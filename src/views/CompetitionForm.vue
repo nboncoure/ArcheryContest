@@ -1,0 +1,161 @@
+<template>
+  <div class="competition-form">
+    <h1>{{ isEdit ? "Modifier la Compétition" : "Nouvelle Compétition" }}</h1>
+    <form @submit.prevent="handleSubmit">
+      <div class="form-group">
+        <label for="name">Nom de la compétition</label>
+        <input type="text" id="name" v-model="form.name" required />
+      </div>
+
+      <div class="form-group">
+        <label for="date">Date</label>
+        <input type="date" id="date" v-model="form.date" required />
+      </div>
+
+      <div class="form-group">
+        <label for="location">Lieu</label>
+        <input type="text" id="location" v-model="form.location" required />
+      </div>
+
+      <div class="form-group">
+        <label for="type">Type</label>
+        <select id="type" v-model="form.type" required>
+          <option value="indoor">Salle</option>
+          <option value="outdoor">Extérieur</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="numberOfTargets">Nombre de cibles</label>
+        <input
+          type="number"
+          id="numberOfTargets"
+          v-model="form.numberOfTargets"
+          min="1"
+          required
+        />
+      </div>
+
+      <div class="form-group checkbox">
+        <label>
+          <input type="checkbox" v-model="form.hasTwoSessions" />
+          Deux départs (Matin/Après-midi)
+        </label>
+      </div>
+
+      <div class="actions">
+        <router-link to="/competitions" class="btn btn-cancel"
+          >Annuler</router-link
+        >
+        <button type="submit" class="btn btn-submit">
+          {{ isEdit ? "Mettre à jour" : "Créer" }}
+        </button>
+      </div>
+    </form>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useCompetitionsStore } from "../stores/competitionsStore";
+import type { Competition } from "../types";
+
+const router = useRouter();
+const route = useRoute();
+const competitionsStore = useCompetitionsStore();
+
+const isEdit = route.params.id !== undefined;
+const form = ref({
+  name: "",
+  date: "",
+  location: "",
+  type: "indoor" as const,
+  numberOfTargets: 10,
+  hasTwoSessions: false,
+  status: "draft" as const,
+});
+
+function handleSubmit() {
+  const competition: Partial<Competition> = {
+    ...form.value,
+  };
+
+  if (isEdit) {
+    competitionsStore.updateCompetition(route.params.id as string, competition);
+  } else {
+    competitionsStore.addCompetition(competition as Competition);
+  }
+
+  router.push("/");
+}
+</script>
+
+<style scoped>
+.competition-form {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+input[type="text"],
+input[type="date"],
+input[type="number"],
+select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox input {
+  width: auto;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  border: none;
+  text-decoration: none;
+}
+
+.btn-cancel {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-submit {
+  background-color: #4caf50;
+  color: white;
+}
+</style>

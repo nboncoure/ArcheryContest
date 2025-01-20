@@ -1,119 +1,307 @@
 <template>
-  <div class="competition-dashboard" v-if="competition">
-    <header class="dashboard-header">
-      <div class="competition-info">
-        <h1>{{ competition.name }}</h1>
-        <div class="competition-details">
-          <span class="detail">
-            <PhCalendar :size="20" weight="fill" />
-            {{ new Date(competition.date).toLocaleDateString() }}
-          </span>
-          <span class="detail">
-            <PhMapPin :size="20" weight="fill" />
-            {{ competition.location }}
-          </span>
-          <span class="detail">
-            <PhTarget :size="20" weight="fill" />
-            {{ competition.type === "indoor" ? "Salle" : "Extérieur" }}
-          </span>
-          <span :class="['status', competition.status]">
-            {{ translateStatus(competition.status) }}
-          </span>
+  <div class="min-h-screen bg-gray-50" v-if="competition">
+    <header class="bg-white shadow">
+      <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-3">
+              <h1 class="text-2xl font-bold text-gray-900">
+                {{ competition.name }}
+              </h1>
+              <button
+                @click="openEditModal"
+                class="text-gray-400 hover:text-gray-600"
+              >
+                <PencilIcon class="w-5 h-5" />
+              </button>
+            </div>
+            <div class="flex items-center gap-6 mt-2">
+              <div class="flex items-center text-gray-600">
+                <CalendarIcon class="w-5 h-5 mr-2" />
+                {{ new Date(competition.date).toLocaleDateString() }}
+              </div>
+              <div class="flex items-center text-gray-600">
+                <MapPinIcon class="w-5 h-5 mr-2" />
+                {{ competition.location }}
+              </div>
+              <div class="flex items-center text-gray-600">
+                <ArrowsPointingOutIcon class="w-5 h-5 mr-2" />
+                {{ competition.type === "indoor" ? "Salle" : "Extérieur" }}
+              </div>
+              <Badge :class="statusClass(competition.status)">
+                {{ translateStatus(competition.status) }}
+              </Badge>
+            </div>
+          </div>
+
+          <div class="flex gap-3">
+            <button
+              v-if="competition.status === 'draft'"
+              @click="startCompetition"
+              class="btn btn-success"
+            >
+              <PlayIcon class="w-5 h-5" />
+              Démarrer la compétition
+            </button>
+            <button
+              v-else-if="competition.status === 'active'"
+              @click="endCompetition"
+              class="btn btn-danger"
+            >
+              <FlagIcon class="w-5 h-5" />
+              Terminer la compétition
+            </button>
+          </div>
         </div>
-      </div>
-      <div class="actions">
-        <button
-          v-if="competition.status === 'draft'"
-          @click="startCompetition"
-          class="btn-start"
-        >
-          <PhPlay :size="20" weight="fill" />
-          Démarrer la compétition
-        </button>
-        <button
-          v-else-if="competition.status === 'active'"
-          @click="endCompetition"
-          class="btn-end"
-        >
-          <PhFlag :size="20" weight="fill" />
-          Terminer la compétition
-        </button>
       </div>
     </header>
 
-    <nav class="competition-nav">
-      <router-link
-        :to="`/competition/${competition.id}/archers`"
-        class="nav-link"
-      >
-        <PhUsers :size="24" weight="fill" />
-        Archers
-      </router-link>
-      <router-link
-        :to="`/competition/${competition.id}/import`"
-        class="nav-link"
-      >
-        <PhUploadSimple :size="24" weight="fill" />
-        Import
-      </router-link>
-      <router-link
-        :to="`/competition/${competition.id}/targets`"
-        class="nav-link"
-      >
-        <PhTarget :size="24" weight="fill" />
-        Cibles
-      </router-link>
-      <router-link
-        :to="`/competition/${competition.id}/scores`"
-        class="nav-link"
-      >
-        <PhChartLineUp :size="24" weight="fill" />
-        Scores
-      </router-link>
-      <router-link
-        :to="`/competition/${competition.id}/rankings`"
-        class="nav-link"
-      >
-        <PhMedal :size="24" weight="fill" />
-        Classements
-      </router-link>
+    <nav class="bg-white border-b border-gray-200">
+      <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <div class="flex justify-start h-16 gap-8">
+          <router-link
+            :to="`/competition/${competition.id}/archers`"
+            class="inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 group"
+            :class="[
+              isActiveRoute('archers')
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+            ]"
+          >
+            <UsersIcon class="w-5 h-5 mr-2" />
+            Archers
+          </router-link>
+
+          <router-link
+            :to="`/competition/${competition.id}/import`"
+            class="inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 group"
+            :class="[
+              isActiveRoute('import')
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+            ]"
+          >
+            <ArrowUpTrayIcon class="w-5 h-5 mr-2" />
+            Import
+          </router-link>
+
+          <router-link
+            :to="`/competition/${competition.id}/targets`"
+            class="inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 group"
+            :class="[
+              isActiveRoute('targets')
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+            ]"
+          >
+            <ViewfinderCircleIcon class="w-5 h-5 mr-2" />
+            Cibles
+          </router-link>
+
+          <router-link
+            :to="`/competition/${competition.id}/scores`"
+            class="inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 group"
+            :class="[
+              isActiveRoute('scores')
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+            ]"
+          >
+            <ChartBarIcon class="w-5 h-5 mr-2" />
+            Scores
+          </router-link>
+
+          <router-link
+            :to="`/competition/${competition.id}/rankings`"
+            class="inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 group"
+            :class="[
+              isActiveRoute('rankings')
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+            ]"
+          >
+            <TrophyIcon class="w-5 h-5 mr-2" />
+            Classements
+          </router-link>
+        </div>
+      </div>
     </nav>
 
-    <main class="dashboard-content">
-      <router-view></router-view>
+    <main class="py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <div class="px-4 sm:px-0">
+        <router-view></router-view>
+      </div>
     </main>
+
+    <!-- Modal de modification -->
+    <TransitionRoot appear :show="showEditModal" as="template">
+      <Dialog as="div" @close="closeEditModal" class="relative z-10">
+        <TransitionChild
+          as="template"
+          enter="duration-300 ease-out"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="duration-200 ease-in"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black bg-opacity-25" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div
+            class="flex items-center justify-center min-h-full p-4 text-center"
+          >
+            <TransitionChild
+              as="template"
+              enter="duration-300 ease-out"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="duration-200 ease-in"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel
+                class="w-full max-w-md p-6 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl"
+              >
+                <DialogTitle
+                  as="h3"
+                  class="mb-4 text-lg font-medium leading-6 text-gray-900"
+                >
+                  Modifier la compétition
+                </DialogTitle>
+
+                <form @submit.prevent="saveCompetition" class="space-y-4">
+                  <div class="form-group">
+                    <label for="name">Nom de la compétition</label>
+                    <input type="text" id="name" v-model="form.name" required />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" v-model="form.date" required />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="location">Lieu</label>
+                    <input
+                      type="text"
+                      id="location"
+                      v-model="form.location"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="type">Type</label>
+                    <select id="type" v-model="form.type" required>
+                      <option value="indoor">Salle</option>
+                      <option value="outdoor">Extérieur</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="numberOfTargets">Nombre de cibles</label>
+                    <input
+                      type="number"
+                      id="numberOfTargets"
+                      v-model="form.numberOfTargets"
+                      min="1"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        v-model="form.hasTwoSessions"
+                        class="border-gray-300 rounded text-primary focus:ring-primary"
+                      />
+                      <span>Deux départs (Matin/Après-midi)</span>
+                    </label>
+                  </div>
+
+                  <div class="flex justify-end gap-3 mt-6">
+                    <button
+                      type="button"
+                      @click="closeEditModal"
+                      class="btn btn-secondary"
+                    >
+                      Annuler
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                      Enregistrer
+                    </button>
+                  </div>
+                </form>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
   </div>
-  <div v-else class="not-found card">
-    <PhWarning :size="48" weight="fill" class="icon" />
-    <h2>Compétition non trouvée</h2>
-    <p>La compétition que vous recherchez n'existe pas.</p>
-    <router-link to="/" class="btn btn-primary">
-      Retour à l'accueil
-    </router-link>
+
+  <div v-else class="flex items-center justify-center min-h-screen bg-gray-50">
+    <div class="text-center">
+      <ExclamationTriangleIcon class="w-12 h-12 mx-auto text-warning" />
+      <h2 class="mt-2 text-lg font-semibold text-gray-900">
+        Compétition non trouvée
+      </h2>
+      <p class="mt-2 text-sm text-gray-600">
+        La compétition que vous recherchez n'existe pas.
+      </p>
+      <div class="mt-6">
+        <router-link to="/" class="btn btn-primary">
+          Retour à l'accueil
+        </router-link>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useCompetitionsStore } from "../stores/competitionsStore";
 import { storeToRefs } from "pinia";
 import {
-  PhUsers,
-  PhUploadSimple,
-  PhTarget,
-  PhChartLineUp,
-  PhMedal,
-  PhCalendar,
-  PhMapPin,
-  PhPlay,
-  PhFlag,
-  PhWarning,
-} from "@phosphor-icons/vue";
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  TransitionRoot,
+  TransitionChild,
+} from "@headlessui/vue";
+import {
+  CalendarIcon,
+  MapPinIcon,
+  ArrowsPointingOutIcon,
+  PlayIcon,
+  FlagIcon,
+  UsersIcon,
+  ArrowUpTrayIcon,
+  ViewfinderCircleIcon,
+  ChartBarIcon,
+  TrophyIcon,
+  ExclamationTriangleIcon,
+  PencilIcon,
+} from "@heroicons/vue/24/outline";
+import type { Competition } from "../types/competition";
 
 const route = useRoute();
 const competitionsStore = useCompetitionsStore();
 const { competitions } = storeToRefs(competitionsStore);
+
+const showEditModal = ref(false);
+const form = ref<Partial<Competition>>({
+  name: "",
+  date: "",
+  location: "",
+  type: "indoor",
+  numberOfTargets: 10,
+  hasTwoSessions: false,
+});
 
 const competition = computed(() =>
   competitions.value.find((c) => c.id === route.params.id)
@@ -126,6 +314,21 @@ function translateStatus(status: string): string {
     completed: "Terminée",
   };
   return statusMap[status] || status;
+}
+
+function statusClass(status: string): string {
+  const classes = {
+    draft: "bg-yellow-100 text-yellow-800",
+    active: "bg-green-100 text-green-800",
+    completed: "bg-blue-100 text-blue-800",
+  };
+  return `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+    classes[status as keyof typeof classes]
+  }`;
+}
+
+function isActiveRoute(name: string): boolean {
+  return route.path.includes(`/${name}`);
 }
 
 function startCompetition() {
@@ -143,158 +346,22 @@ function endCompetition() {
     });
   }
 }
+
+function openEditModal() {
+  if (competition.value) {
+    form.value = { ...competition.value };
+    showEditModal.value = true;
+  }
+}
+
+function closeEditModal() {
+  showEditModal.value = false;
+}
+
+function saveCompetition() {
+  if (competition.value) {
+    competitionsStore.updateCompetition(competition.value.id, form.value);
+    closeEditModal();
+  }
+}
 </script>
-
-<style scoped>
-.competition-dashboard {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 20px;
-}
-
-.competition-info h1 {
-  margin: 0 0 10px 0;
-  font-size: 2em;
-  color: var(--text);
-}
-
-.competition-details {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.detail {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-light);
-}
-
-.status {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.status.draft {
-  background-color: #fff3e0;
-  color: #e65100;
-}
-.status.active {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
-.status.completed {
-  background-color: #e3f2fd;
-  color: #1565c0;
-}
-
-.competition-nav {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  padding: 10px;
-  background-color: var(--surface);
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow-x: auto;
-}
-
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  text-decoration: none;
-  color: var(--text-light);
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.nav-link:hover {
-  background-color: var(--border);
-  color: var(--text);
-}
-
-.nav-link.router-link-active {
-  background-color: var(--primary);
-  color: white;
-}
-
-.actions {
-  display: flex;
-  gap: 10px;
-}
-
-.btn-start,
-.btn-end {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-weight: 500;
-  color: white;
-  transition: all 0.2s ease;
-}
-
-.btn-start {
-  background-color: var(--success);
-}
-
-.btn-start:hover {
-  background-color: #15803d;
-}
-
-.btn-end {
-  background-color: var(--error);
-}
-
-.btn-end:hover {
-  background-color: #b91c1c;
-}
-
-.not-found {
-  max-width: 400px;
-  margin: 40px auto;
-  text-align: center;
-  padding: 40px 20px;
-}
-
-.not-found .icon {
-  color: var(--error);
-  margin-bottom: 20px;
-}
-
-.not-found h2 {
-  margin: 0 0 10px 0;
-  color: var(--text);
-}
-
-.not-found p {
-  margin: 0 0 20px 0;
-  color: var(--text-light);
-}
-
-.dashboard-content {
-  background-color: var(--surface);
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-}
-</style>

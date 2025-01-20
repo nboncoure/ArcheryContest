@@ -36,13 +36,6 @@
         />
       </div>
 
-      <div class="form-group checkbox">
-        <label>
-          <input type="checkbox" v-model="form.hasTwoSessions" />
-          Deux départs (Matin/Après-midi)
-        </label>
-      </div>
-
       <div class="actions">
         <router-link to="/competitions" class="btn btn-cancel"
           >Annuler</router-link
@@ -72,7 +65,6 @@ const form = ref({
   location: "",
   type: "indoor" as const,
   numberOfTargets: 10,
-  hasTwoSessions: false,
   status: "draft" as const,
 });
 

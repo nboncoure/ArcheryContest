@@ -1,9 +1,11 @@
 <template>
   <div class="competitions">
     <div class="header">
-      <h1>Compétitions de Tir à l'Arc</h1>
-      <router-link to="/competitions/new" class="btn-new">
-        <PhPlus :size="20" weight="bold" />
+      <h1 class="text-3xl font-bold text-gray-900">
+        Compétitions de Tir à l'Arc
+      </h1>
+      <router-link to="/competitions/new" class="btn btn-primary">
+        <PlusIcon class="h-5 w-5" />
         Nouvelle Compétition
       </router-link>
     </div>
@@ -12,60 +14,90 @@
       <div
         v-for="competition in competitions"
         :key="competition.id"
-        class="competition-card card"
+        class="card"
       >
-        <div class="card-header">
-          <h3>{{ competition.name }}</h3>
-          <span :class="['status', competition.status]">
+        <div class="flex justify-between items-start mb-4">
+          <h3 class="text-xl font-semibold">{{ competition.name }}</h3>
+          <Badge :class="statusClass(competition.status)">
             {{ translateStatus(competition.status) }}
-          </span>
+          </Badge>
         </div>
 
-        <div class="competition-info">
-          <div class="info-item">
-            <PhCalendar :size="20" weight="fill" />
+        <div class="space-y-3 mb-6">
+          <div class="flex items-center text-gray-600">
+            <CalendarIcon class="h-5 w-5 mr-2" />
             <span>{{ new Date(competition.date).toLocaleDateString() }}</span>
           </div>
-          <div class="info-item">
-            <PhMapPin :size="20" weight="fill" />
+          <div class="flex items-center text-gray-600">
+            <MapPinIcon class="h-5 w-5 mr-2" />
             <span>{{ competition.location }}</span>
           </div>
-          <div class="info-item">
-            <PhTarget :size="20" weight="fill" />
+          <div class="flex items-center text-gray-600">
+            <ArrowsPointingOutIcon class="h-5 w-5 mr-2" />
             <span>{{
               competition.type === "indoor" ? "Salle" : "Extérieur"
             }}</span>
           </div>
-          <div class="info-item">
-            <PhUsers :size="20" weight="fill" />
+          <div class="flex items-center text-gray-600">
+            <UsersIcon class="h-5 w-5 mr-2" />
             <span>{{ getArcherCount(competition.id) }} archers</span>
           </div>
         </div>
 
-        <div class="actions">
+        <div class="flex gap-2">
           <router-link
-            :to="`/competitions/${competition.id}/archers`"
-            class="btn btn-primary"
+            :to="`/competition/${competition.id}/archers`"
+            class="btn btn-primary flex-1"
           >
-            <PhArrowRight :size="20" weight="bold" />
+            <ArrowRightIcon class="h-5 w-5" />
             Gérer
           </router-link>
-          <button
-            @click="deleteCompetition(competition.id)"
-            class="btn btn-danger"
-          >
-            <PhTrash :size="20" weight="bold" />
-          </button>
+          <Menu as="div" class="relative">
+            <MenuButton class="btn btn-secondary p-2">
+              <EllipsisVerticalIcon class="h-5 w-5" />
+            </MenuButton>
+            <transition
+              enter-active-class="transition duration-100 ease-out"
+              enter-from-class="transform scale-95 opacity-0"
+              enter-to-class="transform scale-100 opacity-100"
+              leave-active-class="transition duration-75 ease-in"
+              leave-from-class="transform scale-100 opacity-100"
+              leave-to-class="transform scale-95 opacity-0"
+            >
+              <MenuItems
+                class="absolute right-0 mt-2 w-48 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+              >
+                <div class="py-1">
+                  <MenuItem v-slot="{ active }">
+                    <button
+                      @click="deleteCompetition(competition.id)"
+                      :class="[
+                        active ? 'bg-red-50 text-red-700' : 'text-red-600',
+                        'group flex w-full items-center px-4 py-2 text-sm',
+                      ]"
+                    >
+                      <TrashIcon class="h-5 w-5 mr-3" aria-hidden="true" />
+                      Supprimer
+                    </button>
+                  </MenuItem>
+                </div>
+              </MenuItems>
+            </transition>
+          </Menu>
         </div>
       </div>
     </div>
 
-    <div v-else class="no-competitions card">
-      <PhTarget :size="48" weight="fill" class="icon" />
-      <h2>Aucune compétition</h2>
-      <p>Commencez par créer votre première compétition !</p>
-      <router-link to="/competitions/new" class="btn btn-primary">
-        <PhPlus :size="20" weight="bold" />
+    <div v-else class="card text-center py-12">
+      <ArrowsPointingOutIcon class="h-12 w-12 mx-auto text-gray-400 mb-4" />
+      <h2 class="text-xl font-semibold text-gray-900 mb-2">
+        Aucune compétition
+      </h2>
+      <p class="text-gray-600 mb-6">
+        Commencez par créer votre première compétition !
+      </p>
+      <router-link to="/competitions/new" class="btn btn-primary inline-flex">
+        <PlusIcon class="h-5 w-5" />
         Nouvelle Compétition
       </router-link>
     </div>
@@ -76,15 +108,17 @@
 import { useCompetitionsStore } from "../stores/competitionsStore";
 import { useArchersStore } from "../stores/archersStore";
 import { storeToRefs } from "pinia";
+import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
 import {
-  PhCalendar,
-  PhMapPin,
-  PhTarget,
-  PhUsers,
-  PhPlus,
-  PhArrowRight,
-  PhTrash,
-} from "@phosphor-icons/vue";
+  PlusIcon,
+  CalendarIcon,
+  MapPinIcon,
+  ArrowsPointingOutIcon,
+  UsersIcon,
+  ArrowRightIcon,
+  EllipsisVerticalIcon,
+  TrashIcon,
+} from "@heroicons/vue/24/outline";
 
 const competitionsStore = useCompetitionsStore();
 const archersStore = useArchersStore();
@@ -101,6 +135,17 @@ function translateStatus(status: string): string {
   return statusMap[status] || status;
 }
 
+function statusClass(status: string): string {
+  const classes = {
+    draft: "bg-yellow-100 text-yellow-800",
+    active: "bg-green-100 text-green-800",
+    completed: "bg-blue-100 text-blue-800",
+  };
+  return `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+    classes[status as keyof typeof classes]
+  }`;
+}
+
 function getArcherCount(competitionId: string): number {
   return archers.value.filter(
     (archer) => archer.competitionId === competitionId
@@ -110,158 +155,14 @@ function getArcherCount(competitionId: string): number {
 
 <style scoped>
 .competitions {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  @apply max-w-7xl mx-auto p-6;
 }
 
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-}
-
-.header h1 {
-  margin: 0;
-  font-size: 2em;
-  color: var(--text);
-}
-
-.btn-new {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: var(--primary);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.btn-new:hover {
-  background-color: var(--primary-light);
+  @apply flex justify-between items-center mb-8;
 }
 
 .competition-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.competition-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 15px;
-}
-
-.card-header h3 {
-  margin: 0;
-  font-size: 1.25em;
-  color: var(--text);
-}
-
-.status {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.875em;
-  font-weight: 500;
-}
-
-.status.draft {
-  background-color: #fff3e0;
-  color: #e65100;
-}
-
-.status.active {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status.completed {
-  background-color: #e3f2fd;
-  color: #1565c0;
-}
-
-.competition-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-light);
-}
-
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-top: auto;
-}
-
-.btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-weight: 500;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.btn-primary {
-  background-color: var(--primary);
-  color: white;
-  flex: 1;
-}
-
-.btn-primary:hover {
-  background-color: var(--primary-light);
-}
-
-.btn-danger {
-  background-color: var(--error);
-  color: white;
-  padding: 8px;
-}
-
-.btn-danger:hover {
-  background-color: #ef4444;
-}
-
-.no-competitions {
-  text-align: center;
-  padding: 60px 20px;
-}
-
-.no-competitions .icon {
-  color: var(--text-light);
-  margin-bottom: 20px;
-}
-
-.no-competitions h2 {
-  margin: 0 0 10px 0;
-  color: var(--text);
-}
-
-.no-competitions p {
-  margin: 0 0 30px 0;
-  color: var(--text-light);
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
 }
 </style>

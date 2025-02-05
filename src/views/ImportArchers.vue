@@ -76,18 +76,6 @@
                 >
                   Catégorie
                 </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                >
-                  Genre
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                >
-                  Type d'arc
-                </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -104,18 +92,6 @@
                 <td class="px-6 py-4 whitespace-nowrap">{{ archer.club }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   {{ archer.category }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  {{ archer.gender === "M" ? "Homme" : "Femme" }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  {{ translateBowType(archer.bowType) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  {{ archer.session }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  {{ archer.target?.number }}{{ archer.target?.position }}
                 </td>
               </tr>
             </tbody>
@@ -136,22 +112,44 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRoute } from "vue-router";
-import { useArchersStore } from "../stores/archersStore";
+import { useCompetitionsStore } from "../stores/competitionsStore";
 import * as XLSX from "xlsx";
 import Papa from "papaparse";
-import type { Archer } from "../types";
+import { v4 as uuidv4 } from "uuid";
+import type {
+  Archer,
+  ArcherBowType,
+  ArcherPosition,
+  ArcherAge,
+  ArcherGender,
+} from "../types";
 import {
   ArrowUpTrayIcon,
   DocumentArrowUpIcon,
   XMarkIcon,
   CheckIcon,
 } from "@heroicons/vue/24/outline";
+import { getCategoryCode, translateAgeGroup } from "../constants/categories";
 
 const route = useRoute();
-const archersStore = useArchersStore();
+const competitionsStore = useCompetitionsStore();
 
 const importedArchers = ref<Archer[]>([]);
 const dragOver = ref(false);
+
+function mapAgeGroup(age: string): ArcherAge | undefined {
+  const ageGroupMap: Record<string, ArcherAge> = {
+    "- de 11ans": "P",
+    "11/12 ans": "B",
+    "13/14 ans": "M",
+    "15/16 ans": "C",
+    "17/25 ans": "J",
+    "26/49 ans": "S",
+    "50/59 ans": "V",
+    "60 ans et plus": "SV",
+  };
+  return ageGroupMap[age] || undefined;
+}
 
 function translateBowType(bowType: string): string {
   const bowTypes: Record<string, string> = {
@@ -163,19 +161,9 @@ function translateBowType(bowType: string): string {
   return bowTypes[bowType] || bowType;
 }
 
-function mapBowType(type: string): "SV" | "AV" | "COSV" | "COAV" {
-  const bowTypeMap: Record<string, "SV" | "AV" | "COSV" | "COAV"> = {
-    SV: "Arc nue", // Sans viseur
-    AV: "Classique", // Avec viseur
-    COSV: "Poulie sans viseur", // Compound avec viseur
-    COAV: "Poulie", // Compound avec viseur
-  };
-  return bowTypeMap[type] || "AV";
-}
-
 function parseTarget(
   targetStr: string
-): { number: number; position: "A" | "B" | "C" | "D" } | undefined {
+): { number: number; position: ArcherPosition } | undefined {
   if (!targetStr) return undefined;
 
   const match = targetStr.match(/(\d+)\s*([A-D])/);
@@ -183,7 +171,7 @@ function parseTarget(
 
   return {
     number: parseInt(match[1], 10),
-    position: match[2] as "A" | "B" | "C" | "D",
+    position: match[2] as ArcherPosition,
   };
 }
 
@@ -207,7 +195,7 @@ function processFile(file: File) {
         processImportedData(results.data);
       },
       header: true,
-      // encoding: "ISO-8859-1", // Pour gérer les caractères accentués
+      encoding: "ISO-8859-1", // Pour gérer les caractères accentués
     });
   } else {
     const reader = new FileReader();
@@ -223,27 +211,34 @@ function processFile(file: File) {
 }
 
 function processImportedData(data: any[]) {
-  importedArchers.value = data.map((row: any) => ({
-    id: row["N° Licence"] || crypto.randomUUID(),
-    lastName: row["NOM"] || "",
-    firstName: row["Prénom"] || "",
-    club: row["Club"] || "",
-    category: row["Cat_age"] || "",
-    gender: row["Sexe"] === "F" ? "F" : "M",
-    bowType: mapBowType(row["Arme"]),
-    level: row["Débutant"] === "D" ? "Débutant" : "Confirmé",
-    session: row["N° Départ"]
-      ? (parseInt(row["N° Départ"]) as 1 | 2)
-      : undefined,
-    target: parseTarget(row["Cible"]),
-  }));
+  importedArchers.value = data
+    .map((row: any) => ({
+      id: row["N° Licence"] || uuidv4,
+      lastName: row["NOM"] || "",
+      firstName: row["Prénom"] || "",
+      club: row["Club"] || "",
+      age: mapAgeGroup(row["Cat_age"]) || "S",
+      gender:
+        row["Sexe"] === "F" ? ("F" as ArcherGender) : ("M" as ArcherGender),
+      bowType: row["Arme"] as ArcherBowType,
+      license: row["N° Licence"] || "",
+      isBeginner: row["Débutant"] === "D",
+      isDisabled: row["Handicapè"] === "H",
+      isVisuallyImpaired: row["Malvoyant"] === "M",
+      // session: row["N° Départ"] ? parseInt(row["N° Départ"]) : undefined,
+      // target: parseTarget(row["Cible"]), // TODO: Gérer les cibles "01 A"
+    }))
+    .map((archer) => ({
+      ...archer,
+      category: getCategoryCode(archer.age, archer.bowType, archer.gender),
+    }));
 }
 
 function confirmImport() {
   if (importedArchers.value.length > 0) {
-    archersStore.importArchers(
-      importedArchers.value,
-      route.params.id as string
+    competitionsStore.importArchers(
+      route.params.id as string,
+      importedArchers.value
     );
     importedArchers.value = [];
     alert("Import réussi !");

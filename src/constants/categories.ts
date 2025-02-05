@@ -1,3 +1,5 @@
+import type { ArcherAge, ArcherBowType, ArcherGender } from "../types";
+
 export const BOW_TYPES = {
   SV: "SV",
   AV: "AV",
@@ -384,7 +386,11 @@ export const CATEGORIES = [
   },
 ];
 
-export function getCategoryCode(age: string, bowType: string, gender: string) {
+export function getCategoryCode(
+  age: ArcherAge,
+  bowType: ArcherBowType | undefined,
+  gender: ArcherGender | undefined
+) {
   const category = CATEGORIES.find(
     (cat) => cat.age === age && cat.bowType === bowType && cat.gender === gender
   );
@@ -405,7 +411,7 @@ export function translateBowType(bowType: string): string {
   return translations[bowType] || bowType;
 }
 
-export function translateAgeGroup(age: string): string {
+export function translateAgeGroup(age: ArcherAge): string {
   const translations: Record<string, string> = {
     [AGE_GROUPS.P]: "- de 11 ans", // "Poussins" is a French word for "Under 11"
     [AGE_GROUPS.B]: "11/12 ans", // "Benjamins" is a French word for "Under 13"
@@ -416,7 +422,7 @@ export function translateAgeGroup(age: string): string {
     [AGE_GROUPS.V]: "50/59 ans", // "Vétérans" is a French word for "Veterans"
     [AGE_GROUPS.SV]: "60 ans et plus", // "Super Vétérans" is a French word for "Super Veterans"
   };
-  return translations[age] || age;
+  return translations[age] || "";
 }
 
 export function translateGender(gender: string): string {

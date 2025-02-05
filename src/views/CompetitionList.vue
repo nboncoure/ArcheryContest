@@ -5,7 +5,7 @@
         Compétitions de Tir à l'Arc
       </h1>
       <router-link to="/competitions/new" class="btn btn-primary">
-        <PlusIcon class="h-5 w-5" />
+        <PlusIcon class="w-5 h-5" />
         Nouvelle Compétition
       </router-link>
     </div>
@@ -16,45 +16,45 @@
         :key="competition.id"
         class="card"
       >
-        <div class="flex justify-between items-start mb-4">
+        <div class="flex items-start justify-between mb-4">
           <h3 class="text-xl font-semibold">{{ competition.name }}</h3>
           <Badge :class="statusClass(competition.status)">
             {{ translateStatus(competition.status) }}
           </Badge>
         </div>
 
-        <div class="space-y-3 mb-6">
+        <div class="mb-6 space-y-3">
           <div class="flex items-center text-gray-600">
-            <CalendarIcon class="h-5 w-5 mr-2" />
+            <CalendarIcon class="w-5 h-5 mr-2" />
             <span>{{ new Date(competition.date).toLocaleDateString() }}</span>
           </div>
           <div class="flex items-center text-gray-600">
-            <MapPinIcon class="h-5 w-5 mr-2" />
+            <MapPinIcon class="w-5 h-5 mr-2" />
             <span>{{ competition.location }}</span>
           </div>
           <div class="flex items-center text-gray-600">
-            <ArrowsPointingOutIcon class="h-5 w-5 mr-2" />
+            <ArrowsPointingOutIcon class="w-5 h-5 mr-2" />
             <span>{{
               competition.type === "indoor" ? "Salle" : "Extérieur"
             }}</span>
           </div>
           <div class="flex items-center text-gray-600">
-            <UsersIcon class="h-5 w-5 mr-2" />
-            <span>{{ getArcherCount(competition.id) }} archers</span>
+            <UsersIcon class="w-5 h-5 mr-2" />
+            <span>{{ competition.archers.length }} archers</span>
           </div>
         </div>
 
         <div class="flex gap-2">
           <router-link
             :to="`/competition/${competition.id}/archers`"
-            class="btn btn-primary flex-1"
+            class="flex-1 btn btn-primary"
           >
-            <ArrowRightIcon class="h-5 w-5" />
+            <ArrowRightIcon class="w-5 h-5" />
             Gérer
           </router-link>
           <Menu as="div" class="relative">
-            <MenuButton class="btn btn-secondary p-2">
-              <EllipsisVerticalIcon class="h-5 w-5" />
+            <MenuButton class="p-2 btn btn-secondary">
+              <EllipsisVerticalIcon class="w-5 h-5" />
             </MenuButton>
             <transition
               enter-active-class="transition duration-100 ease-out"
@@ -65,7 +65,7 @@
               leave-to-class="transform scale-95 opacity-0"
             >
               <MenuItems
-                class="absolute right-0 mt-2 w-48 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                class="absolute right-0 w-48 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
               >
                 <div class="py-1">
                   <MenuItem v-slot="{ active }">
@@ -76,7 +76,7 @@
                         'group flex w-full items-center px-4 py-2 text-sm',
                       ]"
                     >
-                      <TrashIcon class="h-5 w-5 mr-3" aria-hidden="true" />
+                      <TrashIcon class="w-5 h-5 mr-3" aria-hidden="true" />
                       Supprimer
                     </button>
                   </MenuItem>
@@ -88,16 +88,16 @@
       </div>
     </div>
 
-    <div v-else class="card text-center py-12">
-      <ArrowsPointingOutIcon class="h-12 w-12 mx-auto text-gray-400 mb-4" />
-      <h2 class="text-xl font-semibold text-gray-900 mb-2">
+    <div v-else class="py-12 text-center card">
+      <ArrowsPointingOutIcon class="w-12 h-12 mx-auto mb-4 text-gray-400" />
+      <h2 class="mb-2 text-xl font-semibold text-gray-900">
         Aucune compétition
       </h2>
-      <p class="text-gray-600 mb-6">
+      <p class="mb-6 text-gray-600">
         Commencez par créer votre première compétition !
       </p>
-      <router-link to="/competitions/new" class="btn btn-primary inline-flex">
-        <PlusIcon class="h-5 w-5" />
+      <router-link to="/competitions/new" class="inline-flex btn btn-primary">
+        <PlusIcon class="w-5 h-5" />
         Nouvelle Compétition
       </router-link>
     </div>
@@ -106,7 +106,6 @@
 
 <script setup lang="ts">
 import { useCompetitionsStore } from "../stores/competitionsStore";
-import { useArchersStore } from "../stores/archersStore";
 import { storeToRefs } from "pinia";
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
 import {
@@ -121,9 +120,7 @@ import {
 } from "@heroicons/vue/24/outline";
 
 const competitionsStore = useCompetitionsStore();
-const archersStore = useArchersStore();
 const { competitions } = storeToRefs(competitionsStore);
-const { archers } = storeToRefs(archersStore);
 const { deleteCompetition } = competitionsStore;
 
 function translateStatus(status: string): string {
@@ -144,12 +141,6 @@ function statusClass(status: string): string {
   return `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
     classes[status as keyof typeof classes]
   }`;
-}
-
-function getArcherCount(competitionId: string): number {
-  return archers.value.filter(
-    (archer) => archer.competitionId === competitionId
-  ).length;
 }
 </script>
 

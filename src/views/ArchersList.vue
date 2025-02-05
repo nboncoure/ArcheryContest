@@ -1,23 +1,32 @@
 <template>
   <div class="archers-list">
-    <div class="header">
-      <h1>Liste des Archers</h1>
-      <button @click="showAddForm = true" class="btn-add">
-        <PhPlus :size="20" weight="bold" />
-        Ajouter un archer
-      </button>
-      <div class="filters">
-        <div class="filter-group">
-          <label for="search">Rechercher :</label>
-          <input
-            type="text"
-            id="search"
-            v-model="filters.search"
-            placeholder="Nom, prénom, club..."
-          />
+    <div class="mb-8">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Liste des Archers</h1>
+        <button @click="showAddForm = true" class="btn btn-primary">
+          <PlusIcon class="w-5 h-5" />
+          Ajouter un archer
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="form-group">
+          <label for="search">Rechercher</label>
+          <div class="relative">
+            <MagnifyingGlassIcon
+              class="h-5 w-5 absolute left-3 top-2.5 text-gray-400"
+            />
+            <input
+              type="text"
+              id="search"
+              v-model="filters.search"
+              placeholder="Nom, prénom, club..."
+              class="pl-10"
+            />
+          </div>
         </div>
-        <div class="filter-group">
-          <label for="category">Catégorie :</label>
+        <div class="form-group">
+          <label for="category">Catégorie</label>
           <select id="category" v-model="filters.category">
             <option value="">Toutes</option>
             <option v-for="cat in categories" :key="cat" :value="cat">
@@ -25,217 +34,360 @@
             </option>
           </select>
         </div>
-        <div class="filter-group">
-          <label for="bowType">Type d'arc :</label>
+        <div class="form-group">
+          <label for="bowType">Type d'arc</label>
           <select id="bowType" v-model="filters.bowType">
             <option value="">Tous</option>
-            <option value="SV">Classique sans viseur</option>
-            <option value="AV">Classique avec viseur</option>
+            <option value="SV">Arc nu</option>
+            <option value="AV">Classique</option>
             <option value="COSV">Poulies sans viseur</option>
-            <option value="COAV">Poulies avec viseur</option>
+            <option value="COAV">Poulies</option>
           </select>
         </div>
       </div>
     </div>
 
-    <div class="table-container card">
-      <table>
-        <thead>
-          <tr>
-            <th @click="sort('lastName')">
-              Nom
-              <span v-if="sortField === 'lastName'" class="sort-indicator">
-                {{ sortDirection === "asc" ? "↑" : "↓" }}
-              </span>
-            </th>
-            <th @click="sort('firstName')">
-              Prénom
-              <span v-if="sortField === 'firstName'" class="sort-indicator">
-                {{ sortDirection === "asc" ? "↑" : "↓" }}
-              </span>
-            </th>
-            <th @click="sort('club')">
-              Club
-              <span v-if="sortField === 'club'" class="sort-indicator">
-                {{ sortDirection === "asc" ? "↑" : "↓" }}
-              </span>
-            </th>
-            <th @click="sort('category')">
-              Catégorie
-              <span v-if="sortField === 'category'" class="sort-indicator">
-                {{ sortDirection === "asc" ? "↑" : "↓" }}
-              </span>
-            </th>
-            <th @click="sort('gender')">
-              Genre
-              <span v-if="sortField === 'gender'" class="sort-indicator">
-                {{ sortDirection === "asc" ? "↑" : "↓" }}
-              </span>
-            </th>
-            <th @click="sort('bowType')">
-              Arc
-              <span v-if="sortField === 'bowType'" class="sort-indicator">
-                {{ sortDirection === "asc" ? "↑" : "↓" }}
-              </span>
-            </th>
-            <th>Cible</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="archer in sortedArchers" :key="archer.id">
-            <td>{{ archer.lastName }}</td>
-            <td>{{ archer.firstName }}</td>
-            <td>{{ archer.club }}</td>
-            <td>{{ archer.category }}</td>
-            <td>{{ translateGender(archer.gender) }}</td>
-            <td class="with-icon">
-              <PhCrosshair weight="fill" :size="20" />
-              <span>{{ translateBowType(archer.bowType) }}</span>
-            </td>
-            <td class="with-icon">
-              <PhTarget weight="fill" :size="20" />
-              <span>{{
-                archer.target
-                  ? `${archer.target.number}${archer.target.position}`
-                  : "-"
-              }}</span>
-            </td>
-            <td class="actions">
-              <button @click="editArcher(archer)" class="btn-icon">
-                <PhPencil :size="20" weight="bold" />
-              </button>
-              <button
-                @click="deleteArcher(archer.id)"
-                class="btn-icon btn-danger"
+    <div class="overflow-hidden bg-white rounded-lg shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                v-for="column in columns"
+                :key="column.key"
+                @click="() => column.sortable && sort(column.key)"
+                :class="[
+                  'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider',
+                  column.sortable && 'cursor-pointer hover:text-gray-700',
+                ]"
               >
-                <PhTrash :size="20" weight="bold" />
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="stats card">
-      <PhUsersThree weight="fill" :size="24" />
-      <p>Total : {{ sortedArchers.length }} archers</p>
-    </div>
-
-    <!-- Modal pour ajouter/modifier un archer -->
-    <div v-if="showAddForm || editingArcher" class="modal-overlay">
-      <div class="modal card">
-        <h2>{{ editingArcher ? "Modifier" : "Ajouter" }} un archer</h2>
-        <form @submit.prevent="saveArcher">
-          <div class="form-group">
-            <label for="lastName">Nom :</label>
-            <input
-              type="text"
-              id="lastName"
-              v-model="archerForm.lastName"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="firstName">Prénom :</label>
-            <input
-              type="text"
-              id="firstName"
-              v-model="archerForm.firstName"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="club">Club :</label>
-            <input type="text" id="club" v-model="archerForm.club" required />
-          </div>
-
-          <div class="form-group">
-            <label for="ageGroup">Tranche d'âge :</label>
-            <select id="ageGroup" v-model="selectedAgeGroup" required>
-              <option
-                v-for="(label, key) in AGE_GROUPS"
-                :key="key"
-                :value="label"
+                <div class="flex items-center gap-1">
+                  {{ column.label }}
+                  <template v-if="column.sortable && sortField === column.key">
+                    <ChevronUpIcon
+                      v-if="sortDirection === 'asc'"
+                      class="w-4 h-4"
+                    />
+                    <ChevronDownIcon v-else class="w-4 h-4" />
+                  </template>
+                </div>
+              </th>
+              <th
+                class="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase"
               >
-                {{ translateAgeGroup(label) }}
-              </option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="gender">Genre :</label>
-            <select id="gender" v-model="archerForm.gender" required>
-              <option :value="GENDERS.MALE">Homme</option>
-              <option :value="GENDERS.FEMALE">Femme</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="bowType">Type d'arc :</label>
-            <select id="bowType" v-model="archerForm.bowType" required>
-              <option :value="BOW_TYPES.SV">Classique sans viseur</option>
-              <option :value="BOW_TYPES.AV">Classique avec viseur</option>
-              <option :value="BOW_TYPES.COSV">Poulies sans viseur</option>
-              <option :value="BOW_TYPES.COAV">Poulies avec viseur</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Catégorie spéciale :</label>
-            <div class="special-categories">
-              <label v-for="(label, key) in SPECIAL_CATEGORIES" :key="key">
-                <input
-                  type="radio"
-                  name="specialCategory"
-                  :value="label"
-                  v-model="selectedSpecialCategory"
-                />
-                {{ label }}
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="specialCategory"
-                  value=""
-                  v-model="selectedSpecialCategory"
-                />
-                Aucune
-              </label>
-            </div>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" @click="closeForm" class="btn-cancel">
-              Annuler
-            </button>
-            <button type="submit" class="btn-submit">
-              {{ editingArcher ? "Modifier" : "Ajouter" }}
-            </button>
-          </div>
-        </form>
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr
+              v-for="archer in sortedArchers"
+              :key="archer.id"
+              class="hover:bg-gray-50"
+            >
+              <td class="px-6 py-4 whitespace-nowrap">{{ archer.lastName }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                {{ archer.firstName }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ archer.club }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ archer.category }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                {{ translateGender(archer.gender) }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center gap-2">
+                  <BowIcon class="w-5 h-5 text-gray-400" />
+                  {{ translateBowType(archer.bowType) }}
+                </div>
+              </td>
+              <td class="px-6 py-4 text-right whitespace-nowrap">
+                <Menu as="div" class="relative inline-block text-left">
+                  <MenuButton class="p-2 btn btn-secondary">
+                    <EllipsisVerticalIcon class="w-5 h-5" />
+                  </MenuButton>
+                  <transition
+                    enter-active-class="transition duration-100 ease-out"
+                    enter-from-class="transform scale-95 opacity-0"
+                    enter-to-class="transform scale-100 opacity-100"
+                    leave-active-class="transition duration-75 ease-in"
+                    leave-from-class="transform scale-100 opacity-100"
+                    leave-to-class="transform scale-95 opacity-0"
+                  >
+                    <MenuItems
+                      class="absolute right-0 w-48 mt-2 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    >
+                      <div class="py-1">
+                        <MenuItem v-slot="{ active }">
+                          <button
+                            @click="editArcher(archer)"
+                            :class="[
+                              active ? 'bg-gray-100' : '',
+                              'flex w-full items-center px-4 py-2 text-sm text-gray-700',
+                            ]"
+                          >
+                            <PencilIcon class="w-5 h-5 mr-3 text-gray-400" />
+                            Modifier
+                          </button>
+                        </MenuItem>
+                        <MenuItem v-slot="{ active }">
+                          <button
+                            @click="deleteArcher(archer.id)"
+                            :class="[
+                              active
+                                ? 'bg-red-50 text-red-700'
+                                : 'text-red-600',
+                              'flex w-full items-center px-4 py-2 text-sm',
+                            ]"
+                          >
+                            <TrashIcon class="w-5 h-5 mr-3" />
+                            Supprimer
+                          </button>
+                        </MenuItem>
+                      </div>
+                    </MenuItems>
+                  </transition>
+                </Menu>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
+
+    <div class="flex items-center gap-2 mt-4 text-gray-600">
+      <UsersIcon class="w-5 h-5" />
+      <span>Total : {{ sortedArchers.length }} archers</span>
+    </div>
+
+    <TransitionRoot
+      appear
+      :show="showAddForm || editingArcher !== null"
+      as="template"
+    >
+      <Dialog as="div" @close="closeForm" class="relative z-10">
+        <TransitionChild
+          as="template"
+          enter="duration-300 ease-out"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="duration-200 ease-in"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black bg-opacity-25" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div
+            class="flex items-center justify-center min-h-full p-4 text-center"
+          >
+            <TransitionChild
+              as="template"
+              enter="duration-300 ease-out"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="duration-200 ease-in"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel
+                class="w-full max-w-md p-6 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl"
+              >
+                <DialogTitle
+                  as="h3"
+                  class="mb-4 text-lg font-medium leading-6 text-gray-900"
+                >
+                  {{ editingArcher ? "Modifier" : "Ajouter" }} un archer
+                </DialogTitle>
+
+                <form @submit.prevent="saveArcher" class="space-y-4">
+                  <div class="form-group">
+                    <label for="lastName">Nom</label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      v-model="archerForm.lastName"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="firstName">Prénom</label>
+                    <input
+                      type="text"
+                      id="firstName"
+                      v-model="archerForm.firstName"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="club">Club</label>
+                    <input
+                      type="text"
+                      id="club"
+                      v-model="archerForm.club"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="club">N° Licence</label>
+                    <input
+                      type="text"
+                      id="license"
+                      v-model="archerForm.license"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ageGroup">Tranche d'âge</label>
+                    <select id="ageGroup" v-model="selectedAgeGroup" required>
+                      <option
+                        v-for="(label, key) in AGE_GROUPS"
+                        :key="key"
+                        :value="label"
+                      >
+                        {{ label }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="gender">Genre</label>
+                    <select id="gender" v-model="archerForm.gender" required>
+                      <option :value="GENDERS.MALE">Homme</option>
+                      <option :value="GENDERS.FEMALE">Femme</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="bowType">Type d'arc</label>
+                    <select id="bowType" v-model="archerForm.bowType" required>
+                      <option :value="BOW_TYPES.SV">Arc nu</option>
+                      <option :value="BOW_TYPES.AV">Classique</option>
+                      <option :value="BOW_TYPES.COSV">
+                        Poulies sans viseur
+                      </option>
+                      <option :value="BOW_TYPES.COAV">Poulies</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="mb-2">Catégorie spéciale</label>
+                    <RadioGroup v-model="selectedSpecialCategory" class="mt-2">
+                      <RadioGroupOption
+                        v-for="(label, key) in SPECIAL_CATEGORIES"
+                        :key="key"
+                        :value="label"
+                        v-slot="{ checked }"
+                      >
+                        <div
+                          :class="[
+                            checked
+                              ? 'bg-primary-50 border-primary'
+                              : 'border-gray-200',
+                            'relative border rounded-lg px-4 py-2 flex cursor-pointer focus:outline-none',
+                          ]"
+                        >
+                          <div class="flex items-center">
+                            <div class="text-sm">
+                              <RadioGroupLabel
+                                :class="[
+                                  checked
+                                    ? 'text-primary-900'
+                                    : 'text-gray-900',
+                                  'font-medium',
+                                ]"
+                              >
+                                {{ label }}
+                              </RadioGroupLabel>
+                            </div>
+                          </div>
+                        </div>
+                      </RadioGroupOption>
+                      <RadioGroupOption value="" v-slot="{ checked }">
+                        <div
+                          :class="[
+                            checked
+                              ? 'bg-primary-50 border-primary'
+                              : 'border-gray-200',
+                            'relative border rounded-lg px-4 py-2 flex cursor-pointer focus:outline-none',
+                          ]"
+                        >
+                          <div class="flex items-center">
+                            <div class="text-sm">
+                              <RadioGroupLabel
+                                :class="[
+                                  checked
+                                    ? 'text-primary-900'
+                                    : 'text-gray-900',
+                                  'font-medium',
+                                ]"
+                              >
+                                Aucune
+                              </RadioGroupLabel>
+                            </div>
+                          </div>
+                        </div>
+                      </RadioGroupOption>
+                    </RadioGroup>
+                  </div>
+
+                  <div class="flex justify-end gap-3 mt-6">
+                    <button
+                      type="button"
+                      @click="closeForm"
+                      class="btn btn-secondary"
+                    >
+                      Annuler
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                      {{ editingArcher ? "Modifier" : "Ajouter" }}
+                    </button>
+                  </div>
+                </form>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { useRoute } from "vue-router";
+import { useCompetitionsStore } from "../stores/competitionsStore";
 import { storeToRefs } from "pinia";
-import { v4 as uuidv4 } from "uuid";
 import {
-  PhCrosshair,
-  PhTarget,
-  PhUsersThree,
-  PhPlus,
-  PhPencil,
-  PhTrash,
-} from "@phosphor-icons/vue";
-import type { Archer } from "../types";
-import { useArchersStore } from "../stores/archersStore";
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  Menu,
+  MenuButton,
+  MenuItems,
+  MenuItem,
+  RadioGroup,
+  RadioGroupLabel,
+  RadioGroupOption,
+  TransitionRoot,
+  TransitionChild,
+} from "@headlessui/vue";
+import {
+  PlusIcon,
+  MagnifyingGlassIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  ViewfinderCircleIcon,
+  EllipsisVerticalIcon,
+  PencilIcon,
+  TrashIcon,
+  UsersIcon,
+} from "@heroicons/vue/24/outline";
+import type { Archer, ArcherAge } from "../types";
 import {
   AGE_GROUPS,
   BOW_TYPES,
@@ -244,27 +396,31 @@ import {
   CATEGORIES,
   getCategoryCode,
   translateBowType,
-  translateAgeGroup,
   translateGender,
 } from "../constants/categories";
 
 const route = useRoute();
-const archersStore = useArchersStore();
-const { archers } = storeToRefs(archersStore);
+const competitionsStore = useCompetitionsStore();
+const { competitions } = storeToRefs(competitionsStore);
+
+const competitionId = route.params.id as string;
 
 const showAddForm = ref(false);
 const editingArcher = ref<Archer | null>(null);
-const selectedAgeGroup = ref<keyof typeof AGE_GROUPS>(AGE_GROUPS.S);
+const selectedAgeGroup = ref<ArcherAge>(AGE_GROUPS.S);
 const selectedSpecialCategory = ref("");
 
 const archerForm = ref<Partial<Archer>>({
   lastName: "",
   firstName: "",
   club: "",
+  license: "",
   category: "",
   gender: GENDERS.MALE,
   bowType: BOW_TYPES.AV,
-  license: "",
+  isBeginner: false,
+  isDisabled: false,
+  isVisuallyImpaired: false,
 });
 
 const filters = ref({
@@ -276,14 +432,25 @@ const filters = ref({
 const sortField = ref("lastName");
 const sortDirection = ref<"asc" | "desc">("asc");
 
+const columns = [
+  { key: "lastName", label: "Nom", sortable: true },
+  { key: "firstName", label: "Prénom", sortable: true },
+  { key: "club", label: "Club", sortable: true },
+  { key: "category", label: "Catégorie", sortable: true },
+  { key: "gender", label: "Genre", sortable: true },
+  { key: "bowType", label: "Arc", sortable: true },
+];
+
+const archers = computed(
+  () => competitions.value.find((c) => c.id === competitionId)?.archers || []
+);
+
 const categories = computed(() =>
   [...new Set(archers.value.map((a) => a.category))].sort()
 );
 
 const filteredArchers = computed(() => {
   return archers.value.filter((archer) => {
-    if (archer.competitionId !== route.params.id) return false;
-
     const searchMatch =
       !filters.value.search ||
       [archer.lastName, archer.firstName, archer.club]
@@ -314,19 +481,10 @@ const sortedArchers = computed(() => {
   });
 });
 
-// Calcul automatique de la catégorie
 watch(
-  [selectedAgeGroup, archerForm, selectedSpecialCategory],
-  ([age, form, special]) => {
-    if (special) {
-      archerForm.value.category = special;
-    } else {
-      archerForm.value.category = getCategoryCode(
-        age,
-        form.bowType || "",
-        form.gender || ""
-      );
-    }
+  [selectedAgeGroup, archerForm],
+  ([age, form]) => {
+    archerForm.value.category = getCategoryCode(age, form.bowType, form.gender);
   },
   { immediate: true }
 );
@@ -344,26 +502,17 @@ function editArcher(archer: Archer) {
   editingArcher.value = archer;
   archerForm.value = { ...archer };
 
-  if (
-    Object.values(SPECIAL_CATEGORIES).includes(
-      archer.category as keyof typeof SPECIAL_CATEGORIES
-    )
-  ) {
-    selectedSpecialCategory.value = archer.category;
-    selectedAgeGroup.value = AGE_GROUPS.S; // valeur par défaut
-  } else {
-    selectedSpecialCategory.value = "";
-    const category = CATEGORIES.find((cat) => cat.code === archer.category);
-    if (category) {
-      selectedAgeGroup.value = category.age;
-    }
+  selectedSpecialCategory.value = "";
+  const category = CATEGORIES.find((cat) => cat.code === archer.category);
+  if (category) {
+    selectedAgeGroup.value = category.age;
   }
   showAddForm.value = true;
 }
 
 function deleteArcher(id: string) {
   if (confirm("Êtes-vous sûr de vouloir supprimer cet archer ?")) {
-    archersStore.deleteArcher(id);
+    competitionsStore.deleteArcher(competitionId, id);
   }
 }
 
@@ -374,12 +523,9 @@ function saveArcher() {
   };
 
   if (editingArcher.value) {
-    archersStore.updateArcher(editingArcher.value.id, archer as Archer);
+    competitionsStore.updateArcher(competitionId, archer as Archer);
   } else {
-    archersStore.addArcher({
-      ...archer,
-      id: uuidv4(),
-    } as Archer);
+    competitionsStore.addArcher(competitionId, archer as Archer);
   }
 
   closeForm();
@@ -396,6 +542,9 @@ function closeForm() {
     gender: GENDERS.MALE,
     bowType: BOW_TYPES.AV,
     license: "",
+    isBeginner: false,
+    isDisabled: false,
+    isVisuallyImpaired: false,
   };
   selectedAgeGroup.value = AGE_GROUPS.S;
   selectedSpecialCategory.value = "";
@@ -404,192 +553,6 @@ function closeForm() {
 
 <style scoped>
 .archers-list {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.header {
-  margin-bottom: 20px;
-}
-
-.header h1 {
-  margin: 0 0 20px 0;
-}
-
-.btn-add {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.filters {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.filter-group label {
-  font-size: 0.9em;
-  color: var(--text-light);
-}
-
-.filter-group input,
-.filter-group select {
-  min-width: 200px;
-}
-
-.table-container {
-  overflow-x: auto;
-  margin-bottom: 20px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th {
-  text-align: left;
-  padding: 12px;
-  color: var(--text-light);
-  font-weight: 500;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-}
-
-th:hover {
-  color: var(--text);
-}
-
-td {
-  padding: 12px;
-  border-top: 1px solid var(--border);
-  color: var(--text);
-}
-
-td.with-icon {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-td.actions {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-icon {
-  padding: 6px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-  background-color: var(--primary);
-  color: white;
-}
-
-.btn-icon.btn-danger {
-  background-color: var(--error);
-}
-
-.sort-indicator {
-  display: inline-block;
-  margin-left: 4px;
-}
-
-.stats {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-light);
-}
-
-.stats p {
-  margin: 0;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal {
-  width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 20px;
-}
-
-.modal h2 {
-  margin: 0 0 20px 0;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-}
-
-.special-categories {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.special-categories label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-weight: normal;
-}
-
-.special-categories input[type="radio"] {
-  margin: 0;
-  width: auto;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.btn-cancel {
-  background-color: var(--text-light);
-}
-
-.btn-submit {
-  background-color: var(--primary);
+  @apply max-w-7xl mx-auto;
 }
 </style>

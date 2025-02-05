@@ -1,17 +1,26 @@
+export type ArcherPosition = "A" | "B" | "C" | "D";
+export type ArcherAge = "P" | "B" | "M" | "C" | "J" | "S" | "V" | "SV";
+export type ArcherGender = "M" | "F";
+export type ArcherBowType = "SV" | "AV" | "COSV" | "COAV";
+export type CompetitionType = "indoor" | "outdoor";
+
 export interface Archer {
   id: string;
-  competitionId: string;
   lastName: string;
   firstName: string;
   club: string;
+  age: ArcherAge;
   category: string;
-  gender: "M" | "F";
-  bowType: "SV" | "AV" | "COSV" | "COAV";
+  gender: ArcherGender;
+  bowType: ArcherBowType;
   license: string;
+  isBeginner: boolean;
+  isDisabled: boolean;
+  isVisuallyImpaired: boolean;
   session?: string;
   target?: {
     number: number;
-    position: "A" | "B" | "C" | "D";
+    position: ArcherPosition;
   };
   scores?: number[];
 }
@@ -23,7 +32,8 @@ export interface Competition {
   name: string;
   date: string;
   location: string;
-  type: "indoor" | "outdoor";
+  type: CompetitionType;
+  archers: Archer[];
   numberOfSessions: number;
   numberOfTargets: number;
   status: CompetitionStatus;
@@ -33,14 +43,15 @@ export interface Competition {
 }
 
 export interface SessionConfig {
-  id: number;
+  id: string;
+  name: string;
   date: string;
   targets: TargetConfig[];
 }
 
 export interface TargetConfig {
-  number: number;
   // marqueur
+  number: number;
   distance: number;
   faceSize: number;
 }

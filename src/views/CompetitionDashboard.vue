@@ -211,17 +211,6 @@
                     />
                   </div>
 
-                  <div class="form-group">
-                    <label class="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        v-model="form.hasTwoSessions"
-                        class="border-gray-300 rounded text-primary focus:ring-primary"
-                      />
-                      <span>Deux départs (Matin/Après-midi)</span>
-                    </label>
-                  </div>
-
                   <div class="flex justify-end gap-3 mt-6">
                     <button
                       type="button"
@@ -287,7 +276,7 @@ import {
   ExclamationTriangleIcon,
   PencilIcon,
 } from "@heroicons/vue/24/outline";
-import type { Competition } from "../types/competition";
+import type { Competition } from "../types";
 
 const route = useRoute();
 const competitionsStore = useCompetitionsStore();
@@ -300,7 +289,6 @@ const form = ref<Partial<Competition>>({
   location: "",
   type: "indoor",
   numberOfTargets: 10,
-  hasTwoSessions: false,
 });
 
 const competition = computed(() =>

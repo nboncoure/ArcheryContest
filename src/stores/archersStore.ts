@@ -68,6 +68,16 @@ export const useArchersStore = defineStore("archers", () => {
     }
   }
 
+  function updateArcherSession(
+    archerId: string,
+    sessionId: string | undefined
+  ) {
+    const archer = archers.value.find((a) => a.id === archerId);
+    if (archer) {
+      archer.session = sessionId;
+    }
+  }
+
   function updateScore(archerId: string, scores: number[]) {
     const archer = archers.value.find((a) => a.id === archerId);
     if (archer) {
@@ -97,6 +107,7 @@ export const useArchersStore = defineStore("archers", () => {
     deleteArcher,
     importArchers,
     updateArcherTarget,
+    updateArcherSession,
     updateScore,
     getRankings,
   };

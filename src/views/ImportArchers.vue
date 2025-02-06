@@ -140,13 +140,13 @@ const dragOver = ref(false);
 function mapAgeGroup(age: string): ArcherAge | undefined {
   const ageGroupMap: Record<string, ArcherAge> = {
     "- de 11ans": "P",
-    "11/12 ans": "B",
-    "13/14 ans": "M",
-    "15/16 ans": "C",
-    "17/25 ans": "J",
-    "26/49 ans": "S",
-    "50/59 ans": "V",
-    "60 ans et plus": "SV",
+    "11 / 12 ans": "B",
+    "13 / 14 ans": "M",
+    "15 / 16 ans": "C",
+    "17 / 25 ans": "J",
+    "26 / 49 ans": "S",
+    "50 / 59 ans": "V",
+    "60 et +": "SV",
   };
   return ageGroupMap[age] || undefined;
 }
@@ -217,7 +217,7 @@ function processImportedData(data: any[]) {
       lastName: row["NOM"] || "",
       firstName: row["Prénom"] || "",
       club: row["Club"] || "",
-      age: mapAgeGroup(row["Cat_age"]) || "S",
+      age: mapAgeGroup(row["Cat_age"]) || "U",
       gender:
         row["Sexe"] === "F" ? ("F" as ArcherGender) : ("M" as ArcherGender),
       bowType: row["Arme"] as ArcherBowType,

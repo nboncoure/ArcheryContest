@@ -1,237 +1,254 @@
+import { v4 as uuidv4 } from "uuid";
 import type {
   Archer,
-  ArcherPosition,
+  ArcherAge,
   ArcherBowType,
-  TargetConfig,
+  ArcherPosition,
+  Competition,
   CompetitionType,
+  SessionConfig,
+  TargetConfig,
 } from "../types";
 import { BOW_TYPES } from "../constants/categories";
 import { getCompetitionTargetConfig } from "../constants/distances";
 import { getCategoryByCode } from "../constants/categories";
 
-interface TargetAssignment {
-  targetNumber: number;
-  position: ArcherPosition;
-  depart: number;
-}
-
-export interface AssignmentResult {
-  archerId: string;
-  assignment: TargetAssignment;
-}
-
-interface ArcherWithTarget extends Archer {
-  targetConfig: TargetConfig;
-}
-
-class NotEnoughTargetsError extends Error {
-  constructor(message?: string) {
-    super(message);
-    this.name = "NotEnoughTargetsError";
-  }
-}
+type ArcherGroup = {
+  bowType: ArcherBowType;
+  age: ArcherAge;
+  archers: Archer[];
+  targetConfig: {
+    distance: number;
+    faceSize: number;
+  };
+};
 
 function isCompoundBow(bowType: ArcherBowType): boolean {
-  return bowType === BOW_TYPES.COAV || bowType === BOW_TYPES.COSV;
+  return bowType === BOW_TYPES.COSV || bowType === BOW_TYPES.COAV;
 }
 
-function groupArchersByDistance(
-  archers: ArcherWithTarget[]
-): Map<number, ArcherWithTarget[]> {
-  return archers.reduce((groups, archer) => {
-    const distance = archer.targetConfig.distance;
-    if (!groups.has(distance)) {
-      groups.set(distance, []);
-    }
-    groups.get(distance)!.push(archer);
-    return groups;
-  }, new Map<number, ArcherWithTarget[]>());
+function createBalancedGroups<T>(items: T[], maxGroupSize: number = 10): T[][] {
+  if (items.length <= maxGroupSize) {
+    return [items];
+  }
+
+  const numberOfGroups = Math.ceil(items.length / maxGroupSize);
+  const baseGroupSize = Math.floor(items.length / numberOfGroups);
+  const remainingItems = items.length % numberOfGroups;
+
+  const groups: T[][] = [];
+  let currentIndex = 0;
+
+  for (let i = 0; i < numberOfGroups; i++) {
+    // Add one extra item to the first 'remainingItems' groups
+    const currentGroupSize =
+      i < remainingItems ? baseGroupSize + 1 : baseGroupSize;
+    groups.push(items.slice(currentIndex, currentIndex + currentGroupSize));
+    currentIndex += currentGroupSize;
+  }
+
+  return groups;
 }
 
-function calculateRequiredTargets(archers: ArcherWithTarget[]): number {
-  const sortedArchers = [...archers].sort((a, b) => {
-    const aIsCompound = isCompoundBow(a.bowType);
-    const bIsCompound = isCompoundBow(b.bowType);
-    return aIsCompound === bIsCompound ? 0 : aIsCompound ? 1 : -1;
-  });
-
-  let requiredTargets = 0;
-  let currentArcherType = isCompoundBow(sortedArchers[0]?.bowType);
-  let currentTargetPositions = 0;
-
-  for (const archer of sortedArchers) {
-    const archerType = isCompoundBow(archer.bowType);
-
-    // Si on change de type d'arc, on doit utiliser une nouvelle cible
-    if (archerType !== currentArcherType) {
-      if (currentTargetPositions > 0) {
-        requiredTargets++;
-      }
-      currentTargetPositions = 1;
-      currentArcherType = archerType;
-    } else {
-      currentTargetPositions++;
-      if (currentTargetPositions === 4) {
-        requiredTargets++;
-        currentTargetPositions = 0;
-      }
-    }
+declare global {
+  interface Array<T> {
+    toBalancedGroups(maxGroupSize?: number): T[][];
   }
-
-  // Ne pas oublier la dernière cible si elle n'est pas complète
-  if (currentTargetPositions > 0) {
-    requiredTargets++;
-  }
-
-  return requiredTargets;
 }
 
-function assignArchersToTargets(
-  archers: ArcherWithTarget[],
-  startingTarget: number,
-  maxTargetNumber: number
-): AssignmentResult[] {
-  if (startingTarget > maxTargetNumber) {
-    throw new NotEnoughTargetsError(
-      "Starting target number exceeds maximum available targets"
-    );
-  }
+if (!Array.prototype.toBalancedGroups) {
+  Array.prototype.toBalancedGroups = function <T>(
+    this: T[],
+    maxGroupSize: number = 10
+  ): T[][] {
+    return createBalancedGroups(this, maxGroupSize);
+  };
+}
 
-  const requiredTargets = calculateRequiredTargets(archers);
-  if (startingTarget + requiredTargets - 1 > maxTargetNumber) {
-    throw new NotEnoughTargetsError(
-      "Not enough targets available for this group of archers"
-    );
-  }
-
-  const sortedArchers = [...archers].sort((a, b) => {
-    const aIsCompound = isCompoundBow(a.bowType);
-    const bIsCompound = isCompoundBow(b.bowType);
-    return aIsCompound === bIsCompound ? 0 : aIsCompound ? 1 : -1;
-  });
-
-  const assignments: AssignmentResult[] = [];
-  let currentTargetNumber = startingTarget;
-  let currentPositions: ArcherPosition[] = ["A", "B", "C", "D"];
-  let currentArcherIndex = 0;
-
-  while (currentArcherIndex < sortedArchers.length) {
-    const currentArcher = sortedArchers[currentArcherIndex];
-    const isCurrentCompound = isCompoundBow(currentArcher.bowType);
-
-    if (currentPositions.length === 4) {
-      const compatibleArchers = sortedArchers
-        .slice(currentArcherIndex)
-        .filter(
-          (archer) => isCompoundBow(archer.bowType) === isCurrentCompound
+export function configureTargets(competition: Competition): SessionConfig[] {
+  return competition.archers
+    .map((archer) =>
+      getCompetitionTargetConfig(competition.type, archer.bowType, archer.age)
+    )
+    .reduce(
+      (
+        acc: { count: number; targetConfig: Partial<TargetConfig> }[],
+        targetConfig: Partial<TargetConfig>
+      ) => {
+        const target = acc.find(
+          (t) =>
+            t.targetConfig.distance === targetConfig.distance &&
+            t.targetConfig.faceSize === targetConfig.faceSize
         );
-
-      if (compatibleArchers.length < 4) {
-        currentPositions = ["A", "B", "C", "D"].slice(
-          0,
-          compatibleArchers.length
-        ) as ArcherPosition[];
-      }
-    }
-
-    const position = currentPositions.shift()!;
-    assignments.push({
-      archerId: currentArcher.id,
-      assignment: {
-        targetNumber: currentTargetNumber,
-        position,
-        depart: 1, // Sera mis à jour plus tard
+        if (target) {
+          target.count++;
+        } else {
+          acc.push({ count: 1, targetConfig });
+        }
+        return acc;
       },
+      []
+    )
+    .flatMap(
+      ({
+        count,
+        targetConfig,
+      }: {
+        count: number;
+        targetConfig: Partial<TargetConfig>;
+      }) => {
+        const targetsNeeded = Math.ceil(count / 4);
+        return Array.from({ length: targetsNeeded }, (_, i) => targetConfig);
+      }
+    )
+    .sort((a: Partial<TargetConfig>, b: Partial<TargetConfig>) => {
+      if (a.distance === b.distance) {
+        return (a.faceSize ?? 0) - (b.faceSize ?? 0);
+      }
+      return (a.distance ?? 0) - (b.distance ?? 0);
+    })
+    .toBalancedGroups(competition.numberOfTargets)
+    .map(
+      (
+        targetConfigs: Partial<TargetConfig>[],
+        index: number
+      ): SessionConfig => ({
+        id: uuidv4(),
+        name: `Départ ${index + 1}`,
+        date: competition.date,
+        targets: targetConfigs.map(
+          (targetConfig: Partial<TargetConfig>, i: number): TargetConfig => ({
+            number: i + 1,
+            distance: targetConfig.distance || 0,
+            faceSize: targetConfig.faceSize || 0,
+          })
+        ),
+      })
+    );
+}
+
+function groupArchers(
+  archers: Archer[],
+  competitionType: CompetitionType
+): ArcherGroup[] {
+  // Grouper les archers par type d'arc et catégorie d'âge
+  const groups = new Map<string, ArcherGroup>();
+
+  archers.forEach((archer) => {
+    const key = `${archer.bowType}-${archer.age}`;
+    if (!groups.has(key)) {
+      groups.set(key, {
+        bowType: archer.bowType,
+        age: archer.age,
+        archers: [],
+        targetConfig: getCompetitionTargetConfig(
+          competitionType,
+          archer.bowType,
+          archer.age
+        ),
+      });
+    }
+    groups.get(key)!.archers.push(archer);
+  });
+
+  return Array.from(groups.values());
+}
+
+export function assignArchers_new(
+  competition: Competition,
+  keepExistingAssignments: boolean = false
+): Archer[] {
+  return (
+    competition.archers
+      // Si on veut garder les attributions existantes, on ne garde que les archers sans cible
+      .filter((archer) => !keepExistingAssignments || !archer.target)
+      // Trier les archers par type d'arc et catégorie d'âge
+      .sort((a, b) => {
+        if (a.bowType === b.bowType) {
+          return a.age.localeCompare(b.age);
+        }
+        return a.bowType.localeCompare(b.bowType);
+      })
+  );
+}
+
+export function assignArchers(
+  competition: Competition,
+  keepExistingAssignments: boolean = false
+): Archer[] {
+  const archerGroups = groupArchers(competition.archers, competition.type);
+  const updatedArchers = [...competition.archers];
+
+  // Réinitialiser les attributions si demandé
+  if (!keepExistingAssignments) {
+    updatedArchers.forEach((archer) => {
+      archer.target = undefined;
+      archer.session = undefined;
+    });
+  }
+
+  // Pour chaque session
+  competition.sessions.forEach((session) => {
+    const sessionTargets = new Map<number, ArcherPosition[]>();
+
+    // Initialiser les positions disponibles
+    session.targets.forEach((target) => {
+      sessionTargets.set(target.number, ["A", "B", "C", "D"]);
     });
 
-    if (currentPositions.length === 0) {
-      currentTargetNumber++;
-      currentPositions = ["A", "B", "C", "D"];
+    // Marquer les positions déjà occupées si keepExistingAssignments
+    if (keepExistingAssignments) {
+      updatedArchers.forEach((archer) => {
+        if (archer.target && archer.session === session.id) {
+          const positions = sessionTargets.get(archer.target.number);
+          if (positions) {
+            const index = positions.indexOf(archer.target.position);
+            if (index > -1) {
+              positions.splice(index, 1);
+            }
+          }
+        }
+      });
     }
 
-    currentArcherIndex++;
-  }
+    // Pour chaque groupe d'archers
+    archerGroups.forEach((group) => {
+      const unassignedArchers = group.archers.filter(
+        (archer) => !archer.target || !keepExistingAssignments
+      );
 
-  return assignments;
-}
+      // Trouver les cibles compatibles dans cette session
+      const compatibleTargets = session.targets
+        .filter(
+          (target) =>
+            target.distance === group.targetConfig.distance &&
+            target.faceSize === group.targetConfig.faceSize
+        )
+        .map((target) => target.number);
 
-export function assignTargets(
-  competitionType: CompetitionType,
-  archers: Archer[],
-  numberOfTargets: number
-): AssignmentResult[] {
-  const archersWithTargets: ArcherWithTarget[] = archers.map((archer) => ({
-    ...archer,
-    targetConfig: getCompetitionTargetConfig(
-      competitionType,
-      archer.bowType,
-      archer.age
-    ),
-  }));
-
-  const archersByDistance = groupArchersByDistance(archersWithTargets);
-  const sortedDistances = Array.from(archersByDistance.keys()).sort(
-    (a, b) => a - b
-  );
-
-  let assignments: AssignmentResult[] = [];
-  let currentDepart = 1;
-  let currentTargetNumber = 1;
-
-  for (const distance of sortedDistances) {
-    const archersAtDistance = archersByDistance.get(distance)!;
-    let remainingArchers = [...archersAtDistance];
-
-    while (remainingArchers.length > 0) {
-      try {
-        // Calculer combien d'archers peuvent être assignés avec les cibles disponibles
-        const availablePositions =
-          (numberOfTargets - currentTargetNumber + 1) * 4;
-        const archersForCurrentDepart = remainingArchers.slice(
-          0,
-          availablePositions
-        );
-
-        const departAssignments = assignArchersToTargets(
-          archersForCurrentDepart,
-          currentTargetNumber,
-          numberOfTargets
-        );
-
-        departAssignments.forEach((assignment) => {
-          assignment.assignment.depart = currentDepart;
-        });
-
-        assignments = [...assignments, ...departAssignments];
-
-        remainingArchers = remainingArchers.slice(availablePositions);
-
-        // Mettre à jour les numéros de cibles pour le prochain groupe
-        if (remainingArchers.length > 0) {
-          currentDepart++;
-          currentTargetNumber = 1;
-        } else {
-          currentTargetNumber =
-            Math.ceil(archersForCurrentDepart.length / 4) + 1;
+      // Attribuer les archers aux positions disponibles
+      unassignedArchers.forEach((archer) => {
+        for (const targetNumber of compatibleTargets) {
+          const availablePositions = sessionTargets.get(targetNumber);
+          if (availablePositions && availablePositions.length > 0) {
+            const position = availablePositions.shift()!;
+            const archerIndex = updatedArchers.findIndex(
+              (a) => a.id === archer.id
+            );
+            updatedArchers[archerIndex] = {
+              ...archer,
+              session: session.id,
+              target: {
+                number: targetNumber,
+                position: position,
+              },
+            };
+            break;
+          }
         }
-      } catch (error) {
-        if (error instanceof NotEnoughTargetsError) {
-          // Si on ne peut pas assigner les archers avec les cibles actuelles,
-          // on passe au départ suivant
-          currentDepart++;
-          currentTargetNumber = 1;
-          continue;
-        }
-        throw error;
-      }
-    }
-  }
+      });
+    });
+  });
 
-  if (assignments.length < archers.length) {
-    throw new NotEnoughTargetsError(
-      "Unable to assign all archers with the available number of targets"
-    );
-  }
-
-  return assignments;
+  return updatedArchers;
 }

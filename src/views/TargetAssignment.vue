@@ -104,6 +104,11 @@
             <PlusIcon class="w-5 h-5" />
             Ajouter une cible
           </button>
+
+          <button @click="autoConfigure" class="btn btn-primary">
+            <PlusIcon class="w-5 h-5" />
+            Configuration Automatique
+          </button>
         </div>
       </div>
     </div>
@@ -245,7 +250,7 @@ import type {
   SessionConfig,
   TargetConfig,
 } from "../types";
-import { assignTargets, AssignmentResult } from "../utils/targetAssignment";
+import { assignArchers, configureTargets } from "../utils/targetAssignment";
 import TargetGrid from "../components/target/TargetGrid.vue";
 import TargetSidePanel from "../components/target/TargetSidePanel.vue";
 import {
@@ -570,27 +575,25 @@ function removeFromTarget(targetNum: number, position: ArcherPosition) {
   }
 }
 
+function autoConfigure() {
+  const sessionsConfig = configureTargets(competition.value!);
+  competitionsStore.replaceSession(competition.value!.id, sessionsConfig);
+}
+
 function autoAssign() {
   console.log("Auto-assigning targets ", currentSession.value);
   if (!competition.value || !currentSession.value) return;
 
-  const assignments = assignTargets(
-    competition.value.type,
-    competition.value.archers,
-    competition.value.numberOfTargets
-  );
+  const updatedArchers = assignArchers(competition.value);
 
-  console.log(assignments);
+  console.log(updatedArchers);
 
-  assignments.forEach((assignment) => {
+  updatedArchers.forEach((archer) => {
     competitionsStore.updateArcherTarget(
       competition.value!.id,
-      assignment.archerId,
-      competition.value?.sessions[assignment.assignment.depart - 1]?.id,
-      {
-        number: assignment.assignment.targetNumber,
-        position: assignment.assignment.position,
-      }
+      archer.id,
+      archer.session,
+      archer.target
     );
   });
 }

@@ -158,6 +158,15 @@ export const useCompetitionsStore = defineStore("competitions", () => {
     return session;
   }
 
+  function replaceSession(competitionId: string, sessions: SessionConfig[]) {
+    const competition = competitions.value.find((c) => c.id === competitionId);
+    if (!competition) {
+      return;
+    }
+
+    competition.sessions = sessions;
+  }
+
   function updateSession(competitionId: string, sessionId: string) {}
 
   function deleteSession(competitionId: string, sessionId: string) {
@@ -176,6 +185,7 @@ export const useCompetitionsStore = defineStore("competitions", () => {
     importArchers,
     addSession,
     updateSession,
+    replaceSession,
     deleteSession,
   };
 });

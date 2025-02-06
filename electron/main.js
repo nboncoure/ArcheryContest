@@ -23,11 +23,11 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  createWindow();
+  // createWindow();
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      //createWindow();
     }
   });
 });
@@ -41,7 +41,7 @@ app.on("ready", async () => {
       console.error("Vue Devtools failed to install:", e.toString());
     }
   }
-  createWindow();
+  // createWindow();
 });
 
 app.on("window-all-closed", () => {

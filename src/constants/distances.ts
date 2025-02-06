@@ -2,8 +2,8 @@ import type { ArcherAge, ArcherBowType, TargetConfig } from "./types";
 
 // Groupes d'âge pour les départs
 export const AGE_GROUPS_SESSIONS = {
-  MORNING: ["P", "B", "M"],
-  AFTERNOON: ["C", "J", "S", "V", "SV"],
+  MORNING: ["P", "B", "M", "C"],
+  AFTERNOON: ["J", "S", "V", "SV"],
 };
 
 type CompetitionTargetConfig = {

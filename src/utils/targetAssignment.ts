@@ -176,8 +176,8 @@ export function assignArchers(
   competition: Competition,
   keepExistingAssignments: boolean = false
 ): Archer[] {
-  const archerGroups = groupArchers(competition.archers, competition.type);
   const updatedArchers = [...competition.archers];
+  let unassignedArchers: Archer[] = [];
 
   // Réinitialiser les attributions si demandé
   if (!keepExistingAssignments) {
@@ -187,20 +187,36 @@ export function assignArchers(
     });
   }
 
+  // Grouper les archers par type d'arc et catégorie d'âge
+  const archerGroups = groupArchers(
+    updatedArchers.filter((a) => !a.target || !keepExistingAssignments),
+    competition.type
+  );
+
+  // Calculer le nombre total de positions disponibles par session
+  const sessionCapacities = competition.sessions.map((session) => {
+    return {
+      sessionId: session.id,
+      targets: session.targets,
+      totalPositions: session.targets.length * 4,
+    };
+  });
+
   // Pour chaque session
   competition.sessions.forEach((session) => {
-    const sessionTargets = new Map<number, ArcherPosition[]>();
+    // Créer une map des positions disponibles pour chaque cible
+    const availablePositions = new Map<number, ArcherPosition[]>();
 
     // Initialiser les positions disponibles
     session.targets.forEach((target) => {
-      sessionTargets.set(target.number, ["A", "B", "C", "D"]);
+      availablePositions.set(target.number, ["A", "B", "C", "D"]);
     });
 
     // Marquer les positions déjà occupées si keepExistingAssignments
     if (keepExistingAssignments) {
       updatedArchers.forEach((archer) => {
         if (archer.target && archer.session === session.id) {
-          const positions = sessionTargets.get(archer.target.number);
+          const positions = availablePositions.get(archer.target.number);
           if (positions) {
             const index = positions.indexOf(archer.target.position);
             if (index > -1) {
@@ -213,10 +229,6 @@ export function assignArchers(
 
     // Pour chaque groupe d'archers
     archerGroups.forEach((group) => {
-      const unassignedArchers = group.archers.filter(
-        (archer) => !archer.target || !keepExistingAssignments
-      );
-
       // Trouver les cibles compatibles dans cette session
       const compatibleTargets = session.targets
         .filter(
@@ -224,14 +236,26 @@ export function assignArchers(
             target.distance === group.targetConfig.distance &&
             target.faceSize === group.targetConfig.faceSize
         )
-        .map((target) => target.number);
+        .map((target) => target.number)
+        .sort((a, b) => a - b); // Trier les numéros de cible
 
-      // Attribuer les archers aux positions disponibles
-      unassignedArchers.forEach((archer) => {
+      if (compatibleTargets.length === 0) {
+        // Si aucune cible compatible dans cette session, passer au groupe suivant
+        return;
+      }
+
+      // Pour chaque archer non assigné dans le groupe
+      for (const archer of group.archers) {
+        let assigned = false;
+
+        // Chercher une position disponible sur une cible compatible
         for (const targetNumber of compatibleTargets) {
-          const availablePositions = sessionTargets.get(targetNumber);
-          if (availablePositions && availablePositions.length > 0) {
-            const position = availablePositions.shift()!;
+          const positions = availablePositions.get(targetNumber);
+          if (positions && positions.length > 0) {
+            // Prendre la première position disponible
+            const position = positions.shift()!;
+
+            // Mettre à jour l'archer
             const archerIndex = updatedArchers.findIndex(
               (a) => a.id === archer.id
             );
@@ -243,12 +267,66 @@ export function assignArchers(
                 position: position,
               },
             };
+            assigned = true;
             break;
+          }
+        }
+
+        if (!assigned) {
+          // Ajouter l'archer à la liste des non assignés pour réessayer dans une autre session
+          unassignedArchers.push(archer);
+        }
+      }
+    });
+  });
+
+  // Réessayer d'assigner les archers non assignés dans d'autres sessions
+  if (unassignedArchers.length > 0) {
+    const unassignedGroups = groupArchers(unassignedArchers, competition.type);
+
+    unassignedGroups.forEach((group) => {
+      group.archers.forEach((archer) => {
+        // Parcourir toutes les sessions pour trouver une place
+        for (const session of competition.sessions) {
+          const compatibleTargets = session.targets
+            .filter(
+              (target) =>
+                target.distance === group.targetConfig.distance &&
+                target.faceSize === group.targetConfig.faceSize
+            )
+            .map((target) => target.number)
+            .sort((a, b) => a - b);
+
+          for (const targetNumber of compatibleTargets) {
+            const positions = ["A", "B", "C", "D"].filter((pos) => {
+              // Vérifier si la position est libre
+              return !updatedArchers.some(
+                (a) =>
+                  a.session === session.id &&
+                  a.target?.number === targetNumber &&
+                  a.target?.position === pos
+              );
+            });
+
+            if (positions.length > 0) {
+              const archerIndex = updatedArchers.findIndex(
+                (a) => a.id === archer.id
+              );
+              updatedArchers[archerIndex] = {
+                ...archer,
+                session: session.id,
+                target: {
+                  number: targetNumber,
+                  position: positions[0] as ArcherPosition,
+                },
+              };
+              break;
+            }
           }
         }
       });
     });
-  });
+  }
 
   return updatedArchers;
 }

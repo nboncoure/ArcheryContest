@@ -44,9 +44,33 @@
         </select>
       </div>
 
-      <button @click="$emit('auto-assign')" class="w-full btn btn-primary">
+      <div class="flex items-center">
+        <input
+          type="checkbox"
+          id="keepAssignments"
+          v-model="keepAssignments"
+          class="w-4 h-4 border-gray-300 rounded text-primary focus:ring-primary"
+        />
+        <label for="keepAssignments" class="ml-2 text-sm text-gray-600">
+          Conserver les assignations existantes
+        </label>
+      </div>
+
+      <button
+        @click="$emit('auto-assign', keepAssignments)"
+        class="w-full btn btn-primary"
+      >
         <SparklesIcon class="w-5 h-5" />
         Attribution automatique
+      </button>
+
+      <button
+        @click="$emit('reset-all-assignments')"
+        class="w-full btn btn-danger"
+        title="Réinitialiser toutes les assignations"
+      >
+        <ArrowPathIcon class="w-5 h-5" />
+        Réinitialiser les archers
       </button>
     </div>
 
@@ -80,7 +104,8 @@
 </template>
 
 <script setup lang="ts">
-import { ViewfinderCircleIcon, SparklesIcon } from "@heroicons/vue/24/outline";
+import { defineProps, defineEmits, ref } from "vue";
+import { ArrowPathIcon, SparklesIcon } from "@heroicons/vue/24/outline";
 import type { Archer } from "../../types";
 import { translateBowType } from "../../constants/categories";
 
@@ -94,12 +119,15 @@ defineProps<{
   unassignedArchers: Archer[];
 }>();
 
+const keepAssignments = ref(true);
+
 defineEmits<{
   "update:modelValue": [
     value: { session: number; category: string; bowType: string }
   ];
-  "auto-assign": [];
+  "auto-assign": [keepAssignments: boolean];
   "archer-drag-start": [event: DragEvent, archer: Archer];
   "archer-drag-end": [];
+  "reset-all-assignments": [];
 }>();
 </script>

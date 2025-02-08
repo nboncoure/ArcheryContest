@@ -1,4 +1,4 @@
-import type { ArcherAge, ArcherBowType, TargetConfig } from "./types";
+import type { ArcherAge, ArcherBowType, TargetConfig } from "../types";
 
 // Groupes d'âge pour les départs
 export const AGE_GROUPS_SESSIONS = {

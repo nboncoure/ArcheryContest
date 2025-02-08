@@ -21,12 +21,12 @@
             title="Configurer la cible"
           >
             <Icon icon="material-symbols-light:target" class="w-4 h-4" />
-            Blason {{ target.size }}cm
+            Blason {{ target.faceSize }}cm
           </button>
         </div>
       </div>
       <button
-        @click="$emit('remove-target', number)"
+        @click="$emit('remove-target', target.number)"
         class="remove-target-btn"
         title="Supprimer cette cible"
       >

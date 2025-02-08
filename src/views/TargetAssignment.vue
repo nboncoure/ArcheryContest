@@ -139,6 +139,7 @@
           @auto-assign="autoAssign"
           @archer-drag-start="dragStart"
           @archer-drag-end="dragEnd"
+          @reset-all-assignments="resetAllAssignments"
         />
       </div>
     </div>
@@ -530,24 +531,29 @@ function handleDrop(
   event.preventDefault();
   dragOverTarget.value = null;
 
-  const archerId = event.dataTransfer?.getData("archer-id");
-  if (!archerId || !draggedArcher.value) return;
+  if (!draggedArcher.value) return;
+  const archerId = draggedArcher.value.id;
 
+  // Trouver l'archer à la position cible (s'il y en a un)
+  const targetArcher = assignedArchers.value.find(
+    (a) => a.target?.number === targetNum && a.target?.position === position
+  );
+
+  // Si l'archer qu'on déplace vient d'une position existante
   if (draggedArcher.value.target) {
-    const targetArcher = assignedArchers.value.find(
-      (a) => a.target?.number === targetNum && a.target?.position === position
-    );
-
+    // Si la position cible est occupée, on échange les positions
     if (targetArcher) {
+      // Déplacer l'archer cible vers l'ancienne position de l'archer déplacé
       competitionsStore.updateArcherTarget(
         competition.value!.id,
         targetArcher.id,
         selectedSessionId.value,
-        targetArcher.target
+        draggedArcher.value.target
       );
     }
   }
 
+  // Déplacer l'archer vers la nouvelle position
   competitionsStore.updateArcherTarget(
     competition.value!.id,
     archerId,
@@ -576,15 +582,31 @@ function removeFromTarget(targetNum: number, position: ArcherPosition) {
 }
 
 function autoConfigure() {
+  const hasAssignedArchers = competition.value!.archers.some(
+    (archer) => archer.target
+  );
+
+  if (hasAssignedArchers) {
+    if (
+      confirm(
+        "Des archers sont déjà assignés aux cibles. Voulez-vous réinitialiser toutes les assignations avant de reconfigurer les cibles ?"
+      )
+    ) {
+      resetAllAssignments(false);
+    } else {
+      return;
+    }
+  }
+
   const sessionsConfig = configureTargets(competition.value!);
   competitionsStore.replaceSession(competition.value!.id, sessionsConfig);
 }
 
-function autoAssign() {
+function autoAssign(keepAssignments: boolean = true) {
   console.log("Auto-assigning targets ", currentSession.value);
   if (!competition.value || !currentSession.value) return;
 
-  const updatedArchers = assignArchers(competition.value);
+  const updatedArchers = assignArchers(competition.value, keepAssignments);
 
   console.log(updatedArchers);
 
@@ -596,6 +618,28 @@ function autoAssign() {
       archer.target
     );
   });
+}
+
+function resetAllAssignments(askConfirmation: boolean = true) {
+  if (!competition.value) return;
+
+  if (
+    !askConfirmation ||
+    confirm(
+      "Êtes-vous sûr de vouloir réinitialiser toutes les assignations ? Cette action ne peut pas être annulée."
+    )
+  ) {
+    const updatedCompetition = { ...competition.value };
+    updatedCompetition.archers = updatedCompetition.archers.map((archer) => ({
+      ...archer,
+      session: undefined,
+      target: undefined,
+    }));
+    competitionsStore.updateCompetition(
+      updatedCompetition.id,
+      updatedCompetition
+    );
+  }
 }
 </script>
 

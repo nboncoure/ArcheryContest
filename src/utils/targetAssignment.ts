@@ -1,31 +1,25 @@
 import { v4 as uuidv4 } from "uuid";
 import type {
+  AgeCategory,
   Archer,
-  ArcherAge,
-  ArcherBowType,
-  ArcherPosition,
+  BowType,
   Competition,
   CompetitionType,
-  SessionConfig,
-  TargetConfig,
+  Session,
+  Target,
+  TargetPosition,
 } from "../types";
-import { BOW_TYPES } from "../constants/categories";
-import { getCompetitionTargetConfig } from "../constants/distances";
-import { getCategoryByCode } from "../constants/categories";
+import { findCompetitionTargetConfig } from "../constants/staticData";
 
 type ArcherGroup = {
-  bowType: ArcherBowType;
-  age: ArcherAge;
+  bowType: BowType;
+  age: AgeCategory;
   archers: Archer[];
   targetConfig: {
     distance: number;
     faceSize: number;
   };
 };
-
-function isCompoundBow(bowType: ArcherBowType): boolean {
-  return bowType === BOW_TYPES.COSV || bowType === BOW_TYPES.COAV;
-}
 
 function createBalancedGroups<T>(items: T[], maxGroupSize: number = 10): T[][] {
   if (items.length <= maxGroupSize) {
@@ -65,15 +59,19 @@ if (!Array.prototype.toBalancedGroups) {
   };
 }
 
-export function configureTargets(competition: Competition): SessionConfig[] {
+export function configureTargets(competition: Competition): Session[] {
   return competition.archers
     .map((archer) =>
-      getCompetitionTargetConfig(competition.type, archer.bowType, archer.age)
+      findCompetitionTargetConfig(
+        competition.type,
+        archer.bowType.code,
+        archer.ageCategory.code
+      )
     )
     .reduce(
       (
-        acc: { count: number; targetConfig: Partial<TargetConfig> }[],
-        targetConfig: Partial<TargetConfig>
+        acc: { count: number; targetConfig: Partial<Target> }[],
+        targetConfig: Partial<Target>
       ) => {
         const target = acc.find(
           (t) =>
@@ -95,13 +93,13 @@ export function configureTargets(competition: Competition): SessionConfig[] {
         targetConfig,
       }: {
         count: number;
-        targetConfig: Partial<TargetConfig>;
+        targetConfig: Partial<Target>;
       }) => {
         const targetsNeeded = Math.ceil(count / 4);
         return Array.from({ length: targetsNeeded }, (_, i) => targetConfig);
       }
     )
-    .sort((a: Partial<TargetConfig>, b: Partial<TargetConfig>) => {
+    .sort((a: Partial<Target>, b: Partial<Target>) => {
       if (a.distance === b.distance) {
         return (a.faceSize ?? 0) - (b.faceSize ?? 0);
       }
@@ -109,15 +107,13 @@ export function configureTargets(competition: Competition): SessionConfig[] {
     })
     .toBalancedGroups(competition.numberOfTargets)
     .map(
-      (
-        targetConfigs: Partial<TargetConfig>[],
-        index: number
-      ): SessionConfig => ({
-        id: uuidv4(),
+      (targetConfigs: Partial<Target>[], index: number): Session => ({
+        id: index,
         name: `Départ ${index + 1}`,
-        date: competition.date,
+        // startTime: competition.date,
+        assignments: [],
         targets: targetConfigs.map(
-          (targetConfig: Partial<TargetConfig>, i: number): TargetConfig => ({
+          (targetConfig: Partial<Target>, i: number): Target => ({
             number: i + 1,
             distance: targetConfig.distance || 0,
             faceSize: targetConfig.faceSize || 0,
@@ -135,16 +131,16 @@ function groupArchers(
   const groups = new Map<string, ArcherGroup>();
 
   archers.forEach((archer) => {
-    const key = `${archer.bowType}-${archer.age}`;
+    const key = `${archer.bowType}-${archer.ageCategory?.code}`;
     if (!groups.has(key)) {
       groups.set(key, {
         bowType: archer.bowType,
-        age: archer.age,
+        age: archer.ageCategory,
         archers: [],
-        targetConfig: getCompetitionTargetConfig(
+        targetConfig: findCompetitionTargetConfig(
           competitionType,
-          archer.bowType,
-          archer.age
+          archer.bowType.code,
+          archer.ageCategory.code
         ),
       });
     }
@@ -165,7 +161,7 @@ export function assignArchers_new(
       // Trier les archers par type d'arc et catégorie d'âge
       .sort((a, b) => {
         if (a.bowType === b.bowType) {
-          return a.age.localeCompare(b.age);
+          return a.ageCategory.localeCompare(b.ageCategory);
         }
         return a.bowType.localeCompare(b.bowType);
       })
@@ -205,7 +201,7 @@ export function assignArchers(
   // Pour chaque session
   competition.sessions.forEach((session) => {
     // Créer une map des positions disponibles pour chaque cible
-    const availablePositions = new Map<number, ArcherPosition[]>();
+    const availablePositions = new Map<number, TargetPosition[]>();
 
     // Initialiser les positions disponibles
     session.targets.forEach((target) => {
@@ -317,7 +313,7 @@ export function assignArchers(
                 session: session.id,
                 target: {
                   number: targetNumber,
-                  position: positions[0] as ArcherPosition,
+                  position: positions[0] as TargetPosition,
                 },
               };
               break;

@@ -97,7 +97,7 @@
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center gap-2">
                   <BowIcon class="w-5 h-5 text-gray-400" />
-                  {{ translateBowType(archer.bowType) }}
+                  {{ archer.bowType.label }}
                 </div>
               </td>
               <td class="px-6 py-4 text-right whitespace-nowrap">
@@ -395,7 +395,6 @@ import {
   SPECIAL_CATEGORIES,
   CATEGORIES,
   getCategoryCode,
-  translateBowType,
   translateGender,
 } from "../constants/categories";
 

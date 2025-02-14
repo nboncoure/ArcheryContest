@@ -208,7 +208,7 @@
                         <div class="mb-0 form-group">
                           <label class="text-sm">Blason (cm)</label>
                           <select
-                            v-model.number="target.size"
+                            v-model.number="target.faceSize"
                             @change="updateTargetConfig(target)"
                           >
                             <option :value="80">80cm</option>
@@ -247,9 +247,10 @@ import { useArchersStore } from "../stores/archersStore";
 import { storeToRefs } from "pinia";
 import type {
   Archer,
-  ArcherPosition,
-  SessionConfig,
-  TargetConfig,
+  Competition,
+  Session,
+  Target,
+  TargetPosition,
 } from "../types";
 import { assignArchers, configureTargets } from "../utils/targetAssignment";
 import TargetGrid from "../components/target/TargetGrid.vue";
@@ -276,16 +277,16 @@ const { archers } = storeToRefs(archersStore);
 
 const dragOverTarget = ref<{
   number: number;
-  position: ArcherPosition;
+  position: TargetPosition;
 } | null>(null);
 const draggedArcher = ref<{
   id: string;
-  target?: { number: number; position: ArcherPosition };
+  target?: { number: number; position: TargetPosition };
 } | null>(null);
 
-const editingTarget = ref<TargetConfig | null>(null);
+const editingTarget = ref<Target | null>(null);
 const showTargetConfigModal = ref(false);
-const selectedSessionId = ref("");
+const selectedSessionId = ref<number>();
 const filters = ref({
   session: 1,
   category: "",
@@ -314,7 +315,7 @@ const filteredArchers = computed(() =>
     if (archer.session !== selectedSessionId.value) return false;
     if (filters.value.category && archer.category !== filters.value.category)
       return false;
-    if (filters.value.bowType && archer.bowType !== filters.value.bowType)
+    if (filters.value.bowType && archer.bowType.code !== filters.value.bowType)
       return false;
     return true;
   })
@@ -331,7 +332,7 @@ const unassignedArchers = computed(() =>
     if (archer.target) return false;
     if (filters.value.category && archer.category !== filters.value.category)
       return false;
-    if (filters.value.bowType && archer.bowType !== filters.value.bowType)
+    if (filters.value.bowType && archer.bowType.code !== filters.value.bowType)
       return false;
     return true;
   })
@@ -440,7 +441,7 @@ function removeTarget(targetNum: number) {
   });
 }
 
-function updateTargetConfig(target: TargetConfig) {
+function updateTargetConfig(target: Target) {
   if (!competition.value || !currentSession) return;
 
   const updatedSessions = competition.value.sessions.map((session) => {
@@ -464,14 +465,14 @@ function closeTargetConfigModal() {
   editingTarget.value = null;
 }
 
-function editTargetConfig(target: TargetConfig) {
+function editTargetConfig(target: Target) {
   editingTarget.value = { ...target };
 }
 
 function handlePositionDragStart(
   event: DragEvent,
   targetNum: number,
-  position: ArcherPosition
+  position: TargetPosition
 ) {
   const archer = filteredArchers.value.find(
     (a) => a.target?.number === targetNum && a.target?.position === position
@@ -502,7 +503,7 @@ function dragEnd() {
 function handleDragOver(
   event: DragEvent,
   targetNum: number,
-  position: ArcherPosition
+  position: TargetPosition
 ) {
   event.preventDefault();
   dragOverTarget.value = { number: targetNum, position };
@@ -512,7 +513,7 @@ function handleDragOver(
 function handleDragLeave(
   event: DragEvent,
   targetNum: number,
-  position: ArcherPosition
+  position: TargetPosition
 ) {
   event.preventDefault();
   if (
@@ -526,7 +527,7 @@ function handleDragLeave(
 function handleDrop(
   event: DragEvent,
   targetNum: number,
-  position: ArcherPosition
+  position: TargetPosition
 ) {
   event.preventDefault();
   dragOverTarget.value = null;
@@ -567,7 +568,7 @@ function handleDrop(
   draggedArcher.value = null;
 }
 
-function removeFromTarget(targetNum: number, position: ArcherPosition) {
+function removeFromTarget(targetNum: number, position: TargetPosition) {
   const archer = filteredArchers.value.find(
     (a) => a.target?.number === targetNum && a.target?.position === position
   );
@@ -582,9 +583,9 @@ function removeFromTarget(targetNum: number, position: ArcherPosition) {
 }
 
 function autoConfigure() {
-  const hasAssignedArchers = competition.value!.archers.some(
-    (archer) => archer.target
-  );
+  const hasAssignedArchers =
+    competition.value!.sessions.flatMap((session) => session.assignments)
+      .length > 0;
 
   if (hasAssignedArchers) {
     if (

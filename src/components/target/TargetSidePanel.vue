@@ -94,7 +94,7 @@
             <span>{{ archer.category }}</span>
             <span>•</span>
             <span class="flex items-center gap-1">
-              {{ translateBowType(archer.bowType) }}
+              {{ archer.bowType.label }}
             </span>
           </div>
         </div>
@@ -107,7 +107,6 @@
 import { defineProps, defineEmits, ref } from "vue";
 import { ArrowPathIcon, SparklesIcon } from "@heroicons/vue/24/outline";
 import type { Archer } from "../../types";
-import { translateBowType } from "../../constants/categories";
 
 defineProps<{
   modelValue: {

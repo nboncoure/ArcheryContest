@@ -1,31 +1,59 @@
-export type ArcherPosition = "A" | "B" | "C" | "D";
-export type ArcherAge = "P" | "B" | "M" | "C" | "J" | "S" | "V" | "SV";
 export type ArcherGender = "M" | "F";
-export type ArcherBowType = "SV" | "AV" | "COSV" | "COAV";
-export type CompetitionType = "indoor" | "outdoor";
+export type CompetitionType = "indoor" | "outdoor" | "18m";
+export type TargetPosition = "A" | "B" | "C" | "D";
+export type AgeCategoryCode = "P" | "B" | "M" | "C" | "J" | "S" | "V" | "SV";
+export type BowTypeCode = "SV" | "AV" | "COSV" | "COAV";
+
+export interface AgeCategory {
+  code: AgeCategoryCode;
+  label: string;
+  minAge: number;
+  maxAge: number;
+}
+
+export interface BowType {
+  code: BowTypeCode;
+  label: string;
+  isCompound: boolean;
+}
 
 export interface Archer {
   id: string;
   lastName: string;
   firstName: string;
   club: string;
-  age: ArcherAge;
-  category: string;
-  gender: ArcherGender;
-  bowType: ArcherBowType;
+  birthYear: number;
+  ageCategory: AgeCategory;
+  category?: string;
+  bowType: BowType;
+  gender: "M" | "F";
   license: string;
   isBeginner: boolean;
   isDisabled: boolean;
   isVisuallyImpaired: boolean;
-  session?: string;
-  target?: {
-    number: number;
-    position: ArcherPosition;
-  };
-  scores?: number[];
+  session?: number;
 }
 
-export type CompetitionStatus = "draft" | "active" | "completed";
+export interface Target {
+  number: number;
+  distance: number;
+  faceSize: number;
+}
+
+export interface TargetAssignment {
+  archerId: string;
+  targetNumber: number;
+  position: TargetPosition;
+  SessionId: string;
+}
+
+export interface Session {
+  id: number;
+  name: string;
+  startTime?: Date;
+  targets: Target[];
+  assignments: TargetAssignment[];
+}
 
 export interface Competition {
   id: string;
@@ -33,25 +61,16 @@ export interface Competition {
   date: string;
   location: string;
   type: CompetitionType;
-  archers: Archer[];
-  numberOfSessions: number;
   numberOfTargets: number;
-  status: CompetitionStatus;
-  createdAt: string;
-  updatedAt: string;
-  sessions: SessionConfig[];
+  archers: Archer[];
+  sessions: Session[];
+  shootingConfig: CompetitionTargetConfig[];
 }
 
-export interface SessionConfig {
-  id: string;
-  name: string;
-  date: string;
-  targets: TargetConfig[];
-}
-
-export interface TargetConfig {
-  // marqueur
-  number: number;
-  distance: number;
-  faceSize: number;
-}
+export type CompetitionTargetConfig = {
+  [key in CompetitionType]: {
+    [key in BowTypeCode]: {
+      [key in AgeCategoryCode]: Partial<Target>;
+    };
+  };
+};

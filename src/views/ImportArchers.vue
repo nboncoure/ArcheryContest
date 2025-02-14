@@ -130,6 +130,11 @@ import {
   CheckIcon,
 } from "@heroicons/vue/24/outline";
 import { getCategoryCode, translateAgeGroup } from "../constants/categories";
+import {
+  getBowTypeByCode,
+  getAgeCategoryByCode,
+  findCategoryCode,
+} from "../constants/staticData";
 
 const route = useRoute();
 const competitionsStore = useCompetitionsStore();
@@ -212,25 +217,34 @@ function processFile(file: File) {
 
 function processImportedData(data: any[]) {
   importedArchers.value = data
-    .map((row: any) => ({
-      id: row["N° Licence"] || uuidv4,
-      lastName: row["NOM"] || "",
-      firstName: row["Prénom"] || "",
-      club: row["Club"] || "",
-      age: mapAgeGroup(row["Cat_age"]) || "U",
-      gender:
-        row["Sexe"] === "F" ? ("F" as ArcherGender) : ("M" as ArcherGender),
-      bowType: row["Arme"] as ArcherBowType,
-      license: row["N° Licence"] || "",
-      isBeginner: row["Débutant"] === "D",
-      isDisabled: row["Handicapè"] === "H",
-      isVisuallyImpaired: row["Malvoyant"] === "M",
-      // session: row["N° Départ"] ? parseInt(row["N° Départ"]) : undefined,
-      // target: parseTarget(row["Cible"]), // TODO: Gérer les cibles "01 A"
-    }))
+    .map(
+      (row: any): Partial<Archer> => ({
+        id: row["N° Licence"] || uuidv4,
+        lastName: row["NOM"] || "",
+        firstName: row["Prénom"] || "",
+        club: row["Club"] || "",
+        birthYear: row["AnnÈe nais."]
+          ? parseInt(row["AnnÈe nais."])
+          : undefined,
+        ageCategory: getAgeCategoryByCode(mapAgeGroup(row["Cat_age"])),
+        gender:
+          row["Sexe"] === "F" ? ("F" as ArcherGender) : ("M" as ArcherGender),
+        bowType: getBowTypeByCode(row["Arme"]),
+        license: row["N° Licence"] || "",
+        isBeginner: row["Débutant"] === "D",
+        isDisabled: row["Handicapè"] === "H",
+        isVisuallyImpaired: row["Malvoyant"] === "M",
+        session: row["N° Départ"] ? parseInt(row["N° Départ"]) : undefined,
+        // target: parseTarget(row["Cible"]), // TODO: Gérer les cibles "01 A"
+      })
+    )
     .map((archer) => ({
       ...archer,
-      category: getCategoryCode(archer.age, archer.bowType, archer.gender),
+      category: findCategoryCode(
+        archer.ageCategory?.code,
+        archer.bowType?.code,
+        archer.gender
+      ),
     }));
 }
 

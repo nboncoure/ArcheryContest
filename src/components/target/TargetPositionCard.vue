@@ -17,7 +17,7 @@
           <span>{{ archer.category }}</span>
           <span class="flex items-center gap-1">
             <ViewfinderCircleIcon class="w-4 h-4" />
-            {{ translateBowType(archer.bowType) }}
+            {{ archer.bowType.label }}
           </span>
         </div>
       </div>
@@ -33,11 +33,10 @@
 
 <script setup lang="ts">
 import { ViewfinderCircleIcon, XMarkIcon } from "@heroicons/vue/24/outline";
-import type { Archer, ArcherPosition } from "../../types";
-import { translateBowType } from "../../constants/categories";
+import type { Archer, TargetPosition } from "../../types";
 
 defineProps<{
-  position: ArcherPosition;
+  position: TargetPosition;
   archer?: Archer;
   isDragOver?: boolean;
 }>();

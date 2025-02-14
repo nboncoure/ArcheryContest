@@ -35,7 +35,7 @@
     </div>
     <div class="positions">
       <template v-for="position in positions" :key="`${number}-${position}`">
-        <TargetPosition
+        <TargetPositionCard
           :position="position"
           :archer="getArcherAtPosition(position)"
           :is-drag-over="isDragOver(position)"
@@ -53,31 +53,31 @@
 <script setup lang="ts">
 import { XMarkIcon } from "@heroicons/vue/24/outline";
 import { Icon } from "@iconify/vue";
-import type { Archer, ArcherPosition, TargetConfig } from "../../types";
-import TargetPosition from "./TargetPosition.vue";
+import type { Archer, TargetPosition, Target } from "../../types";
+import TargetPositionCard from "./TargetPositionCard.vue";
 
 const props = defineProps<{
-  positions: ArcherPosition[];
+  positions: TargetPosition[];
   archers: Archer[];
-  target: TargetConfig;
-  dragOverPosition?: ArcherPosition;
+  target: Target;
+  dragOverPosition?: TargetPosition;
 }>();
 
 defineEmits<{
-  "position-drag-start": [event: DragEvent, position: ArcherPosition];
-  "position-drag-over": [event: DragEvent, position: ArcherPosition];
-  "position-drag-leave": [event: DragEvent, position: ArcherPosition];
-  "position-drop": [event: DragEvent, position: ArcherPosition];
-  "remove-archer": [position: ArcherPosition];
+  "position-drag-start": [event: DragEvent, position: TargetPosition];
+  "position-drag-over": [event: DragEvent, position: TargetPosition];
+  "position-drag-leave": [event: DragEvent, position: TargetPosition];
+  "position-drop": [event: DragEvent, position: TargetPosition];
+  "remove-archer": [position: TargetPosition];
   "remove-target": [number: number];
   "edit-config": [];
 }>();
 
-function getArcherAtPosition(position: ArcherPosition): Archer | undefined {
+function getArcherAtPosition(position: TargetPosition): Archer | undefined {
   return props.archers.find((a) => a.target?.position === position);
 }
 
-function isDragOver(position: ArcherPosition) {
+function isDragOver(position: TargetPosition) {
   return props.dragOverPosition === position;
 }
 </script>

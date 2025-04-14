@@ -1,34 +1,50 @@
 // @see https://www.electron.build/configuration/configuration
 {
   $schema: "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-  appId: "YourAppID",
+  appId: "com.archerycontest.app",
   asar: true,
   productName: "ArcheryContest",
   directories: {
     output: "release/${version}",
+    buildResources: "public"
   },
-  files: ["dist", "dist-electron"],
+  files: [
+    "dist/**/*",
+    "dist-electron/**/*"
+  ],
+  extraMetadata: {
+    main: "dist-electron/main/index.js"
+  },
   mac: {
-    target: ["dmg"],
-    artifactName: "${productName}-Mac-${version}-Installer.${ext}",
+    target: [
+      {
+        target: "dmg",
+        arch: ["x64", "arm64"]
+      }
+    ],
+    artifactName: "${productName}-Mac-${version}-${arch}.${ext}",
+    category: "public.app-category.sports",
+    darkModeSupport: true
   },
   win: {
     target: [
       {
         target: "nsis",
-        arch: ["x64"],
-      },
+        arch: ["x64"]
+      }
     ],
-    artifactName: "${productName}-Windows-${version}-Setup.${ext}",
+    artifactName: "${productName}-Windows-${version}-Setup.${ext}"
   },
   nsis: {
     oneClick: false,
     perMachine: false,
     allowToChangeInstallationDirectory: true,
-    deleteAppDataOnUninstall: false,
+    deleteAppDataOnUninstall: false
   },
   linux: {
     target: ["AppImage"],
     artifactName: "${productName}-Linux-${version}.${ext}",
+    category: "Sport"
   },
+  publish: null
 }

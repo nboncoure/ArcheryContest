@@ -59,6 +59,7 @@
                 :class="[
                   'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider',
                   column.sortable && 'cursor-pointer hover:text-gray-700',
+                  column.key === 'club' && 'w-40 md:w-48 lg:w-56',
                 ]"
               >
                 <div class="flex items-center gap-1">
@@ -89,7 +90,11 @@
               <td class="px-6 py-4 whitespace-nowrap">
                 {{ archer.firstName }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">{{ archer.club }}</td>
+              <td class="px-6 py-4">
+                <div class="truncate max-w-[150px] md:max-w-[180px] lg:max-w-[220px]" :title="archer.club">
+                  {{ archer.club }}
+                </div>
+              </td>
               <td class="px-6 py-4 whitespace-nowrap">{{ archer.category }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
                 {{ translateGender(archer.gender) }}

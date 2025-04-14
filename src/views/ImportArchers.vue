@@ -1,3 +1,126 @@
+<script setup lang="ts">
+import { ref, computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import { useCompetitionsStore } from "../stores/competitionsStore";
+import { archerImportService, type ArcherWithStatus } from "../services/archerImportService";
+import {
+  ArrowUpTrayIcon,
+  DocumentArrowUpIcon,
+  XMarkIcon,
+  CheckIcon,
+  ExclamationCircleIcon,
+  XCircleIcon,
+  CheckCircleIcon
+} from "@heroicons/vue/24/outline";
+
+const route = useRoute();
+const competitionsStore = useCompetitionsStore();
+
+const importData = ref<ArcherWithStatus[]>([]);
+const dragOver = ref(false);
+const isLoading = ref(false);
+
+// Pagination
+const itemsPerPage = 10;
+const currentPage = ref(1);
+const totalPages = computed(() => Math.ceil(importData.value.length / itemsPerPage));
+const paginationStart = computed(() => (currentPage.value - 1) * itemsPerPage);
+const paginationEnd = computed(() => Math.min(paginationStart.value + itemsPerPage, importData.value.length));
+const paginatedData = computed(() => 
+  importData.value.slice(paginationStart.value, paginationEnd.value)
+);
+
+// Statistiques d'importation
+const importStats = computed(() => archerImportService.getImportStats(importData.value));
+
+function prevPage() {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+}
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+}
+
+function getRowClass(archer: ArcherWithStatus): string {
+  if (archer.importStatus === 'error') return 'bg-red-50';
+  if (archer.importStatus === 'warning') return 'bg-yellow-50';
+  return '';
+}
+
+async function handleFileSelect(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  await processFile(file);
+}
+
+async function handleFileDrop(event: DragEvent) {
+  dragOver.value = false;
+  const file = event.dataTransfer?.files[0];
+  if (!file) return;
+  await processFile(file);
+}
+
+async function processFile(file: File) {
+  // Réinitialiser la pagination
+  currentPage.value = 1;
+  isLoading.value = true;
+  
+  try {
+    // Utiliser le service pour traiter le fichier
+    const archers = await archerImportService.processFile(file);
+    importData.value = archers;
+    
+    // Vérifier les licences problématiques mentionnées pour le débogage
+    const specificLicenses = ["60056577", "65177772", "94028769", "40265127", "23436017", "97019840"];
+    specificLicenses.forEach(license => {
+      const archer = archers.find(a => a.license === license);
+      if (archer && archer.importStatus !== 'ok') {
+        console.warn(`Problème détecté pour la licence ${license}:`, archer.importMessage);
+      }
+    });
+  } catch (error) {
+    console.error("Erreur lors du traitement du fichier:", error);
+    alert(`Erreur lors du traitement du fichier: ${error}`);
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+function confirmImport() {
+  if (importData.value.length > 0) {
+    // Utiliser le service pour filtrer les archers valides
+    const validArchers = archerImportService.getValidArchers(importData.value);
+      
+    competitionsStore.importArchers(
+      route.params.id as string,
+      validArchers
+    );
+    
+    importData.value = [];
+    alert(`Import réussi ! ${validArchers.length} archers importés.`);
+    
+    if (importStats.value.warnings > 0) {
+      alert(`Attention: ${importStats.value.warnings} archers ont été importés avec des avertissements.`);
+    }
+    
+    if (importStats.value.errors > 0) {
+      alert(`Note: ${importStats.value.errors} archers n'ont pas pu être importés en raison d'erreurs.`);
+    }
+    
+    (document.getElementById("file-upload") as HTMLInputElement).value = "";
+  }
+}
+
+function cancelImport() {
+  importData.value = [];
+  (document.getElementById("file-upload") as HTMLInputElement).value = "";
+}
+</script>
+
 <template>
   <div class="import-archers">
     <h1 class="mb-8 text-2xl font-bold text-gray-900">Import des Archers</h1>
@@ -31,10 +154,10 @@
         </div>
       </div>
 
-      <div v-if="importedArchers.length > 0" class="mt-8">
+      <div v-if="importData.length > 0" class="mt-8">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-gray-900">
-            Aperçu des données ({{ importedArchers.length }} archers)
+            Aperçu des données ({{ importData.length }} archers)
           </h2>
           <div class="flex gap-3">
             <button @click="cancelImport" class="btn btn-secondary">
@@ -52,6 +175,12 @@
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
+                  Licence
+                </th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
@@ -74,15 +203,49 @@
                   scope="col"
                   class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                 >
+                  Année naissance
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
+                  Cat. Âge
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
+                  Genre
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
+                  Type Arc
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
                   Catégorie
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
+                  Status
                 </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr
-                v-for="archer in importedArchers.slice(0, 5)"
-                :key="archer.id"
+                v-for="(archer, index) in paginatedData"
+                :key="index"
+                :class="getRowClass(archer)"
               >
+                <td class="px-6 py-4 whitespace-nowrap">
+                  {{ archer.license }}
+                </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   {{ archer.lastName }}
                 </td>
@@ -91,179 +254,80 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ archer.club }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
+                  {{ archer.birthYear }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  {{ archer.ageCategory?.label }} ({{ archer.ageCategory?.code }})
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  {{ archer.gender === 'M' ? 'Homme' : 'Femme' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  {{ archer.bowType?.label }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
                   {{ archer.category }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span v-if="archer.importStatus === 'warning'" class="text-warning flex items-center">
+                    <ExclamationCircleIcon class="w-4 h-4 mr-1" /> Avertissement
+                    <span v-if="archer.importMessage" class="ml-1 text-xs italic">
+                      ({{ archer.importMessage }})
+                    </span>
+                  </span>
+                  <span v-else-if="archer.importStatus === 'error'" class="text-error flex items-center">
+                    <XCircleIcon class="w-4 h-4 mr-1" /> Erreur
+                    <span v-if="archer.importMessage" class="ml-1 text-xs italic">
+                      ({{ archer.importMessage }})
+                    </span>
+                  </span>
+                  <span v-else class="text-success flex items-center">
+                    <CheckCircleIcon class="w-4 h-4 mr-1" /> OK
+                  </span>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <p
-          v-if="importedArchers.length > 5"
-          class="mt-4 text-sm text-center text-gray-600"
-        >
-          ... et {{ importedArchers.length - 5 }} autres archers
-        </p>
+        <!-- Pagination -->
+        <div class="flex items-center justify-between mt-4">
+          <div>
+            <span class="text-sm text-gray-700">
+              Affichage de {{ paginationStart + 1 }} à {{ paginationEnd }} sur {{ importData.length }} archers
+            </span>
+          </div>
+          <div class="flex space-x-2">
+            <button
+              @click="prevPage"
+              :disabled="currentPage === 1"
+              class="px-3 py-1 text-sm bg-white border rounded-md disabled:opacity-50"
+            >
+              Précédent
+            </button>
+            <button
+              @click="nextPage"
+              :disabled="currentPage >= totalPages"
+              class="px-3 py-1 text-sm bg-white border rounded-md disabled:opacity-50"
+            >
+              Suivant
+            </button>
+          </div>
+        </div>
+
+        <!-- Statistiques d'importation -->
+        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+          <div class="text-sm text-gray-700">
+            <p class="mb-1"><span class="font-medium">Total:</span> {{ importStats.total }} archers</p>
+            <p class="mb-1"><span class="font-medium">Valides:</span> {{ importStats.valid }} archers</p>
+            <p class="mb-1"><span class="font-medium">Avertissements:</span> {{ importStats.warnings }} archers</p>
+            <p><span class="font-medium">Erreurs:</span> {{ importStats.errors }} archers</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref } from "vue";
-import { useRoute } from "vue-router";
-import { useCompetitionsStore } from "../stores/competitionsStore";
-import * as XLSX from "xlsx";
-import Papa from "papaparse";
-import { v4 as uuidv4 } from "uuid";
-import type {
-  Archer,
-  ArcherBowType,
-  ArcherPosition,
-  ArcherAge,
-  ArcherGender,
-} from "../types";
-import {
-  ArrowUpTrayIcon,
-  DocumentArrowUpIcon,
-  XMarkIcon,
-  CheckIcon,
-} from "@heroicons/vue/24/outline";
-import { getCategoryCode, translateAgeGroup } from "../constants/categories";
-import {
-  getBowTypeByCode,
-  getAgeCategoryByCode,
-  findCategoryCode,
-} from "../constants/staticData";
-
-const route = useRoute();
-const competitionsStore = useCompetitionsStore();
-
-const importedArchers = ref<Archer[]>([]);
-const dragOver = ref(false);
-
-function mapAgeGroup(age: string): ArcherAge | undefined {
-  const ageGroupMap: Record<string, ArcherAge> = {
-    "- de 11ans": "P",
-    "11 / 12 ans": "B",
-    "13 / 14 ans": "M",
-    "15 / 16 ans": "C",
-    "17 / 25 ans": "J",
-    "26 / 49 ans": "S",
-    "50 / 59 ans": "V",
-    "60 et +": "SV",
-  };
-  return ageGroupMap[age] || undefined;
-}
-
-function translateBowType(bowType: string): string {
-  const bowTypes: Record<string, string> = {
-    SV: "Arc nue", // Sans viseur
-    AV: "Classique", // Avec viseur
-    COSV: "Poulie sans viseur", // Compound avec viseur
-    COAV: "Poulie", // Compound avec viseur
-  };
-  return bowTypes[bowType] || bowType;
-}
-
-function parseTarget(
-  targetStr: string
-): { number: number; position: ArcherPosition } | undefined {
-  if (!targetStr) return undefined;
-
-  const match = targetStr.match(/(\d+)\s*([A-D])/);
-  if (!match) return undefined;
-
-  return {
-    number: parseInt(match[1], 10),
-    position: match[2] as ArcherPosition,
-  };
-}
-
-function handleFileSelect(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0];
-  if (!file) return;
-  processFile(file);
-}
-
-function handleFileDrop(event: DragEvent) {
-  dragOver.value = false;
-  const file = event.dataTransfer?.files[0];
-  if (!file) return;
-  processFile(file);
-}
-
-function processFile(file: File) {
-  if (file.name.endsWith(".csv")) {
-    Papa.parse(file, {
-      complete: (results) => {
-        processImportedData(results.data);
-      },
-      header: true,
-      encoding: "ISO-8859-1", // Pour gérer les caractères accentués
-    });
-  } else {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const data = e.target?.result;
-      const workbook = XLSX.read(data, { type: "binary" });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-      processImportedData(jsonData);
-    };
-    reader.readAsBinaryString(file);
-  }
-}
-
-function processImportedData(data: any[]) {
-  importedArchers.value = data
-    .map(
-      (row: any): Partial<Archer> => ({
-        id: row["N° Licence"] || uuidv4,
-        lastName: row["NOM"] || "",
-        firstName: row["Prénom"] || "",
-        club: row["Club"] || "",
-        birthYear: row["AnnÈe nais."]
-          ? parseInt(row["AnnÈe nais."])
-          : undefined,
-        ageCategory: getAgeCategoryByCode(mapAgeGroup(row["Cat_age"])),
-        gender:
-          row["Sexe"] === "F" ? ("F" as ArcherGender) : ("M" as ArcherGender),
-        bowType: getBowTypeByCode(row["Arme"]),
-        license: row["N° Licence"] || "",
-        isBeginner: row["Débutant"] === "D",
-        isDisabled: row["Handicapè"] === "H",
-        isVisuallyImpaired: row["Malvoyant"] === "M",
-        session: row["N° Départ"] ? parseInt(row["N° Départ"]) : undefined,
-        // target: parseTarget(row["Cible"]), // TODO: Gérer les cibles "01 A"
-      })
-    )
-    .map((archer) => ({
-      ...archer,
-      category: findCategoryCode(
-        archer.ageCategory?.code,
-        archer.bowType?.code,
-        archer.gender
-      ),
-    }));
-}
-
-function confirmImport() {
-  if (importedArchers.value.length > 0) {
-    competitionsStore.importArchers(
-      route.params.id as string,
-      importedArchers.value
-    );
-    importedArchers.value = [];
-    alert("Import réussi !");
-  }
-}
-
-function cancelImport() {
-  importedArchers.value = [];
-  (document.getElementById("file-upload") as HTMLInputElement).value = "";
-}
-</script>
 
 <style scoped>
 .import-archers {

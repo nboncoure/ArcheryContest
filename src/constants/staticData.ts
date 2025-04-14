@@ -13,11 +13,11 @@ export const AGE_CATEGORIES: AgeCategory[] = [
   { code: "P", label: "Poussin", minAge: 8, maxAge: 10 },
   { code: "B", label: "Benjamin", minAge: 11, maxAge: 12 },
   { code: "M", label: "Minime", minAge: 13, maxAge: 14 },
-  { code: "C", label: "Cadet", minAge: 15, maxAge: 17 },
-  { code: "J", label: "Junior", minAge: 18, maxAge: 20 },
-  { code: "S", label: "Senior", minAge: 21, maxAge: 49 },
-  { code: "V", label: "Vétéran", minAge: 50, maxAge: 59 },
-  { code: "SV", label: "Super Vétéran", minAge: 60, maxAge: 99 },
+  { code: "C", label: "Cadet", minAge: 15, maxAge: 16 },
+  { code: "J", label: "Junior", minAge: 17, maxAge: 25 },
+  { code: "S", label: "Senior", minAge: 26, maxAge: 49 },
+  { code: "V", label: "Vétéran", minAge: 50, maxAge: 64 },
+  { code: "SV", label: "Super Vétéran", minAge: 65, maxAge: 99 },
 ];
 
 export function getAgeCategoryByCode(code: string): AgeCategory {
@@ -419,7 +419,7 @@ export const CATEGORIES: {
     code: "SFCOAV",
   },
 
-  // Vétérans : 50/59 ans
+  // Vétérans : 50/64 ans
   {
     ageCategory: "V",
     bowType: "SV",
@@ -469,7 +469,7 @@ export const CATEGORIES: {
     code: "VFCOAV",
   },
 
-  // Super Vétérans : 60 ans et plus
+  // Super Vétérans : 65 ans et plus
   {
     ageCategory: "SV",
     bowType: "SV",

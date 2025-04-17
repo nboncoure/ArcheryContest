@@ -105,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { useCompetitionsStore } from "../stores/competitionsStore";
+import { useCompetitionStore } from "../stores/competitionsStore";
 import { storeToRefs } from "pinia";
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
 import {
@@ -119,7 +119,7 @@ import {
   TrashIcon,
 } from "@heroicons/vue/24/outline";
 
-const competitionsStore = useCompetitionsStore();
+const competitionsStore = useCompetitionStore();
 const { competitions } = storeToRefs(competitionsStore);
 const { deleteCompetition } = competitionsStore;
 

@@ -253,7 +253,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
-import { useCompetitionsStore } from "../stores/competitionsStore";
+import { useCompetitionStore } from "../stores/competitionsStore";
 import { storeToRefs } from "pinia";
 import {
   Dialog,
@@ -279,7 +279,7 @@ import {
 import type { Competition } from "../types";
 
 const route = useRoute();
-const competitionsStore = useCompetitionsStore();
+const competitionsStore = useCompetitionStore();
 const { competitions } = storeToRefs(competitionsStore);
 
 const showEditModal = ref(false);

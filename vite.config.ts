@@ -2,8 +2,8 @@ import fs from "node:fs";
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import electron from "vite-plugin-electron/simple";
+import path from "node:path";
 import pkg from "./package.json";
-import path from 'node:path';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -17,7 +17,9 @@ export default defineConfig(({ command, mode }) => {
     fs.rmSync("dist-electron", { recursive: true, force: true });
   }
 
-  const plugins = [vue()];
+  const plugins = [
+    vue()
+  ];
 
   // N'ajouter le plugin Electron que si on est en mode Electron
   if (isElectron) {

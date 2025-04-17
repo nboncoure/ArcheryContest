@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import { useCompetitionsStore } from "../stores/competitionsStore";
+import { useCompetitionStore } from "../stores/competitionsStore";
 import { archerImportService, type ArcherWithStatus } from "../services/archerImportService";
 import {
   ArrowUpTrayIcon,
@@ -14,7 +14,7 @@ import {
 } from "@heroicons/vue/24/outline";
 
 const route = useRoute();
-const competitionsStore = useCompetitionsStore();
+const competitionsStore = useCompetitionStore();
 
 const importData = ref<ArcherWithStatus[]>([]);
 const dragOver = ref(false);
@@ -179,6 +179,24 @@ function cancelImport() {
                   scope="col"
                   class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
                 >
+                  Status
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
+                  Catégorie
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
+                  Départ
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
                   Licence
                 </th>
                 <th
@@ -223,18 +241,6 @@ function cancelImport() {
                 >
                   Type Arc
                 </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                >
-                  Catégorie
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                >
-                  Status
-                </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -243,6 +249,29 @@ function cancelImport() {
                 :key="index"
                 :class="getRowClass(archer)"
               >
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span v-if="archer.importStatus === 'warning'" class="text-warning flex items-center">
+                    <ExclamationCircleIcon class="w-4 h-4 mr-1" /> Avertissement
+                    <span v-if="archer.importMessage" class="ml-1 text-xs italic">
+                      ({{ archer.importMessage }})
+                    </span>
+                  </span>
+                  <span v-else-if="archer.importStatus === 'error'" class="text-error flex items-center">
+                    <XCircleIcon class="w-4 h-4 mr-1" /> Erreur
+                    <span v-if="archer.importMessage" class="ml-1 text-xs italic">
+                      ({{ archer.importMessage }})
+                    </span>
+                  </span>
+                  <span v-else class="text-success flex items-center">
+                    <CheckCircleIcon class="w-4 h-4 mr-1" /> OK
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  {{ archer.category }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  {{ archer.sessionId }}
+                </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   {{ archer.license }}
                 </td>
@@ -264,26 +293,6 @@ function cancelImport() {
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   {{ archer.bowType?.label }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  {{ archer.category }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span v-if="archer.importStatus === 'warning'" class="text-warning flex items-center">
-                    <ExclamationCircleIcon class="w-4 h-4 mr-1" /> Avertissement
-                    <span v-if="archer.importMessage" class="ml-1 text-xs italic">
-                      ({{ archer.importMessage }})
-                    </span>
-                  </span>
-                  <span v-else-if="archer.importStatus === 'error'" class="text-error flex items-center">
-                    <XCircleIcon class="w-4 h-4 mr-1" /> Erreur
-                    <span v-if="archer.importMessage" class="ml-1 text-xs italic">
-                      ({{ archer.importMessage }})
-                    </span>
-                  </span>
-                  <span v-else class="text-success flex items-center">
-                    <CheckCircleIcon class="w-4 h-4 mr-1" /> OK
-                  </span>
                 </td>
               </tr>
             </tbody>

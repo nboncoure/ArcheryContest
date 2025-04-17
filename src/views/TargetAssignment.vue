@@ -104,7 +104,10 @@
             <PlusIcon class="w-5 h-5" />
             Ajouter une cible
           </button>
-
+          <button @click="generateScoresheets" class="btn btn-primary">
+            <DocumentArrowDownIcon class="w-5 h-5" />
+            Feuilles de marque
+          </button>
           <button @click="autoConfigure" class="btn btn-primary">
             <PlusIcon class="w-5 h-5" />
             Configuration Automatique
@@ -119,6 +122,7 @@
       <div class="flex-1">
         <TargetGrid
           :targets="currentSession?.targets || []"
+          :assignments="currentSession?.assignments || []"
           :archers="assignedArchers"
           @position-drag-start="handlePositionDragStart"
           @position-drag-over="handleDragOver"
@@ -136,10 +140,13 @@
           v-model="filters"
           :categories="categories"
           :unassigned-archers="unassignedArchers"
+          :sessions="competition?.sessions || []"
+          :selected-session-id="selectedSessionId"
           @auto-assign="autoAssign"
           @archer-drag-start="dragStart"
           @archer-drag-end="dragEnd"
           @reset-all-assignments="resetAllAssignments"
+          @update-archer-session="updateArcherSession"
         />
       </div>
     </div>
@@ -242,15 +249,16 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
-import { useCompetitionsStore } from "../stores/competitionsStore";
-import { useArchersStore } from "../stores/archersStore";
+import { useCompetitionStore } from "../stores/competitionsStore";
 import { storeToRefs } from "pinia";
+import { generateScoreSheets } from "../utils/scoresheetPDF";
 import type {
   Archer,
   Competition,
   Session,
   Target,
   TargetPosition,
+  TargetAssignment,
 } from "../types";
 import { assignArchers, configureTargets } from "../utils/targetAssignment";
 import TargetGrid from "../components/target/TargetGrid.vue";
@@ -259,6 +267,7 @@ import {
   PlusIcon,
   TrashIcon,
   ViewfinderCircleIcon,
+  DocumentArrowDownIcon,
   CheckIcon,
   ChevronUpDownIcon,
 } from "@heroicons/vue/24/outline";
@@ -270,18 +279,17 @@ import {
 } from "@headlessui/vue";
 
 const route = useRoute();
-const competitionsStore = useCompetitionsStore();
-const archersStore = useArchersStore();
-const { competitions } = storeToRefs(competitionsStore);
-const { archers } = storeToRefs(archersStore);
+const competitionStore = useCompetitionStore();
+const { competitions } = storeToRefs(competitionStore);
 
 const dragOverTarget = ref<{
   number: number;
   position: TargetPosition;
 } | null>(null);
+
 const draggedArcher = ref<{
   id: string;
-  target?: { number: number; position: TargetPosition };
+  assignment?: TargetAssignment;
 } | null>(null);
 
 const editingTarget = ref<Target | null>(null);
@@ -300,6 +308,8 @@ const competition = computed(() =>
 const currentSession = computed(() =>
   competition.value?.sessions.find((s) => s.id === selectedSessionId.value)
 );
+
+const archers = computed(() => competition.value?.archers || []);
 
 // Initialiser le départ sélectionné avec le premier départ
 if (competition.value && competition.value.sessions.length > 0) {
@@ -323,24 +333,31 @@ const filteredArchers = computed(() =>
 
 const assignedArchers = computed(() =>
   competition.value!.archers.filter(
-    (archer) => archer.session === selectedSessionId.value && archer.target
+    (archer) => currentSession.value?.assignments?.some(a => a.archerId === archer.id)
   )
 );
 
 const unassignedArchers = computed(() =>
   competition.value!.archers.filter((archer) => {
-    if (archer.target) return false;
+    // Vérifier si l'archer est déjà assigné dans n'importe quelle session
+    const isAssignedInAnySessions = competition.value!.sessions.some(session =>
+      session.assignments?.some(a => a.archerId === archer.id)
+    );
+    if (isAssignedInAnySessions) return false;
+
+    // Appliquer les filtres
     if (filters.value.category && archer.category !== filters.value.category)
       return false;
     if (filters.value.bowType && archer.bowType.code !== filters.value.bowType)
       return false;
+
     return true;
   })
 );
 
 function addSession() {
   if (!competition.value) return;
-  const newSession = competitionsStore.addSession(competition.value.id);
+  const newSession = competitionStore.addSession(competition.value.id);
   selectedSessionId.value = newSession!.id;
 }
 
@@ -351,7 +368,7 @@ function deleteSession() {
     const updatedSessions = competition.value.sessions.filter(
       (s) => s.id !== selectedSessionId.value
     );
-    competitionsStore.updateCompetition(competition.value.id, {
+    competitionStore.updateCompetition(competition.value.id, {
       sessions: updatedSessions,
     });
 
@@ -383,7 +400,7 @@ function addTarget() {
     return session;
   });
 
-  competitionsStore.updateCompetition(competition.value.id, {
+  competitionStore.updateCompetition(competition.value.id, {
     sessions: updatedSessions,
   });
 }
@@ -406,7 +423,7 @@ function removeTarget(targetNum: number) {
     }
     // Supprimer les attributions pour cette cible
     archersOnTarget.forEach((archer) => {
-      competitionsStore.updateArcherTarget(
+      competitionStore.updateArcherTarget(
         competition.value!.id,
         archer.id,
         selectedSessionId.value,
@@ -436,7 +453,7 @@ function removeTarget(targetNum: number) {
     return session;
   });
 
-  competitionsStore.updateCompetition(competition.value.id, {
+  competitionStore.updateCompetition(competition.value.id, {
     sessions: updatedSessions,
   });
 }
@@ -456,7 +473,7 @@ function updateTargetConfig(target: Target) {
     return session;
   });
 
-  competitionsStore.updateCompetition(competition.value.id, {
+  competitionStore.updateCompetition(competition.value.id, {
     sessions: updatedSessions,
   });
 }
@@ -474,15 +491,15 @@ function handlePositionDragStart(
   targetNum: number,
   position: TargetPosition
 ) {
-  const archer = filteredArchers.value.find(
-    (a) => a.target?.number === targetNum && a.target?.position === position
+  const assignment = currentSession.value?.assignments.find(
+    (a) => a.targetNumber === targetNum && a.position === position
   );
-  if (archer) {
+  if (assignment) {
     draggedArcher.value = {
-      id: archer.id,
-      target: { number: targetNum, position },
+      id: assignment.archerId,
+      assignment,
     };
-    event.dataTransfer!.setData("archer-id", archer.id);
+    event.dataTransfer!.setData("archer-id", assignment.archerId);
     event.dataTransfer!.effectAllowed = "move";
   }
 }
@@ -535,50 +552,115 @@ function handleDrop(
   if (!draggedArcher.value) return;
   const archerId = draggedArcher.value.id;
 
-  // Trouver l'archer à la position cible (s'il y en a un)
-  const targetArcher = assignedArchers.value.find(
-    (a) => a.target?.number === targetNum && a.target?.position === position
+  // Vérifier si l'archer est déjà assigné dans une autre session
+  const isAssignedInOtherSession = competition.value!.sessions.some(
+    session => session.id !== currentSession.value!.id && 
+    session.assignments?.some(a => a.archerId === archerId)
   );
 
-  // Si l'archer qu'on déplace vient d'une position existante
-  if (draggedArcher.value.target) {
-    // Si la position cible est occupée, on échange les positions
-    if (targetArcher) {
-      // Déplacer l'archer cible vers l'ancienne position de l'archer déplacé
-      competitionsStore.updateArcherTarget(
-        competition.value!.id,
-        targetArcher.id,
-        selectedSessionId.value,
-        draggedArcher.value.target
+  if (isAssignedInOtherSession) {
+    alert("Cet archer est déjà assigné à une autre session.");
+    draggedArcher.value = null;
+    return;
+  }
+
+  // Trouver l'attribution à la position cible (s'il y en a une)
+  const targetAssignment = currentSession.value?.assignments.find(
+    (a) => a.targetNumber === targetNum && a.position === position
+  );
+
+  if (!currentSession.value) return;
+
+  const updatedAssignments = [...currentSession.value.assignments];
+
+  // Si l'archer qu'on déplace a déjà une attribution
+  if (draggedArcher.value.assignment) {
+    const draggedAssignmentIndex = updatedAssignments.findIndex(
+      a => a.archerId === archerId
+    );
+
+    if (draggedAssignmentIndex !== -1) {
+      // Mettre à jour l'attribution existante
+      updatedAssignments[draggedAssignmentIndex] = {
+        ...updatedAssignments[draggedAssignmentIndex],
+        targetNumber: targetNum,
+        position,
+      };
+
+      // Si la position cible est occupée, échanger les positions
+      if (targetAssignment) {
+        const targetAssignmentIndex = updatedAssignments.findIndex(
+          a => a.archerId === targetAssignment.archerId
+        );
+
+        if (targetAssignmentIndex !== -1) {
+          updatedAssignments[targetAssignmentIndex] = {
+            ...updatedAssignments[targetAssignmentIndex],
+            targetNumber: draggedArcher.value.assignment.targetNumber,
+            position: draggedArcher.value.assignment.position,
+          };
+        }
+      }
+    }
+  } else {
+    // Créer une nouvelle attribution
+    if (targetAssignment) {
+      // Remplacer l'attribution existante
+      const targetAssignmentIndex = updatedAssignments.findIndex(
+        a => a.archerId === targetAssignment.archerId
       );
+      if (targetAssignmentIndex !== -1) {
+        updatedAssignments[targetAssignmentIndex] = {
+          ...targetAssignment,
+          archerId,
+        };
+      }
+    } else {
+      // Ajouter une nouvelle attribution
+      updatedAssignments.push({
+        archerId,
+        targetNumber: targetNum,
+        position,
+        SessionId: currentSession.value.id,
+      });
     }
   }
 
-  // Déplacer l'archer vers la nouvelle position
-  competitionsStore.updateArcherTarget(
-    competition.value!.id,
-    archerId,
-    selectedSessionId.value,
-    {
-      number: targetNum,
-      position,
-    }
+  // Mettre à jour les attributions de la session
+  const updatedSessions = competition.value!.sessions.map(session =>
+    session.id === currentSession.value!.id
+      ? { ...session, assignments: updatedAssignments }
+      : session
   );
+
+  competitionStore.updateCompetition(competition.value!.id, {
+    sessions: updatedSessions,
+  });
 
   draggedArcher.value = null;
 }
 
 function removeFromTarget(targetNum: number, position: TargetPosition) {
-  const archer = filteredArchers.value.find(
-    (a) => a.target?.number === targetNum && a.target?.position === position
+  if (!currentSession.value) return;
+
+  const assignmentToRemove = currentSession.value.assignments.find(
+    a => a.targetNumber === targetNum && a.position === position
   );
-  if (archer) {
-    competitionsStore.updateArcherTarget(
-      competition.value!.id,
-      archer.id,
-      undefined,
-      undefined
+
+  if (assignmentToRemove) {
+    const updatedAssignments = currentSession.value.assignments.filter(
+      a => a !== assignmentToRemove
     );
+
+    const updatedSessions = competition.value!.sessions.map(session =>
+      session.id === currentSession.value!.id
+        ? { ...session, assignments: updatedAssignments }
+        : session
+    );
+
+    competitionStore.updateCompetition(competition.value!.id, {
+      sessions: updatedSessions,
+    });
   }
 }
 
@@ -600,24 +682,26 @@ function autoConfigure() {
   }
 
   const sessionsConfig = configureTargets(competition.value!);
-  competitionsStore.replaceSession(competition.value!.id, sessionsConfig);
+  competitionStore.replaceSession(competition.value!.id, sessionsConfig);
 }
 
 function autoAssign(keepAssignments: boolean = true) {
-  console.log("Auto-assigning targets ", currentSession.value);
   if (!competition.value || !currentSession.value) return;
 
-  const updatedArchers = assignArchers(competition.value, keepAssignments);
+  const newAssignments = assignArchers(
+    competition.value,
+    currentSession.value,
+    keepAssignments
+  );
 
-  console.log(updatedArchers);
+  const updatedSessions = competition.value.sessions.map(session =>
+    session.id === currentSession.value!.id
+      ? { ...session, assignments: newAssignments }
+      : session
+  );
 
-  updatedArchers.forEach((archer) => {
-    competitionsStore.updateArcherTarget(
-      competition.value!.id,
-      archer.id,
-      archer.session,
-      archer.target
-    );
+  competitionStore.updateCompetition(competition.value.id, {
+    sessions: updatedSessions,
   });
 }
 
@@ -630,17 +714,56 @@ function resetAllAssignments(askConfirmation: boolean = true) {
       "Êtes-vous sûr de vouloir réinitialiser toutes les assignations ? Cette action ne peut pas être annulée."
     )
   ) {
-    const updatedCompetition = { ...competition.value };
-    updatedCompetition.archers = updatedCompetition.archers.map((archer) => ({
-      ...archer,
-      session: undefined,
-      target: undefined,
+    // Réinitialiser les assignations de toutes les sessions
+    const updatedSessions = competition.value.sessions.map(session => ({
+      ...session,
+      assignments: []
     }));
-    competitionsStore.updateCompetition(
-      updatedCompetition.id,
-      updatedCompetition
-    );
+
+    // Mettre à jour la compétition avec les sessions réinitialisées
+    competitionStore.updateCompetition(competition.value.id, {
+      sessions: updatedSessions
+    });
   }
+}
+
+function generateScoresheets() {
+  if (!competition.value || !currentSession.value) return;
+
+  // Générer un PDF pour chaque cible qui a des archers assignés
+  currentSession.value.targets.forEach(async target => {
+    const targetAssignments = currentSession.value!.assignments
+      .filter(a => a.targetNumber === target.number)
+      .sort((a, b) => a.position.localeCompare(b.position));
+
+    if (targetAssignments.length > 0) {
+      try {
+        await generateScoreSheets({
+          competition: competition.value!,
+          session: currentSession.value!,
+          target,
+          assignments: targetAssignments,
+          archers: competition.value!.archers,
+        });
+      } catch (error) {
+        console.error(`Erreur lors de la génération de la feuille de marque pour la cible ${target.number}:`, error);
+      }
+    }
+  });
+}
+
+function updateArcherSession(archerId: string, newSessionId: number) {
+  if (!competition.value) return;
+  
+  const updatedArchers = competition.value.archers.map(archer => 
+    archer.id === archerId 
+      ? { ...archer, sessionId: newSessionId }
+      : archer
+  );
+  
+  competitionStore.updateCompetition(competition.value.id, {
+    archers: updatedArchers
+  });
 }
 </script>
 

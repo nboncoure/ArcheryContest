@@ -26,6 +26,17 @@
       </div>
 
       <div class="form-group">
+        <label for="numberOfSessions">Nombre de départs</label>
+        <input
+          type="number"
+          id="numberOfSessions"
+          v-model="form.numberOfSessions"
+          min="1"
+          required
+        />
+      </div>
+
+      <div class="form-group">
         <label for="numberOfTargets">Nombre de cibles</label>
         <input
           type="number"
@@ -51,12 +62,12 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { useCompetitionsStore } from "../stores/competitionsStore";
+import { useCompetitionStore } from "../stores/competitionsStore";
 import type { Competition } from "../types";
 
 const router = useRouter();
 const route = useRoute();
-const competitionsStore = useCompetitionsStore();
+const competitionsStore = useCompetitionStore();
 
 const isEdit = route.params.id !== undefined;
 const form = ref({
@@ -64,6 +75,7 @@ const form = ref({
   date: "",
   location: "",
   type: "indoor" as const,
+  numberOfSessions: 1,
   numberOfTargets: 10,
   status: "draft" as const,
 });

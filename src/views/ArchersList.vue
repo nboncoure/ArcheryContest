@@ -38,10 +38,13 @@
           <label for="bowType">Type d'arc</label>
           <select id="bowType" v-model="filters.bowType">
             <option value="">Tous</option>
-            <option value="SV">Arc nu</option>
-            <option value="AV">Classique</option>
-            <option value="COSV">Poulies sans viseur</option>
-            <option value="COAV">Poulies</option>
+            <option
+              v-for="(bowType, key) in BOW_TYPES"
+              :key="key"
+              :value="bowType.code"
+            >
+              {{ bowType.label }}
+            </option>
           </select>
         </div>
       </div>
@@ -89,7 +92,7 @@
               <td class="px-6 py-4 whitespace-nowrap">{{ archer.lastName }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
                 {{ archer.firstName }}
-              </td>
+              </td>              
               <td class="px-6 py-4">
                 <div class="truncate max-w-[150px] md:max-w-[180px] lg:max-w-[220px]" :title="archer.club">
                   {{ archer.club }}
@@ -97,7 +100,7 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap">{{ archer.category }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
-                {{ translateGender(archer.gender) }}
+                {{ archer.gender === "M" ? "Homme" : "Femme" }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center gap-2">
@@ -119,7 +122,7 @@
                     leave-to-class="transform scale-95 opacity-0"
                   >
                     <MenuItems
-                      class="absolute right-0 w-48 mt-2 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                      class="absolute right-0 w-48 mt-2 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
                     >
                       <div class="py-1">
                         <MenuItem v-slot="{ active }">
@@ -271,7 +274,8 @@
                     <label for="bowType">Type d'arc</label>
                     <select id="bowType" v-model="archerForm.bowType" required>
                       <option
-                        v-for="bowType in BOW_TYPES"
+                        v-for="(bowType, key) in BOW_TYPES"
+                        :key="key"
                         :value="bowType.code"
                       >
                         {{ bowType.label }}
@@ -365,7 +369,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { useRoute } from "vue-router";
-import { useCompetitionsStore } from "../stores/competitionsStore";
+import { useCompetitionStore } from "../stores/competitionsStore";
 import { storeToRefs } from "pinia";
 import {
   Dialog,
@@ -386,24 +390,28 @@ import {
   MagnifyingGlassIcon,
   ChevronUpIcon,
   ChevronDownIcon,
-  ViewfinderCircleIcon,
   EllipsisVerticalIcon,
   PencilIcon,
   TrashIcon,
   UsersIcon,
 } from "@heroicons/vue/24/outline";
 import {
-  CATEGORIES,
   AGE_CATEGORIES,
   BOW_TYPES,
+  getAgeCategoryByCode,
   getBowTypeByCode,
   findCategoryCode,
 } from "../constants/staticData";
+import type { Archer, AgeCategoryCode } from "../types";
 
-import type { AgeCategoryCode, Archer, ArcherGender } from "../types";
+const SPECIAL_CATEGORIES = {
+  BEGINNER: "Débutant",
+  DISABLED: "Handicapé",
+  VISUALLY_IMPAIRED: "Malvoyant",
+} as const;
 
 const route = useRoute();
-const competitionsStore = useCompetitionsStore();
+const competitionsStore = useCompetitionStore();
 const { competitions } = storeToRefs(competitionsStore);
 
 const competitionId = route.params.id as string;
@@ -420,6 +428,7 @@ const archerForm = ref<Partial<Archer>>({
   license: "",
   category: "",
   gender: "M",
+  ageCategory: getAgeCategoryByCode("S"),
   bowType: getBowTypeByCode("AV"),
   isBeginner: false,
   isDisabled: false,
@@ -451,21 +460,6 @@ const archers = computed(
 const categories = computed(() =>
   [...new Set(archers.value.map((a) => a.category))].sort()
 );
-
-const SPECIAL_CATEGORIES = [
-  {
-    label: "Débutant",
-    key: "Déb.",
-  },
-  {
-    label: "Désactivé",
-    key: "Dés.",
-  },
-  {
-    label: "Visuellement handicapé",
-    key: "VH",
-  }
-]
 
 const filteredArchers = computed(() => {
   return archers.value.filter((archer) => {
@@ -499,16 +493,14 @@ const sortedArchers = computed(() => {
   });
 });
 
-function translateGender(gender: ArcherGender) {
-  if (gender === "M") return "Homme";
-  if (gender === "F") return "Femme";
-  return "";
-}
-
 watch(
   [selectedAgeGroup, archerForm],
   ([age, form]) => {
-    archerForm.value.category = findCategoryCode(age, form.bowType?.code, form.gender);
+    archerForm.value.category = findCategoryCode(
+      age,
+      form.bowType?.code,
+      form.gender
+    );
   },
   { immediate: true }
 );
@@ -527,10 +519,6 @@ function editArcher(archer: Archer) {
   archerForm.value = { ...archer };
 
   selectedSpecialCategory.value = "";
-  const category = CATEGORIES.find((cat) => cat.code === archer.category);
-  if (category) {
-    selectedAgeGroup.value = category.ageCategory;
-  }
   showAddForm.value = true;
 }
 
@@ -564,6 +552,7 @@ function closeForm() {
     club: "",
     category: "",
     gender: "M",
+    ageCategory: getAgeCategoryByCode("S"),
     bowType: getBowTypeByCode("AV"),
     license: "",
     isBeginner: false,

@@ -100,12 +100,18 @@ export const archerImportService = {
       const categoryCode = ageCategory && bowType ? 
         findCategoryCode(ageCategory.code, bowType.code, gender) : 
         "";
+
+      // Extraction du numéro de départ
+      const sessionId = row["N° Départ"]? parseInt(row["N° Départ"]) : undefined;
       
       // Vérification du statut d'importation
       let importStatus: ImportStatus = 'ok';
       let importMessage = '';
       
-      if (!ageCategory) {
+      if (!sessionId || sessionId < 1) {
+        importStatus = 'error';
+        importMessage = "Numéro de départ invalide";
+      } else if (!ageCategory) {
         importStatus = 'error';
         importMessage = "Catégorie d'âge non reconnue";
       } else if (!bowType) {
@@ -130,6 +136,7 @@ export const archerImportService = {
         firstName: row["Prénom"] || "",
         club: row["Club"] || "",
         birthYear,
+        sessionId,
         ageCategory: ageCategory || AGE_CATEGORIES[0], // Défaut à Poussin si non reconnu
         gender,
         bowType: bowType || BOW_TYPES[0], // Défaut à Arc nu si non reconnu

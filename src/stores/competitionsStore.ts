@@ -1,12 +1,14 @@
 import { defineStore } from "pinia";
-import { ref, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import { v4 as uuidv4 } from "uuid";
 import type {
   Competition,
   CompetitionStatus,
-  SessionConfig,
+  Session,
   Archer,
-  ArcherPosition,
+  Target,
+  TargetAssignment,
+  Score
 } from "../types";
 
 const loadCompetitions = (): Competition[] => {
@@ -14,7 +16,7 @@ const loadCompetitions = (): Competition[] => {
   return stored ? JSON.parse(stored) : [];
 };
 
-export const useCompetitionsStore = defineStore("competitions", () => {
+export const useCompetitionStore = defineStore("competition", () => {
   const competitions = ref<Competition[]>(loadCompetitions());
 
   watch(
@@ -33,15 +35,18 @@ export const useCompetitionsStore = defineStore("competitions", () => {
       updatedAt: new Date().toISOString(),
       status: "draft" as CompetitionStatus,
       archers: [],
+      scores: [],
       sessions: Array.from(
-        { length: competition.numberOfSessions },
+        { length: competition.numberOfSessions || 1 },
         (_, i) => ({
-          id: uuidv4(),
-          name: `Départ ${competition.sessions.length + 1}`,
+          id: i,
+          name: `Départ ${i + 1}`,
           date: competition.date,
+          assignments: [],
           targets: Array.from(
             { length: competition.numberOfTargets },
             (_, j) => ({
+              number: j + 1,
               distance: 18,
               faceSize: 40,
             })
@@ -58,7 +63,6 @@ export const useCompetitionsStore = defineStore("competitions", () => {
       competitions.value[index] = {
         ...competitions.value[index],
         ...data,
-        sessions: competitions.value[index].sessions,
         updatedAt: new Date().toISOString(),
       };
     }
@@ -73,9 +77,8 @@ export const useCompetitionsStore = defineStore("competitions", () => {
 
   function addArcher(competitionId: string, archer: Archer) {
     const competition = competitions.value.find((c) => c.id === competitionId);
-    if (!competition) {
-      return;
-    }
+    if (!competition) return;
+    
     competition.archers.push({
       ...archer,
       id: uuidv4(),
@@ -84,9 +87,8 @@ export const useCompetitionsStore = defineStore("competitions", () => {
 
   function updateArcher(competitionId: string, archer: Archer) {
     const competition = competitions.value.find((c) => c.id === competitionId);
-    if (!competition) {
-      return;
-    }
+    if (!competition) return;
+    
     const index = competition.archers.findIndex((a) => a.id === archer.id);
     if (index !== -1) {
       competition.archers[index] = archer;
@@ -95,38 +97,17 @@ export const useCompetitionsStore = defineStore("competitions", () => {
 
   function deleteArcher(competitionId: string, archerId: string) {
     const competition = competitions.value.find((c) => c.id === competitionId);
-    if (!competition) {
-      return;
-    }
+    if (!competition) return;
+    
     const index = competition.archers.findIndex((a) => a.id === archerId);
     if (index !== -1) {
       competition.archers.splice(index, 1);
     }
   }
 
-  function updateArcherTarget(
-    competitionId: string,
-    archerId: string,
-    sessionId: string | undefined,
-    target: { number: number; position: ArcherPosition } | undefined
-  ) {
-    const competition = competitions.value.find((c) => c.id === competitionId);
-    if (!competition) {
-      return;
-    }
-    const archer = competition.archers.find((a) => a.id === archerId);
-    if (!archer) {
-      return;
-    }
-    archer.session = sessionId;
-    archer.target = target;
-  }
-
   function importArchers(competitionId: string, archers: Archer[]) {
     const competition = competitions.value.find((c) => c.id === competitionId);
-    if (!competition) {
-      return;
-    }
+    if (!competition) return;
 
     const existingIds = new Set(competition.archers.map((a) => a.id));
     const archersToAdd = archers.filter((a) => !existingIds.has(a.id));
@@ -139,38 +120,91 @@ export const useCompetitionsStore = defineStore("competitions", () => {
     competition.archers.push(...archersToAdd);
   }
 
-  function addSession(competitionId: string): SessionConfig | undefined {
+  function addSession(competitionId: string): Session | undefined {
     const competition = competitions.value.find((c) => c.id === competitionId);
-    if (!competition) {
-      return undefined;
-    }
+    if (!competition) return;
 
-    const session = {
-      id: uuidv4(),
+    const session: Session = {
+      id: competition.sessions.length,
       name: `Départ ${competition.sessions.length + 1}`,
       date: competition.date,
-      targets: Array.from({ length: competition.numberOfTargets }, (_, i) => ({
-        distance: 18,
-        faceSize: 40,
-      })),
+      assignments: [],
+      targets: Array.from(
+        { length: competition.numberOfTargets },
+        (_, i) => ({
+          number: i + 1,
+          distance: 18,
+          faceSize: 40,
+        })
+      ),
     };
     competition.sessions.push(session);
     return session;
   }
 
-  function replaceSession(competitionId: string, sessions: SessionConfig[]) {
+  function updateSession(competitionId: string, sessionId: number, data: Partial<Session>) {
     const competition = competitions.value.find((c) => c.id === competitionId);
-    if (!competition) {
-      return;
-    }
+    if (!competition) return;
+
+    const sessionIndex = competition.sessions.findIndex((s) => s.id === sessionId);
+    if (sessionIndex === -1) return;
+
+    competition.sessions[sessionIndex] = {
+      ...competition.sessions[sessionIndex],
+      ...data,
+    };
+  }
+
+  function replaceSession(competitionId: string, sessions: Session[]) {
+    const competition = competitions.value.find((c) => c.id === competitionId);
+    if (!competition) return;
 
     competition.sessions = sessions;
   }
 
-  function updateSession(competitionId: string, sessionId: string) {}
+  function deleteSession(competitionId: string, sessionId: number) {
+    const competition = competitions.value.find((c) => c.id === competitionId);
+    if (!competition) return;
 
-  function deleteSession(competitionId: string, sessionId: string) {
-    const index = competitions.value.findIndex((c) => c.id === competitionId);
+    const sessionIndex = competition.sessions.findIndex((s) => s.id === sessionId);
+    if (sessionIndex === -1) return;
+
+    competition.sessions.splice(sessionIndex, 1);
+  }
+
+  function updateTarget(
+    competitionId: string,
+    sessionId: number,
+    targetNumber: number,
+    data: Partial<Target>
+  ) {
+    const competition = competitions.value.find((c) => c.id === competitionId);
+    if (!competition) return;
+
+    const session = competition.sessions.find((s) => s.id === sessionId);
+    if (!session) return;
+
+    const targetIndex = session.targets.findIndex((t) => t.number === targetNumber);
+    if (targetIndex === -1) return;
+
+    session.targets[targetIndex] = {
+      ...session.targets[targetIndex],
+      ...data,
+    };
+  }
+
+  function updateAssignments(
+    competitionId: string,
+    sessionId: number,
+    assignments: TargetAssignment[]
+  ) {
+    const competition = competitions.value.find((c) => c.id === competitionId);
+    if (!competition) return;
+
+    const session = competition.sessions.find((s) => s.id === sessionId);
+    if (!session) return;
+
+    session.assignments = assignments;
   }
 
   return {
@@ -181,11 +215,12 @@ export const useCompetitionsStore = defineStore("competitions", () => {
     addArcher,
     updateArcher,
     deleteArcher,
-    updateArcherTarget,
     importArchers,
     addSession,
     updateSession,
     replaceSession,
     deleteSession,
+    updateTarget,
+    updateAssignments,
   };
 });

@@ -1,3 +1,107 @@
+<script setup lang="ts">
+import { ref, computed } from "vue";
+import { useRoute } from "vue-router";
+import { useCompetitionStore } from "../stores/competitionsStore";
+import { storeToRefs } from "pinia";
+import {
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  TransitionRoot,
+  TransitionChild,
+} from "@headlessui/vue";
+import {
+  CalendarIcon,
+  MapPinIcon,
+  ArrowsPointingOutIcon,
+  PlayIcon,
+  FlagIcon,
+  UsersIcon,
+  ArrowUpTrayIcon,
+  ViewfinderCircleIcon,
+  ChartBarIcon,
+  TrophyIcon,
+  ExclamationTriangleIcon,
+  PencilIcon,
+} from "@heroicons/vue/24/outline";
+import type { Competition } from "@/types";
+
+const route = useRoute();
+const competitionsStore = useCompetitionStore();
+const { competitions } = storeToRefs(competitionsStore);
+
+const showEditModal = ref(false);
+const form = ref<Partial<Competition>>({
+  name: "",
+  date: undefined,
+  location: "",
+  type: "indoor",
+  numberOfTargets: 10,
+});
+
+const competition = computed(() =>
+  competitions.value.find((c) => c.id === route.params.id)
+);
+
+function translateStatus(status: string): string {
+  const statusMap: Record<string, string> = {
+    draft: "Brouillon",
+    active: "En cours",
+    completed: "Terminée",
+  };
+  return statusMap[status] || status;
+}
+
+function statusClass(status: string): string {
+  const classes = {
+    draft: "bg-yellow-100 text-yellow-800",
+    active: "bg-green-100 text-green-800",
+    completed: "bg-blue-100 text-blue-800",
+  };
+  return `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+    classes[status as keyof typeof classes]
+  }`;
+}
+
+function isActiveRoute(name: string): boolean {
+  return route.path.includes(`/${name}`);
+}
+
+function startCompetition() {
+  if (competition.value) {
+    competitionsStore.updateCompetition(competition.value.id, {
+      status: "active",
+    });
+  }
+}
+
+function endCompetition() {
+  if (competition.value) {
+    competitionsStore.updateCompetition(competition.value.id, {
+      status: "completed",
+    });
+  }
+}
+
+function openEditModal() {
+  if (competition.value) {
+    form.value = { ...competition.value };
+    showEditModal.value = true;
+  }
+}
+
+function closeEditModal() {
+  showEditModal.value = false;
+}
+
+function saveCompetition() {
+  if (competition.value) {
+    competitionsStore.updateCompetition(competition.value.id, form.value);
+    closeEditModal();
+  }
+}
+</script>
+
 <template>
   <div class="min-h-screen bg-gray-50" v-if="competition">
     <header class="bg-white shadow">
@@ -28,9 +132,9 @@
                 <ArrowsPointingOutIcon class="w-5 h-5 mr-2" />
                 {{ competition.type === "indoor" ? "Salle" : "Extérieur" }}
               </div>
-              <Badge :class="statusClass(competition.status)">
+              <div :class="statusClass(competition.status)">
                 {{ translateStatus(competition.status) }}
-              </Badge>
+              </div>
             </div>
           </div>
 
@@ -249,107 +353,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, computed } from "vue";
-import { useRoute } from "vue-router";
-import { useCompetitionStore } from "../stores/competitionsStore";
-import { storeToRefs } from "pinia";
-import {
-  Dialog,
-  DialogPanel,
-  DialogTitle,
-  TransitionRoot,
-  TransitionChild,
-} from "@headlessui/vue";
-import {
-  CalendarIcon,
-  MapPinIcon,
-  ArrowsPointingOutIcon,
-  PlayIcon,
-  FlagIcon,
-  UsersIcon,
-  ArrowUpTrayIcon,
-  ViewfinderCircleIcon,
-  ChartBarIcon,
-  TrophyIcon,
-  ExclamationTriangleIcon,
-  PencilIcon,
-} from "@heroicons/vue/24/outline";
-import type { Competition } from "../types";
-
-const route = useRoute();
-const competitionsStore = useCompetitionStore();
-const { competitions } = storeToRefs(competitionsStore);
-
-const showEditModal = ref(false);
-const form = ref<Partial<Competition>>({
-  name: "",
-  date: "",
-  location: "",
-  type: "indoor",
-  numberOfTargets: 10,
-});
-
-const competition = computed(() =>
-  competitions.value.find((c) => c.id === route.params.id)
-);
-
-function translateStatus(status: string): string {
-  const statusMap: Record<string, string> = {
-    draft: "Brouillon",
-    active: "En cours",
-    completed: "Terminée",
-  };
-  return statusMap[status] || status;
-}
-
-function statusClass(status: string): string {
-  const classes = {
-    draft: "bg-yellow-100 text-yellow-800",
-    active: "bg-green-100 text-green-800",
-    completed: "bg-blue-100 text-blue-800",
-  };
-  return `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-    classes[status as keyof typeof classes]
-  }`;
-}
-
-function isActiveRoute(name: string): boolean {
-  return route.path.includes(`/${name}`);
-}
-
-function startCompetition() {
-  if (competition.value) {
-    competitionsStore.updateCompetition(competition.value.id, {
-      status: "active",
-    });
-  }
-}
-
-function endCompetition() {
-  if (competition.value) {
-    competitionsStore.updateCompetition(competition.value.id, {
-      status: "completed",
-    });
-  }
-}
-
-function openEditModal() {
-  if (competition.value) {
-    form.value = { ...competition.value };
-    showEditModal.value = true;
-  }
-}
-
-function closeEditModal() {
-  showEditModal.value = false;
-}
-
-function saveCompetition() {
-  if (competition.value) {
-    competitionsStore.updateCompetition(competition.value.id, form.value);
-    closeEditModal();
-  }
-}
-</script>

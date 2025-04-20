@@ -1,3 +1,39 @@
+<script setup lang="ts">
+import { ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useCompetitionStore } from "../stores/competitionsStore";
+import type { Competition } from "../types";
+
+const router = useRouter();
+const route = useRoute();
+const competitionsStore = useCompetitionStore();
+
+const isEdit = route.params.id !== undefined;
+const form = ref({
+  name: "",
+  date: "",
+  location: "",
+  type: "indoor" as const,
+  numberOfSessions: 1,
+  numberOfTargets: 10,
+  status: "draft" as const,
+});
+
+function handleSubmit() {
+  const competition: Partial<Competition> = {
+    ...form.value,
+  };
+
+  if (isEdit) {
+    competitionsStore.updateCompetition(route.params.id as string, competition);
+  } else {
+    competitionsStore.createCompetition(competition as Competition);
+  }
+
+  router.push("/");
+}
+</script>
+
 <template>
   <div class="competition-form">
     <h1>{{ isEdit ? "Modifier la Compétition" : "Nouvelle Compétition" }}</h1>
@@ -58,42 +94,6 @@
     </form>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import { useCompetitionStore } from "../stores/competitionsStore";
-import type { Competition } from "../types";
-
-const router = useRouter();
-const route = useRoute();
-const competitionsStore = useCompetitionStore();
-
-const isEdit = route.params.id !== undefined;
-const form = ref({
-  name: "",
-  date: "",
-  location: "",
-  type: "indoor" as const,
-  numberOfSessions: 1,
-  numberOfTargets: 10,
-  status: "draft" as const,
-});
-
-function handleSubmit() {
-  const competition: Partial<Competition> = {
-    ...form.value,
-  };
-
-  if (isEdit) {
-    competitionsStore.updateCompetition(route.params.id as string, competition);
-  } else {
-    competitionsStore.addCompetition(competition as Competition);
-  }
-
-  router.push("/");
-}
-</script>
 
 <style scoped>
 .competition-form {

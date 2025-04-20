@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref, watch } from "vue";
-import type { Archer } from "../types";
+import type { Archer, TargetPosition } from "../types";
 
 // Charger les données initiales du localStorage
 const loadArchers = (): Archer[] => {
@@ -60,7 +60,7 @@ export const useArchersStore = defineStore("archers", () => {
 
   function updateArcherTarget(
     archerId: string,
-    target: { number: number; position: "A" | "B" | "C" | "D" } | undefined
+    target: { number: number; position: TargetPosition } | undefined
   ) {
     const archer = archers.value.find((a) => a.id === archerId);
     if (archer) {
@@ -68,13 +68,13 @@ export const useArchersStore = defineStore("archers", () => {
     }
   }
 
-  function updateArcherSession(
+  function updateArcherFlight(
     archerId: string,
-    sessionId: string | undefined
+    flightId: number | undefined
   ) {
     const archer = archers.value.find((a) => a.id === archerId);
     if (archer) {
-      archer.session = sessionId;
+      archer.flightId = flightId;
     }
   }
 
@@ -107,7 +107,7 @@ export const useArchersStore = defineStore("archers", () => {
     deleteArcher,
     importArchers,
     updateArcherTarget,
-    updateArcherSession,
+    updateArcherFlight,
     updateScore,
     getRankings,
   };

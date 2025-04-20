@@ -1,3 +1,31 @@
+<script setup lang="ts">
+import { defineProps, defineEmits, ref } from "vue";
+import { ArrowPathIcon, SparklesIcon } from "@heroicons/vue/24/outline";
+import type { Archer } from "@/types";
+
+defineProps<{
+  modelValue: {
+    flight: number;
+    category: string;
+    bowType: string;
+  };
+  categories: string[] | undefined;
+  unassignedArchers: Archer[];
+}>();
+
+const keepAssignments = ref(true);
+
+defineEmits<{
+  "update:modelValue": [
+    value: { flight: number; category: string; bowType: string }
+  ];
+  "auto-assign": [keepAssignments: boolean];
+  "archer-drag-start": [event: DragEvent, archer: Archer];
+  "archer-drag-end": [];
+  "reset-all-assignments": [];
+}>();
+</script>
+
 <template>
   <div class="flex flex-col h-full bg-white rounded-lg shadow">
     <div class="p-4 border-b border-gray-200">
@@ -102,31 +130,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { defineProps, defineEmits, ref } from "vue";
-import { ArrowPathIcon, SparklesIcon } from "@heroicons/vue/24/outline";
-import type { Archer } from "../../types";
-
-defineProps<{
-  modelValue: {
-    session: number;
-    category: string;
-    bowType: string;
-  };
-  categories: string[];
-  unassignedArchers: Archer[];
-}>();
-
-const keepAssignments = ref(true);
-
-defineEmits<{
-  "update:modelValue": [
-    value: { session: number; category: string; bowType: string }
-  ];
-  "auto-assign": [keepAssignments: boolean];
-  "archer-drag-start": [event: DragEvent, archer: Archer];
-  "archer-drag-end": [];
-  "reset-all-assignments": [];
-}>();
-</script>

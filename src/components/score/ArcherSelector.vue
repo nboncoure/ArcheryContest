@@ -1,3 +1,59 @@
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue';
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxButton,
+  ComboboxOptions,
+  ComboboxOption,
+  TransitionRoot,
+} from '@headlessui/vue';
+import { ChevronUpDownIcon } from '@heroicons/vue/24/outline';
+import type { Archer, TargetAssignment } from '@/types';
+
+interface Props {
+  archers: Archer[];
+  assignments: TargetAssignment[];
+}
+
+const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  'select-target': [targetNumber: number];
+}>();
+
+const query = ref('');
+const selectedArcher = ref<Archer | null>(null);
+
+const filteredArchers = computed(() => {
+  // Filtrer d'abord les archers qui sont assignés à cette session
+  const assignedArcherIds = new Set(props.assignments.map(a => a.archerId));
+  const sessionArchers = props.archers.filter(archer => assignedArcherIds.has(archer.id));
+
+  // Ensuite appliquer le filtre de recherche
+  return query.value === ''
+    ? sessionArchers
+    : sessionArchers.filter((archer) => {
+        const searchStr = `${archer.lastName} ${archer.firstName} ${archer.category}`.toLowerCase();
+        return searchStr.includes(query.value.toLowerCase());
+      });
+});
+
+function getArcherTarget(archer: Archer) {
+  return props.assignments.find(a => a.archerId === archer.id);
+}
+
+watch(selectedArcher, (archer) => {
+  if (archer) {
+    const target = getArcherTarget(archer);
+    if (target) {
+      emit('select-target', target.targetNumber);
+    }
+    selectedArcher.value = null;
+  }
+});
+</script>
+
 <template>
   <div class="relative">
     <Combobox v-model="selectedArcher">
@@ -69,59 +125,3 @@
     </Combobox>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import {
-  Combobox,
-  ComboboxInput,
-  ComboboxButton,
-  ComboboxOptions,
-  ComboboxOption,
-  TransitionRoot,
-} from '@headlessui/vue';
-import { ChevronUpDownIcon } from '@heroicons/vue/24/outline';
-import type { Archer, TargetAssignment } from '../../types';
-
-interface Props {
-  archers: Archer[];
-  assignments: TargetAssignment[];
-}
-
-const props = defineProps<Props>();
-
-const emit = defineEmits<{
-  'select-target': [targetNumber: number];
-}>();
-
-const query = ref('');
-const selectedArcher = ref<Archer | null>(null);
-
-const filteredArchers = computed(() => {
-  // Filtrer d'abord les archers qui sont assignés à cette session
-  const assignedArcherIds = new Set(props.assignments.map(a => a.archerId));
-  const sessionArchers = props.archers.filter(archer => assignedArcherIds.has(archer.id));
-
-  // Ensuite appliquer le filtre de recherche
-  return query.value === ''
-    ? sessionArchers
-    : sessionArchers.filter((archer) => {
-        const searchStr = `${archer.lastName} ${archer.firstName} ${archer.category}`.toLowerCase();
-        return searchStr.includes(query.value.toLowerCase());
-      });
-});
-
-function getArcherTarget(archer: Archer) {
-  return props.assignments.find(a => a.archerId === archer.id);
-}
-
-watch(selectedArcher, (archer) => {
-  if (archer) {
-    const target = getArcherTarget(archer);
-    if (target) {
-      emit('select-target', target.targetNumber);
-    }
-    selectedArcher.value = null;
-  }
-});
-</script>

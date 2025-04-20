@@ -4,11 +4,11 @@ import { v4 as uuidv4 } from "uuid";
 import type {
   Competition,
   CompetitionStatus,
-  Session,
+  Flight,
   Archer,
   Target,
   TargetAssignment,
-  Score
+  ArcherScore
 } from "../types";
 
 const loadCompetitions = (): Competition[] => {
@@ -27,7 +27,7 @@ export const useCompetitionStore = defineStore("competition", () => {
     { deep: true }
   );
 
-  function addCompetition(competition: Competition) {
+  function createCompetition(competition: Competition) {
     const newCompetition = {
       ...competition,
       id: uuidv4(),
@@ -36,8 +36,8 @@ export const useCompetitionStore = defineStore("competition", () => {
       status: "draft" as CompetitionStatus,
       archers: [],
       scores: [],
-      sessions: Array.from(
-        { length: competition.numberOfSessions || 1 },
+      flights: Array.from(
+        { length: competition.numberOfFlights || 1 },
         (_, i) => ({
           id: i,
           name: `Départ ${i + 1}`,
@@ -55,6 +55,10 @@ export const useCompetitionStore = defineStore("competition", () => {
       ),
     };
     competitions.value.push(newCompetition);
+  }
+
+  function addCompetition(competition: Competition) {
+    competitions.value.push(competition);
   }
 
   function updateCompetition(id: string, data: Partial<Competition>) {
@@ -120,14 +124,14 @@ export const useCompetitionStore = defineStore("competition", () => {
     competition.archers.push(...archersToAdd);
   }
 
-  function addSession(competitionId: string): Session | undefined {
+  function addFlight(competitionId: string): Flight | undefined {
     const competition = competitions.value.find((c) => c.id === competitionId);
     if (!competition) return;
 
-    const session: Session = {
-      id: competition.sessions.length,
-      name: `Départ ${competition.sessions.length + 1}`,
-      date: competition.date,
+    const flight: Flight = {
+      id: competition.flights.length,
+      name: `Départ ${competition.flights.length + 1}`,
+      startTime: competition.date,
       assignments: [],
       targets: Array.from(
         { length: competition.numberOfTargets },
@@ -138,77 +142,242 @@ export const useCompetitionStore = defineStore("competition", () => {
         })
       ),
     };
-    competition.sessions.push(session);
-    return session;
+    competition.flights.push(flight);
+    return flight;
   }
 
-  function updateSession(competitionId: string, sessionId: number, data: Partial<Session>) {
+  function updateFlight(competitionId: string, flightId: number, data: Partial<Flight>) {
     const competition = competitions.value.find((c) => c.id === competitionId);
     if (!competition) return;
 
-    const sessionIndex = competition.sessions.findIndex((s) => s.id === sessionId);
-    if (sessionIndex === -1) return;
+    const flightIndex = competition.flights.findIndex((s) => s.id === flightId);
+    if (flightIndex === -1) return;
 
-    competition.sessions[sessionIndex] = {
-      ...competition.sessions[sessionIndex],
+    competition.flights[flightIndex] = {
+      ...competition.flights[flightIndex],
       ...data,
     };
   }
 
-  function replaceSession(competitionId: string, sessions: Session[]) {
+  function replaceFlight(competitionId: string, flights: Flight[]) {
     const competition = competitions.value.find((c) => c.id === competitionId);
     if (!competition) return;
 
-    competition.sessions = sessions;
+    competition.flights = flights;
   }
 
-  function deleteSession(competitionId: string, sessionId: number) {
+  function deleteFlight(competitionId: string, flightId: number) {
     const competition = competitions.value.find((c) => c.id === competitionId);
     if (!competition) return;
 
-    const sessionIndex = competition.sessions.findIndex((s) => s.id === sessionId);
-    if (sessionIndex === -1) return;
+    const flightIndex = competition.flights.findIndex((s) => s.id === flightId);
+    if (flightIndex === -1) return;
 
-    competition.sessions.splice(sessionIndex, 1);
+    competition.flights.splice(flightIndex, 1);
   }
 
   function updateTarget(
     competitionId: string,
-    sessionId: number,
+    flightId: number,
     targetNumber: number,
     data: Partial<Target>
   ) {
     const competition = competitions.value.find((c) => c.id === competitionId);
     if (!competition) return;
 
-    const session = competition.sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    const flight = competition.flights.find((s) => s.id === flightId);
+    if (!flight) return;
 
-    const targetIndex = session.targets.findIndex((t) => t.number === targetNumber);
+    const targetIndex = flight.targets.findIndex((t) => t.number === targetNumber);
     if (targetIndex === -1) return;
 
-    session.targets[targetIndex] = {
-      ...session.targets[targetIndex],
+    flight.targets[targetIndex] = {
+      ...flight.targets[targetIndex],
       ...data,
     };
   }
 
   function updateAssignments(
     competitionId: string,
-    sessionId: number,
+    flightId: number,
     assignments: TargetAssignment[]
   ) {
     const competition = competitions.value.find((c) => c.id === competitionId);
     if (!competition) return;
 
-    const session = competition.sessions.find((s) => s.id === sessionId);
-    if (!session) return;
+    const flight = competition.flights.find((s) => s.id === flightId);
+    if (!flight) return;
 
-    session.assignments = assignments;
+    flight.assignments = assignments;
+  }
+
+  // New score management functions
+  function getArcherScore(competitionId: string, archerId: string, flightId: number, targetNumber: number): ArcherScore | undefined {
+    const competition = competitions.value.find((c) => c.id === competitionId);
+    if (!competition) return undefined;
+    
+    return competition.scores.find(
+      (s) => s.archerId === archerId && 
+             s.flightId === flightId &&
+             s.targetNumber === targetNumber
+    );
+  }
+
+  function createArcherScore(competitionId: string, archerId: string, flightId: number, targetNumber: number, position: string): ArcherScore {
+    const competition = competitions.value.find((c) => c.id === competitionId);
+    if (!competition) throw new Error("Competition not found");
+    
+    const rounds: Round[] = Array.from({ length: 2 }, (_, rIndex) => ({
+      id: rIndex + 1,
+      ends: Array.from({ length: 10 }, () => ({
+        id: crypto.randomUUID(),
+        arrows: Array.from({ length: 3 }, () => ({
+          value: null,
+          status: "valid"
+        })),
+        total: 0
+      })),
+      total: 0,
+      tens: 0,
+      nines: 0
+    }));
+
+    const score: ArcherScore = {
+      id: crypto.randomUUID(),
+      archerId,
+      flightId,
+      targetNumber,
+      position,
+      rounds,
+      total: 0,
+      tens: 0,
+      nines: 0,
+    };
+
+    competition.scores = [...(competition.scores || []), score];
+    return score;
+  }
+
+  function getOrCreateArcherScore(competitionId: string, archerId: string, flightId: number, targetNumber: number, position: string): ArcherScore {
+    const existingScore = getArcherScore(competitionId, archerId, flightId, targetNumber);
+    if (existingScore) return existingScore;
+    return createArcherScore(competitionId, archerId, flightId, targetNumber, position);
+  }
+
+  function updateArrowScore(
+    competitionId: string,
+    archerId: string,
+    flightId: number,
+    targetNumber: number,
+    position: string,
+    roundId: number,
+    endIndex: number,
+    arrowIndex: number,
+    value: number
+  ) {
+    if (isNaN(value) || value < 0 || value > 10) return;
+
+    const competition = competitions.value.find((c) => c.id === competitionId);
+    if (!competition) return;
+
+    const score = getOrCreateArcherScore(competitionId, archerId, flightId, targetNumber, position);
+    const round = score.rounds.find(r => r.id === roundId);
+    
+    if (!round) return;
+    
+    const end = round.ends[endIndex];
+
+    // Update arrow with "valid" status
+    end.arrows[arrowIndex] = {
+      value,
+      status: "valid"
+    };
+
+    // Recalculate end total
+    end.total = end.arrows
+      .filter(a => a.status === "valid" && typeof a.value === "number")
+      .reduce((sum, a) => sum + (a.value ?? 0), 0);
+
+    // Recalculate round total
+    round.total = round.ends.reduce((sum, e) => sum + e.total, 0);
+
+    // Recalculate round tens and nines
+    round.tens = round.ends.reduce(
+      (sum, e) => sum + e.arrows.filter(a => a.status === "valid" && a.value === 10).length,
+      0
+    );
+    round.nines = round.ends.reduce(
+      (sum, e) => sum + e.arrows.filter(a => a.status === "valid" && a.value === 9).length,
+      0
+    );
+
+    // Recalculate overall score
+    score.total = score.rounds.reduce((sum, r) => sum + r.total, 0);
+    score.tens = score.rounds.reduce((sum, r) => sum + r.tens, 0);
+    score.nines = score.rounds.reduce((sum, r) => sum + r.nines, 0);
+  }
+
+  function updateArcherTotal(competitionId: string, archerId: string, flightId: number, roundId: number, targetNumber: number, value: number) {
+    if (isNaN(value) || value < 0 || value > 300) return;
+
+    const competition = competitions.value.find((c) => c.id === competitionId);
+    if (!competition) return;
+
+    const score = competition.scores.find(
+      (s) => s.archerId === archerId && 
+             s.flightId === flightId &&
+             s.targetNumber === targetNumber
+    );
+    
+    if (score) {
+      if (roundId !== undefined) {
+        const round = score.rounds.find(r => r.id === roundId);
+        if (round) {
+          round.total = value;
+        }
+      } else {
+        score.total = value;
+      }
+    }
+  }
+
+  function updateArcherTens(competitionId: string, archerId: string, flightId: number, targetNumber: number, value: number) {
+    if (isNaN(value) || value < 0 || value > 30) return;
+
+    const competition = competitions.value.find((c) => c.id === competitionId);
+    if (!competition) return;
+
+    const score = competition.scores.find(
+      (s) => s.archerId === archerId && 
+             s.flightId === flightId &&
+             s.targetNumber === targetNumber
+    );
+    
+    if (score) {
+      score.tens = value;
+    }
+  }
+
+  function updateArcherNines(competitionId: string, archerId: string, flightId: number, targetNumber: number, value: number) {
+    if (isNaN(value) || value < 0 || value > 30) return;
+
+    const competition = competitions.value.find((c) => c.id === competitionId);
+    if (!competition) return;
+
+    const score = competition.scores.find(
+      (s) => s.archerId === archerId && 
+             s.flightId === flightId &&
+             s.targetNumber === targetNumber
+    );
+    
+    if (score) {
+      score.nines = value;
+    }
   }
 
   return {
     competitions,
+    createCompetition,
     addCompetition,
     updateCompetition,
     deleteCompetition,
@@ -216,11 +385,18 @@ export const useCompetitionStore = defineStore("competition", () => {
     updateArcher,
     deleteArcher,
     importArchers,
-    addSession,
-    updateSession,
-    replaceSession,
-    deleteSession,
+    addFlight,
+    updateFlight,
+    replaceFlight,
+    deleteFlight,
     updateTarget,
     updateAssignments,
+    // Export new score functions
+    getArcherScore,
+    getOrCreateArcherScore,
+    updateArrowScore,
+    updateArcherTotal,
+    updateArcherTens,
+    updateArcherNines,
   };
 });

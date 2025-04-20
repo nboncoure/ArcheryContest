@@ -1,3 +1,18 @@
+<script setup lang="ts">
+import { ViewfinderCircleIcon, XMarkIcon } from "@heroicons/vue/24/outline";
+import type { Archer, TargetPosition } from "@/types";
+
+defineProps<{
+  position: TargetPosition;
+  archer?: Archer;
+  isDragOver?: boolean;
+}>();
+
+defineEmits<{
+  remove: [];
+}>();
+</script>
+
 <template>
   <div
     class="position"
@@ -31,21 +46,6 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ViewfinderCircleIcon, XMarkIcon } from "@heroicons/vue/24/outline";
-import type { Archer, TargetPosition } from "../../types";
-
-defineProps<{
-  position: TargetPosition;
-  archer?: Archer;
-  isDragOver?: boolean;
-}>();
-
-defineEmits<{
-  remove: [];
-}>();
-</script>
-
 <style scoped>
 .position {
   @apply relative flex items-center justify-between p-2 rounded bg-white border border-gray-200 transition-colors duration-200;
@@ -72,7 +72,7 @@ defineEmits<{
 }
 
 .empty-position {
-  @apply text-lg font-medium text-gray-400 w-full text-center;
+  @apply text-lg font-medium text-gray-400 w-full text-center min-h-9;
 }
 
 .remove-button {

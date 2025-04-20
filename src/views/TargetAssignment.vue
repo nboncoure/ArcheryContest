@@ -1,6 +1,6 @@
 <template>
   <div class="target-assignment">
-    <!-- En-tête avec gestion des sessions et cibles -->
+    <!-- En-tête avec gestion des Départs et cibles -->
     <div class="mb-6 card">
       <div class="p-6">
         <h1 class="mb-6 text-2xl font-bold text-gray-900">
@@ -13,14 +13,14 @@
         >
           <div class="flex items-center gap-4">
             <div class="mb-0 form-group">
-              <Listbox v-model="selectedSessionId">
+              <Listbox v-model="selectedFlightId">
                 <div class="relative w-40 mt-1">
                   <ListboxButton
                     class="relative w-full py-2 pl-3 pr-10 text-left bg-white rounded-lg shadow-md cursor-default focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm"
                   >
                     <span class="block truncate">{{
-                      competition?.sessions.find(
-                        (session) => session.id === selectedSessionId
+                      competition?.flights.find(
+                        (flight) => flight.id === selectedFlightId
                       )?.name
                     }}</span>
                     <span
@@ -42,9 +42,9 @@
                     >
                       <ListboxOption
                         v-slot="{ active, selected }"
-                        v-for="session in competition?.sessions"
-                        :key="session.id"
-                        :value="session.id"
+                        v-for="flight in competition?.flights"
+                        :key="flight.id"
+                        :value="flight.id"
                         as="template"
                       >
                         <li
@@ -60,7 +60,7 @@
                               selected ? 'font-medium' : 'font-normal',
                               'block truncate',
                             ]"
-                            >{{ session.name }}</span
+                            >{{ flight.name }}</span
                           >
                           <span
                             v-if="selected"
@@ -76,13 +76,13 @@
               </Listbox>
             </div>
             <div class="flex items-end gap-2">
-              <button @click="addSession" class="btn btn-secondary">
+              <button @click="addFlight" class="btn btn-secondary">
                 <PlusIcon class="w-5 h-5" />
                 Ajouter un départ
               </button>
               <button
-                v-if="currentSession && competition!.sessions.length > 1"
-                @click="deleteSession"
+                v-if="currentFlight && competition!.flights.length > 1"
+                @click="deleteFlight"
                 class="btn btn-danger"
               >
                 <TrashIcon class="w-5 h-5" />
@@ -97,7 +97,7 @@
           <div class="flex items-center gap-2">
             <ViewfinderCircleIcon class="w-5 h-5 text-gray-400" />
             <span class="text-gray-600">
-              {{ currentSession?.targets.length || 0 }} cibles
+              {{ currentFlight?.targets.length || 0 }} cibles
             </span>
           </div>
           <button @click="addTarget" class="btn btn-primary">
@@ -121,8 +121,8 @@
       <!-- Grille des cibles -->
       <div class="flex-1">
         <TargetGrid
-          :targets="currentSession?.targets || []"
-          :assignments="currentSession?.assignments || []"
+          :targets="currentFlight?.targets || []"
+          :assignments="currentFlight?.assignments || []"
           :archers="assignedArchers"
           @position-drag-start="handlePositionDragStart"
           @position-drag-over="handleDragOver"
@@ -140,13 +140,10 @@
           v-model="filters"
           :categories="categories"
           :unassigned-archers="unassignedArchers"
-          :sessions="competition?.sessions || []"
-          :selected-session-id="selectedSessionId"
           @auto-assign="autoAssign"
           @archer-drag-start="dragStart"
           @archer-drag-end="dragEnd"
           @reset-all-assignments="resetAllAssignments"
-          @update-archer-session="updateArcherSession"
         />
       </div>
     </div>
@@ -193,7 +190,7 @@
                   class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
                 >
                   <template
-                    v-for="target in currentSession?.targets"
+                    v-for="target in currentFlight?.targets"
                     :key="target.number"
                   >
                     <div class="p-4 rounded-lg bg-gray-50">
@@ -255,7 +252,7 @@ import { generateScoreSheets } from "../utils/scoresheetPDF";
 import type {
   Archer,
   Competition,
-  Session,
+  Flight,
   Target,
   TargetPosition,
   TargetAssignment,
@@ -294,26 +291,26 @@ const draggedArcher = ref<{
 
 const editingTarget = ref<Target | null>(null);
 const showTargetConfigModal = ref(false);
-const selectedSessionId = ref<number>();
+const selectedFlightId = ref<number>();
 const filters = ref({
-  session: 1,
+  flightId: 1,
   category: "",
   bowType: "",
 });
 
 const competition = computed(() =>
-  competitions.value.find((c) => c.id === route.params.id)
+  competitions.value.find((c: Competition) => c.id === route.params.id)
 );
 
-const currentSession = computed(() =>
-  competition.value?.sessions.find((s) => s.id === selectedSessionId.value)
+const currentFlight = computed(() =>
+  competition.value?.flights.find((f: Flight) => f.id === selectedFlightId.value)
 );
 
 const archers = computed(() => competition.value?.archers || []);
 
 // Initialiser le départ sélectionné avec le premier départ
-if (competition.value && competition.value.sessions.length > 0) {
-  selectedSessionId.value = competition.value.sessions[0].id;
+if (competition.value && competition.value.flights.length > 0) {
+  selectedFlightId.value = competition.value.flights[0].id;
 }
 
 const categories = computed(() =>
@@ -321,8 +318,8 @@ const categories = computed(() =>
 );
 
 const filteredArchers = computed(() =>
-  archers.value.filter((archer) => {
-    if (archer.session !== selectedSessionId.value) return false;
+  archers.value.filter((archer: Archer) => {
+    if (archer.flightId !== selectedFlightId.value) return false;
     if (filters.value.category && archer.category !== filters.value.category)
       return false;
     if (filters.value.bowType && archer.bowType.code !== filters.value.bowType)
@@ -333,17 +330,17 @@ const filteredArchers = computed(() =>
 
 const assignedArchers = computed(() =>
   competition.value!.archers.filter(
-    (archer) => currentSession.value?.assignments?.some(a => a.archerId === archer.id)
+    (archer: Archer) => currentFlight.value?.assignments?.some((a: TargetAssignment) => a.archerId === archer.id)
   )
 );
 
 const unassignedArchers = computed(() =>
-  competition.value!.archers.filter((archer) => {
-    // Vérifier si l'archer est déjà assigné dans n'importe quelle session
-    const isAssignedInAnySessions = competition.value!.sessions.some(session =>
-      session.assignments?.some(a => a.archerId === archer.id)
+  competition.value!.archers.filter((archer: Archer) => {
+    // Vérifier si l'archer est déjà assigné dans n'importe quel départ
+    const isAssignedInAnyFlights = competition.value!.flights.some((flight: Flight) =>
+      flight.assignments?.some((a: TargetAssignment) => a.archerId === archer.id)
     );
-    if (isAssignedInAnySessions) return false;
+    if (isAssignedInAnyFlights) return false;
 
     // Appliquer les filtres
     if (filters.value.category && archer.category !== filters.value.category)
@@ -355,62 +352,62 @@ const unassignedArchers = computed(() =>
   })
 );
 
-function addSession() {
+function addFlight() {
   if (!competition.value) return;
-  const newSession = competitionStore.addSession(competition.value.id);
-  selectedSessionId.value = newSession!.id;
+  const newFlight = competitionStore.addFlight(competition.value.id);
+  selectedFlightId.value = newFlight!.id;
 }
 
-function deleteSession() {
-  if (!competition.value || !currentSession) return;
+function deleteFlight() {
+  if (!competition.value || !currentFlight) return;
 
   if (confirm("Êtes-vous sûr de vouloir supprimer ce départ ?")) {
-    const updatedSessions = competition.value.sessions.filter(
-      (s) => s.id !== selectedSessionId.value
+    const updatedFlights = competition.value.flights.filter(
+      (f: Flight) => f.id !== selectedFlightId.value
     );
     competitionStore.updateCompetition(competition.value.id, {
-      sessions: updatedSessions,
+      flights: updatedFlights,
     });
 
     // Supprimer les attributions de cibles pour ce départ
-    archers.value.forEach((archer) => {
-      if (archer.session === selectedSessionId.value) {
+    archers.value.forEach((archer: Archer) => {
+      if (archer.flightId === selectedFlightId.value) {
         archersStore.updateArcherTarget(archer.id, undefined); // TODO
-        archersStore.updateArcherSession(archer.id, undefined); // TODO
+        archersStore.updateArcherFlight(archer.id, undefined); // TODO
       }
     });
 
     // Sélectionner le premier départ restant
-    if (updatedSessions.length > 0) {
-      selectedSessionId.value = updatedSessions[0].id;
+    if (updatedFlights.length > 0) {
+      selectedFlightId.value = updatedFlights[0].id;
     }
   }
 }
 
 function addTarget() {
-  if (!competition.value || !currentSession) return;
+  if (!competition.value || !currentFlight) return;
 
-  const updatedSessions = competition.value.sessions.map((session) => {
-    if (session.id === selectedSessionId.value) {
+  const updatedFlights = competition.value.flights.map((flight: Flight) => {
+    if (flight.id === selectedFlightId.value) {
       return {
-        ...session,
-        // numberOfTargets: session.numberOfTargets + 1,
+        ...flight,
+        // numberOfTargets: flight.numberOfTargets + 1,
       };
     }
-    return session;
+    return flight;
   });
 
   competitionStore.updateCompetition(competition.value.id, {
-    sessions: updatedSessions,
+    flights: updatedFlights,
   });
 }
 
 function removeTarget(targetNum: number) {
-  if (!competition.value || !currentSession) return;
+  if (!competition.value || !currentFlight) return;
 
   // Vérifier si la cible est occupée
   const archersOnTarget = filteredArchers.value.filter(
-    (archer) => archer.target?.number === targetNum
+    (archer: Archer) => archer.target?.number === targetNum
   );
 
   if (archersOnTarget.length > 0) {
@@ -422,18 +419,18 @@ function removeTarget(targetNum: number) {
       return;
     }
     // Supprimer les attributions pour cette cible
-    archersOnTarget.forEach((archer) => {
+    archersOnTarget.forEach((archer: Archer) => {
       competitionStore.updateArcherTarget(
         competition.value!.id,
         archer.id,
-        selectedSessionId.value,
+        selectedFlightId.value,
         undefined
       );
     });
   }
 
   // Mettre à jour les numéros de cible pour les cibles suivantes
-  filteredArchers.value.forEach((archer) => {
+  filteredArchers.value.forEach((archer: Archer) => {
     if (archer.target && archer.target.number > targetNum) {
       archersStore.updateArcherTarget(archer.id, {
         number: archer.target.number - 1,
@@ -443,38 +440,38 @@ function removeTarget(targetNum: number) {
   });
 
   // Mettre à jour le nombre de cibles
-  const updatedSessions = competition.value.sessions.map((session) => {
-    if (session.id === selectedSessionId.value) {
+  const updatedFlights = competition.value.flights.map((flight: Flight) => {
+    if (flight.id === selectedFlightId.value) {
       return {
-        ...session,
-        // numberOfTargets: session.numberOfTargets - 1,
+        ...flight,
+        // numberOfTargets: flight.numberOfTargets - 1,
       };
     }
-    return session;
+    return flight;
   });
 
   competitionStore.updateCompetition(competition.value.id, {
-    sessions: updatedSessions,
+    flights: updatedFlights,
   });
 }
 
 function updateTargetConfig(target: Target) {
-  if (!competition.value || !currentSession) return;
+  if (!competition.value || !currentFlight) return;
 
-  const updatedSessions = competition.value.sessions.map((session) => {
-    if (session.id === selectedSessionId.value) {
+  const updatedFlights = competition.value.flights.map((flight: Flight) => {
+    if (flight.id === selectedFlightId.value) {
       return {
-        ...session,
-        targets: session.targets.map((t) =>
+        ...flight,
+        targets: flight.targets.map((t: Target) =>
           t.number === target.number ? target : t
         ),
       };
     }
-    return session;
+    return flight;
   });
 
   competitionStore.updateCompetition(competition.value.id, {
-    sessions: updatedSessions,
+    flights: updatedFlights,
   });
 }
 
@@ -491,8 +488,8 @@ function handlePositionDragStart(
   targetNum: number,
   position: TargetPosition
 ) {
-  const assignment = currentSession.value?.assignments.find(
-    (a) => a.targetNumber === targetNum && a.position === position
+  const assignment = currentFlight.value?.assignments.find(
+    (a: TargetAssignment) => a.targetNumber === targetNum && a.position === position
   );
   if (assignment) {
     draggedArcher.value = {
@@ -552,26 +549,26 @@ function handleDrop(
   if (!draggedArcher.value) return;
   const archerId = draggedArcher.value.id;
 
-  // Vérifier si l'archer est déjà assigné dans une autre session
-  const isAssignedInOtherSession = competition.value!.sessions.some(
-    session => session.id !== currentSession.value!.id && 
-    session.assignments?.some(a => a.archerId === archerId)
+  // Vérifier si l'archer est déjà assigné dans une autre départ
+  const isAssignedInOtherFlight = competition.value!.flights.some(
+    (flight: Flight) => flight.id !== currentFlight.value!.id && 
+    flight.assignments?.some((a: TargetAssignment) => a.archerId === archerId)
   );
 
-  if (isAssignedInOtherSession) {
-    alert("Cet archer est déjà assigné à une autre session.");
+  if (isAssignedInOtherFlight) {
+    alert("Cet archer est déjà assigné à un autre départ.");
     draggedArcher.value = null;
     return;
   }
 
   // Trouver l'attribution à la position cible (s'il y en a une)
-  const targetAssignment = currentSession.value?.assignments.find(
-    (a) => a.targetNumber === targetNum && a.position === position
+  const targetAssignment = currentFlight.value?.assignments.find(
+    (a: TargetAssignment) => a.targetNumber === targetNum && a.position === position
   );
 
-  if (!currentSession.value) return;
+  if (!currentFlight.value) return;
 
-  const updatedAssignments = [...currentSession.value.assignments];
+  const updatedAssignments = [...currentFlight.value.assignments];
 
   // Si l'archer qu'on déplace a déjà une attribution
   if (draggedArcher.value.assignment) {
@@ -621,52 +618,52 @@ function handleDrop(
         archerId,
         targetNumber: targetNum,
         position,
-        SessionId: currentSession.value.id,
+        flightId: currentFlight.value.id,
       });
     }
   }
 
-  // Mettre à jour les attributions de la session
-  const updatedSessions = competition.value!.sessions.map(session =>
-    session.id === currentSession.value!.id
-      ? { ...session, assignments: updatedAssignments }
-      : session
+  // Mettre à jour les attributions au départ
+  const updatedFlights = competition.value!.flights.map((flight: Flight) =>
+    flight.id === currentFlight.value!.id
+      ? { ...flight, assignments: updatedAssignments }
+      : flight
   );
 
   competitionStore.updateCompetition(competition.value!.id, {
-    sessions: updatedSessions,
+    flights: updatedFlights,
   });
 
   draggedArcher.value = null;
 }
 
 function removeFromTarget(targetNum: number, position: TargetPosition) {
-  if (!currentSession.value) return;
+  if (!currentFlight.value) return;
 
-  const assignmentToRemove = currentSession.value.assignments.find(
+  const assignmentToRemove = currentFlight.value.assignments.find(
     a => a.targetNumber === targetNum && a.position === position
   );
 
   if (assignmentToRemove) {
-    const updatedAssignments = currentSession.value.assignments.filter(
-      a => a !== assignmentToRemove
+    const updatedAssignments = currentFlight.value.assignments.filter(
+      (a: TargetAssignment) => a !== assignmentToRemove
     );
 
-    const updatedSessions = competition.value!.sessions.map(session =>
-      session.id === currentSession.value!.id
-        ? { ...session, assignments: updatedAssignments }
-        : session
+    const updatedFlights = competition.value!.flights.map((flight: Flight) =>
+      flight.id === currentFlight.value!.id
+        ? { ...flight, assignments: updatedAssignments }
+        : flight
     );
 
     competitionStore.updateCompetition(competition.value!.id, {
-      sessions: updatedSessions,
+      flights: updatedFlights,
     });
   }
 }
 
 function autoConfigure() {
   const hasAssignedArchers =
-    competition.value!.sessions.flatMap((session) => session.assignments)
+    competition.value!.flights.flatMap((flight: Flight) => flight.assignments)
       .length > 0;
 
   if (hasAssignedArchers) {
@@ -681,27 +678,26 @@ function autoConfigure() {
     }
   }
 
-  const sessionsConfig = configureTargets(competition.value!);
-  competitionStore.replaceSession(competition.value!.id, sessionsConfig);
+  const flightsConfig = configureTargets(competition.value!);
+  competitionStore.replaceFlight(competition.value!.id, flightsConfig);
 }
 
 function autoAssign(keepAssignments: boolean = true) {
-  if (!competition.value || !currentSession.value) return;
+  if (!competition.value || !currentFlight.value) return;
 
   const newAssignments = assignArchers(
     competition.value,
-    currentSession.value,
     keepAssignments
   );
 
-  const updatedSessions = competition.value.sessions.map(session =>
-    session.id === currentSession.value!.id
-      ? { ...session, assignments: newAssignments }
-      : session
+  const updatedFlights = competition.value.flights.map((flight: Flight) =>
+    flight.id === currentFlight.value!.id
+      ? { ...flight, assignments: newAssignments }
+      : flight
   );
 
   competitionStore.updateCompetition(competition.value.id, {
-    sessions: updatedSessions,
+    flights: updatedFlights,
   });
 }
 
@@ -714,33 +710,33 @@ function resetAllAssignments(askConfirmation: boolean = true) {
       "Êtes-vous sûr de vouloir réinitialiser toutes les assignations ? Cette action ne peut pas être annulée."
     )
   ) {
-    // Réinitialiser les assignations de toutes les sessions
-    const updatedSessions = competition.value.sessions.map(session => ({
-      ...session,
+    // Réinitialiser les assignations de toutes les départs
+    const updatedFlights = competition.value.flights.map((flight: Flight) => ({
+      ...flight,
       assignments: []
     }));
 
-    // Mettre à jour la compétition avec les sessions réinitialisées
+    // Mettre à jour la compétition avec les départs réinitialisées
     competitionStore.updateCompetition(competition.value.id, {
-      sessions: updatedSessions
+      flights: updatedFlights
     });
   }
 }
 
 function generateScoresheets() {
-  if (!competition.value || !currentSession.value) return;
+  if (!competition.value || !currentFlight.value) return;
 
   // Générer un PDF pour chaque cible qui a des archers assignés
-  currentSession.value.targets.forEach(async target => {
-    const targetAssignments = currentSession.value!.assignments
-      .filter(a => a.targetNumber === target.number)
-      .sort((a, b) => a.position.localeCompare(b.position));
+  currentFlight.value.targets.forEach(async (target: Target) => {
+    const targetAssignments = currentFlight.value!.assignments
+      .filter((a: TargetAssignment) => a.targetNumber === target.number)
+      .sort((a: TargetAssignment, b: TargetAssignment) => a.position.localeCompare(b.position));
 
     if (targetAssignments.length > 0) {
       try {
         await generateScoreSheets({
           competition: competition.value!,
-          session: currentSession.value!,
+          flight: currentFlight.value!,
           target,
           assignments: targetAssignments,
           archers: competition.value!.archers,
@@ -749,20 +745,6 @@ function generateScoresheets() {
         console.error(`Erreur lors de la génération de la feuille de marque pour la cible ${target.number}:`, error);
       }
     }
-  });
-}
-
-function updateArcherSession(archerId: string, newSessionId: number) {
-  if (!competition.value) return;
-  
-  const updatedArchers = competition.value.archers.map(archer => 
-    archer.id === archerId 
-      ? { ...archer, sessionId: newSessionId }
-      : archer
-  );
-  
-  competitionStore.updateCompetition(competition.value.id, {
-    archers: updatedArchers
   });
 }
 </script>

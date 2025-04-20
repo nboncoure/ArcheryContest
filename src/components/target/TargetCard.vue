@@ -1,3 +1,39 @@
+<script setup lang="ts">
+import { XMarkIcon } from "@heroicons/vue/24/outline";
+import { Icon } from "@iconify/vue";
+import type { Archer, TargetPosition, Target, TargetAssignment } from "@/types";
+import TargetPositionCard from "./TargetPositionCard.vue";
+
+const props = defineProps<{
+  positions: TargetPosition[];
+  archers: Archer[];
+  assignments: TargetAssignment[];
+  target: Target;
+  dragOverPosition?: TargetPosition;
+}>();
+
+defineEmits<{
+  "position-drag-start": [event: DragEvent, position: TargetPosition];
+  "position-drag-over": [event: DragEvent, position: TargetPosition];
+  "position-drag-leave": [event: DragEvent, position: TargetPosition];
+  "position-drop": [event: DragEvent, position: TargetPosition];
+  "remove-archer": [position: TargetPosition];
+  "remove-target": [number: number];
+  "edit-config": [];
+}>();
+
+function getArcherAtPosition(position: TargetPosition): Archer | undefined {
+  const assignment = props.assignments.find(
+    a => a.position === position && a.targetNumber === props.target.number
+  );
+  return assignment ? props.archers.find(a => a.id === assignment.archerId) : undefined;
+}
+
+function isDragOver(position: TargetPosition) {
+  return props.dragOverPosition === position;
+}
+</script>
+
 <template>
   <div class="target-card">
     <div class="target-header">
@@ -34,7 +70,7 @@
       </button>
     </div>
     <div class="positions">
-      <template v-for="position in positions" :key="`${number}-${position}`">
+      <template v-for="position in positions" :key="`${target.number}-${position}`">
         <TargetPositionCard
           :position="position"
           :archer="getArcherAtPosition(position)"
@@ -49,38 +85,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { XMarkIcon } from "@heroicons/vue/24/outline";
-import { Icon } from "@iconify/vue";
-import type { Archer, TargetPosition, Target } from "../../types";
-import TargetPositionCard from "./TargetPositionCard.vue";
-
-const props = defineProps<{
-  positions: TargetPosition[];
-  archers: Archer[];
-  target: Target;
-  dragOverPosition?: TargetPosition;
-}>();
-
-defineEmits<{
-  "position-drag-start": [event: DragEvent, position: TargetPosition];
-  "position-drag-over": [event: DragEvent, position: TargetPosition];
-  "position-drag-leave": [event: DragEvent, position: TargetPosition];
-  "position-drop": [event: DragEvent, position: TargetPosition];
-  "remove-archer": [position: TargetPosition];
-  "remove-target": [number: number];
-  "edit-config": [];
-}>();
-
-function getArcherAtPosition(position: TargetPosition): Archer | undefined {
-  return props.archers.find((a) => a.target?.position === position);
-}
-
-function isDragOver(position: TargetPosition) {
-  return props.dragOverPosition === position;
-}
-</script>
 
 <style scoped>
 .target-card {

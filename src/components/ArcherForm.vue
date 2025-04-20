@@ -1,3 +1,34 @@
+<script setup lang="ts">
+import { ref, defineProps } from "vue";
+import {
+  AGE_GROUPS,
+  BOW_TYPES,
+  GENDERS,
+  SPECIAL_CATEGORIES,
+  translateAgeGroup,
+} from "@/constants/categories";
+
+import type { Archer } from "../types";
+
+const props = defineProps({
+  archer: (Object as () => Archer) || undefined,
+  closeForm: Function,
+  saveArcher: Function,
+});
+
+const selectedSpecialCategory = ref("");
+const selectedAgeGroup = ref<keyof typeof AGE_GROUPS>(AGE_GROUPS.S);
+const archer = ref<Partial<Archer>>({
+  lastName: "",
+  firstName: "",
+  club: "",
+  category: "",
+  gender: GENDERS.MALE,
+  bowType: BOW_TYPES.AV,
+  license: "",
+});
+</script>
+
 <template>
   <h2>{{ editingArcher ? "Modifier" : "Ajouter" }} un archer</h2>
   <form @submit.prevent="props.saveArcher">
@@ -77,37 +108,6 @@
     </div>
   </form>
 </template>
-
-<script setup lang="ts">
-import { ref, defineProps } from "vue";
-import {
-  AGE_GROUPS,
-  BOW_TYPES,
-  GENDERS,
-  SPECIAL_CATEGORIES,
-  translateAgeGroup,
-} from "../constants/categories";
-
-import type { Archer } from "../types";
-
-const props = defineProps({
-  archer: (Object as () => Archer) || undefined,
-  closeForm: Function,
-  saveArcher: Function,
-});
-
-const selectedSpecialCategory = ref("");
-const selectedAgeGroup = ref<keyof typeof AGE_GROUPS>(AGE_GROUPS.S);
-const archer = ref<Partial<Archer>>({
-  lastName: "",
-  firstName: "",
-  club: "",
-  category: "",
-  gender: GENDERS.MALE,
-  bowType: BOW_TYPES.AV,
-  license: "",
-});
-</script>
 
 <style scoped>
 .form-group {

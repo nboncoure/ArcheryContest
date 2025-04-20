@@ -1,3 +1,22 @@
+/*
+
+  Data model structure:
+    Competition
+      ├── Flights[]
+      │     ├── Targets[]
+      │     └── Assignments[]
+      ├── Archers[]
+      └── Scores[] → Rounds[] → Ends[] → Arrows[]
+
+  Flight => Départ
+  Target => Cible / paillon
+  Target Face => Blason
+  Assignment => Affectation
+  Round => Série
+  End => Volé
+  Arrow => Flèche
+*/
+
 export type ArcherGender = "M" | "F";
 export type CompetitionType = "indoor" | "outdoor" | "18m";
 export type TargetPosition = "A" | "B" | "C" | "D";
@@ -27,9 +46,9 @@ export interface Archer {
   ageCategory: AgeCategory;
   category?: string;
   bowType: BowType;
-  gender: "M" | "F";
+  gender: ArcherGender;
   license: string;
-  sessionId: number;
+  flightId?: number;
   isBeginner: boolean;
   isDisabled: boolean;
   isVisuallyImpaired: boolean;
@@ -45,10 +64,10 @@ export interface TargetAssignment {
   archerId: string;
   targetNumber: number;
   position: TargetPosition;
-  sessionId: number;
+  flightId: number;
 }
 
-export interface Session {
+export interface Flight {
   id: number;
   name: string;
   startTime?: Date;
@@ -56,36 +75,49 @@ export interface Session {
   assignments: TargetAssignment[];
 }
 
-export interface Competition {
-  id: string;
-  name: string;
-  date: string;
-  location: string;
-  type: CompetitionType;
-  numberOfTargets: number;
-  numberOfSessions: number;
-  archers: Archer[];
-  sessions: Session[];
-  status: CompetitionStatus;
-  createdAt: string;
-  updatedAt: string;
-  scores: Score[];
+export interface Arrow {
+  value: number | null;
+  status?: "valid" | "dropped" | "annulled" | "not-shot";
 }
 
-export interface Score {
+export interface End {
   id: string;
-  archerId: string;
-  sessionId: number;
-  targetNumber: number;
-  position: TargetPosition;
-  series: Series[];
+  arrows: Arrow[];
+  total: number;
+}
+
+export interface Round {
+  id: number;
+  ends: End[];
   total: number;
   tens: number;
   nines: number;
 }
 
-export interface Series {
+export interface ArcherScore {
   id: string;
-  arrows: number[];
-  total: number;
+  archerId: string;
+  flightId: number;
+  targetNumber: number;
+  position: TargetPosition;
+  rounds: Round[];
+  total?: number;
+  tens?: number;
+  nines?: number;
+}
+
+export interface Competition {
+  id: string;
+  name: string;
+  date: Date;
+  location: string;
+  type: CompetitionType;
+  numberOfTargets: number;
+  numberOfFlights: number;
+  archers: Archer[];
+  flights: Flight[];
+  status: CompetitionStatus;
+  createdAt: string;
+  updatedAt: string;
+  scores: ArcherScore[];
 }

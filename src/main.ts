@@ -31,7 +31,8 @@ const router = createRouter({
         { path: 'rankings', component: Rankings }
       ]
     },
-    { path: '/competition/:id/edit', component: CompetitionForm }
+    { path: '/competition/:id/edit', component: CompetitionForm },
+    { path: '/about', component: () => import('./views/AboutView.vue') }
   ]
 })
 

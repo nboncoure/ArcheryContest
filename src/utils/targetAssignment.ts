@@ -5,8 +5,9 @@ import type {
   BowType,
   Competition,
   CompetitionType,
-  Session,
+  Flight,
   Target,
+  TargetAssignment,
   TargetPosition,
 } from "../types";
 import { findCompetitionTargetConfig } from "../constants/staticData";
@@ -59,7 +60,7 @@ if (!Array.prototype.toBalancedGroups) {
   };
 }
 
-export function configureTargets(competition: Competition): Session[] {
+export function configureTargets(competition: Competition): Flight[] {
   return competition.archers
     .map((archer) =>
       findCompetitionTargetConfig(
@@ -107,7 +108,7 @@ export function configureTargets(competition: Competition): Session[] {
     })
     .toBalancedGroups(competition.numberOfTargets)
     .map(
-      (targetConfigs: Partial<Target>[], index: number): Session => ({
+      (targetConfigs: Partial<Target>[], index: number): Flight => ({
         id: index,
         name: `Départ ${index + 1}`,
         // startTime: competition.date,
@@ -153,7 +154,7 @@ function groupArchers(
 export function assignArchers_new(
   competition: Competition,
   keepExistingAssignments: boolean = false
-): Archer[] {
+): TargetAssignment[] {
   return (
     competition.archers
       // Si on veut garder les attributions existantes, on ne garde que les archers sans cible
@@ -171,7 +172,7 @@ export function assignArchers_new(
 export function assignArchers(
   competition: Competition,
   keepExistingAssignments: boolean = false
-): Archer[] {
+): TargetAssignment[] {
   const updatedArchers = [...competition.archers];
   let unassignedArchers: Archer[] = [];
 
@@ -179,7 +180,7 @@ export function assignArchers(
   if (!keepExistingAssignments) {
     updatedArchers.forEach((archer) => {
       archer.target = undefined;
-      archer.session = undefined;
+      archer.flight = undefined;
     });
   }
 
@@ -189,29 +190,29 @@ export function assignArchers(
     competition.type
   );
 
-  // Calculer le nombre total de positions disponibles par session
-  const sessionCapacities = competition.sessions.map((session) => {
+  // Calculer le nombre total de positions disponibles par départ
+  const flightCapacities = competition.flights.map((flight) => {
     return {
-      sessionId: session.id,
-      targets: session.targets,
-      totalPositions: session.targets.length * 4,
+      flightId: flight.id,
+      targets: flight.targets,
+      totalPositions: flight.targets.length * 4,
     };
   });
 
-  // Pour chaque session
-  competition.sessions.forEach((session) => {
+  // Pour chaque départ
+  competition.flights.forEach((flight) => {
     // Créer une map des positions disponibles pour chaque cible
     const availablePositions = new Map<number, TargetPosition[]>();
 
     // Initialiser les positions disponibles
-    session.targets.forEach((target) => {
+    flight.targets.forEach((target) => {
       availablePositions.set(target.number, ["A", "B", "C", "D"]);
     });
 
     // Marquer les positions déjà occupées si keepExistingAssignments
     if (keepExistingAssignments) {
       updatedArchers.forEach((archer) => {
-        if (archer.target && archer.session === session.id) {
+        if (archer.target && archer.flightId === flight.id) {
           const positions = availablePositions.get(archer.target.number);
           if (positions) {
             const index = positions.indexOf(archer.target.position);
@@ -225,8 +226,8 @@ export function assignArchers(
 
     // Pour chaque groupe d'archers
     archerGroups.forEach((group) => {
-      // Trouver les cibles compatibles dans cette session
-      const compatibleTargets = session.targets
+      // Trouver les cibles compatibles dans ce départ
+      const compatibleTargets = flight.targets
         .filter(
           (target) =>
             target.distance === group.targetConfig.distance &&
@@ -236,7 +237,7 @@ export function assignArchers(
         .sort((a, b) => a - b); // Trier les numéros de cible
 
       if (compatibleTargets.length === 0) {
-        // Si aucune cible compatible dans cette session, passer au groupe suivant
+        // Si aucune cible compatible dans ce départ, passer au groupe suivant
         return;
       }
 
@@ -257,7 +258,7 @@ export function assignArchers(
             );
             updatedArchers[archerIndex] = {
               ...archer,
-              session: session.id,
+              flightId: flight.id,
               target: {
                 number: targetNumber,
                 position: position,
@@ -269,22 +270,22 @@ export function assignArchers(
         }
 
         if (!assigned) {
-          // Ajouter l'archer à la liste des non assignés pour réessayer dans une autre session
+          // Ajouter l'archer à la liste des non assignés pour réessayer dans un autre départ
           unassignedArchers.push(archer);
         }
       }
     });
   });
 
-  // Réessayer d'assigner les archers non assignés dans d'autres sessions
+  // Réessayer d'assigner les archers non assignés dans d'autres départ
   if (unassignedArchers.length > 0) {
     const unassignedGroups = groupArchers(unassignedArchers, competition.type);
 
     unassignedGroups.forEach((group) => {
       group.archers.forEach((archer) => {
-        // Parcourir toutes les sessions pour trouver une place
-        for (const session of competition.sessions) {
-          const compatibleTargets = session.targets
+        // Parcourir tous les départs pour trouver une place
+        for (const flight of competition.flights) {
+          const compatibleTargets = flight.targets
             .filter(
               (target) =>
                 target.distance === group.targetConfig.distance &&
@@ -298,7 +299,7 @@ export function assignArchers(
               // Vérifier si la position est libre
               return !updatedArchers.some(
                 (a) =>
-                  a.session === session.id &&
+                  a.flightId === flight.id &&
                   a.target?.number === targetNumber &&
                   a.target?.position === pos
               );
@@ -310,7 +311,7 @@ export function assignArchers(
               );
               updatedArchers[archerIndex] = {
                 ...archer,
-                session: session.id,
+                flightId: flight.id,
                 target: {
                   number: targetNumber,
                   position: positions[0] as TargetPosition,

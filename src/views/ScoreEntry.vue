@@ -12,7 +12,7 @@ import {
   ListboxOptions,
   ListboxOption,
 } from "@headlessui/vue";
-import { ChevronUpDownIcon, CheckIcon, ClipboardDocumentListIcon } from "@heroicons/vue/24/outline";
+import { ChevronUpDownIcon, CheckIcon } from "@heroicons/vue/24/outline";
 
 const route = useRoute();
 const competitionStore = useCompetitionStore();

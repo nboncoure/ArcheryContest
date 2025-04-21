@@ -102,13 +102,13 @@ export const archerImportService = {
         "";
 
       // Extraction du numéro de départ
-      const sessionId = row["N° Départ"]? parseInt(row["N° Départ"]) : undefined;
+      const flightId = row["N° Départ"]? parseInt(row["N° Départ"]) : undefined;
       
       // Vérification du statut d'importation
       let importStatus: ImportStatus = 'ok';
       let importMessage = '';
       
-      if (!sessionId || sessionId < 1) {
+      if (!flightId || flightId < 1) {
         importStatus = 'error';
         importMessage = "Numéro de départ invalide";
       } else if (!ageCategory) {
@@ -136,7 +136,7 @@ export const archerImportService = {
         firstName: row["Prénom"] || "",
         club: row["Club"] || "",
         birthYear,
-        sessionId,
+        flightId,
         ageCategory: ageCategory || AGE_CATEGORIES[0], // Défaut à Poussin si non reconnu
         gender,
         bowType: bowType || BOW_TYPES[0], // Défaut à Arc nu si non reconnu
@@ -145,7 +145,6 @@ export const archerImportService = {
         isBeginner: row["Débutant"] === "D" || row["Débutant"] === "Oui",
         isDisabled: row["Handicapè"] === "H" || row["Handicapé"] === "Oui",
         isVisuallyImpaired: row["Malvoyant"] === "M" || row["Malvoyant"] === "Oui",
-        session: row["N° Départ"] ? parseInt(row["N° Départ"]) : undefined,
         importStatus,
         importMessage
       };

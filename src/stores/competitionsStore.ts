@@ -334,6 +334,9 @@ export const useCompetitionStore = defineStore("competition", () => {
         const round = score.rounds.find(r => r.id === roundId);
         if (round) {
           round.total = value;
+          
+          // Recalculate the overall score total after updating a round
+          score.total = score.rounds.reduce((sum, r) => sum + r.total, 0);
         }
       } else {
         score.total = value;
@@ -341,7 +344,7 @@ export const useCompetitionStore = defineStore("competition", () => {
     }
   }
 
-  function updateArcherTens(competitionId: string, archerId: string, flightId: number, targetNumber: number, value: number) {
+  function updateArcherTens(competitionId: string, archerId: string, flightId: number, roundId: number, targetNumber: number, value: number) {
     if (isNaN(value) || value < 0 || value > 30) return;
 
     const competition = competitions.value.find((c) => c.id === competitionId);
@@ -354,11 +357,21 @@ export const useCompetitionStore = defineStore("competition", () => {
     );
     
     if (score) {
-      score.tens = value;
+      if (roundId !== undefined) {
+        const round = score.rounds.find(r => r.id === roundId);
+        if (round) {
+          round.tens = value;
+
+          // Recalculate the overall score tens after updating a round
+          score.tens = score.rounds.reduce((sum, r) => sum + r.tens, 0);
+        }
+      } else {
+        score.tens = value;
+      }
     }
   }
 
-  function updateArcherNines(competitionId: string, archerId: string, flightId: number, targetNumber: number, value: number) {
+  function updateArcherNines(competitionId: string, archerId: string, flightId: number, roundId: number, targetNumber: number, value: number) {
     if (isNaN(value) || value < 0 || value > 30) return;
 
     const competition = competitions.value.find((c) => c.id === competitionId);
@@ -371,7 +384,16 @@ export const useCompetitionStore = defineStore("competition", () => {
     );
     
     if (score) {
-      score.nines = value;
+      if (roundId !== undefined) {
+        const round = score.rounds.find(r => r.id === roundId);
+        if (round) {
+          round.nines = value;
+          // Recalculate the overall score nines after updating a round
+          score.nines = score.rounds.reduce((sum, r) => sum + r.nines, 0);
+        }
+      } else {
+        score.nines = value;
+      }
     }
   }
 

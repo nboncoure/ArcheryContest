@@ -109,12 +109,12 @@ export function configureTargets(competition: Competition): Flight[] {
     .toBalancedGroups(competition.numberOfTargets)
     .map(
       (targetConfigs: Partial<Target>[], index: number): Flight => ({
-        id: index,
+        id: index + 1,
         name: `Départ ${index + 1}`,
-        // startTime: competition.date,
         assignments: [],
         targets: targetConfigs.map(
           (targetConfig: Partial<Target>, i: number): Target => ({
+            id: uuidv4(), // Ajouter un ID pour chaque cible
             number: i + 1,
             distance: targetConfig.distance || 0,
             faceSize: targetConfig.faceSize || 0,
@@ -132,7 +132,7 @@ function groupArchers(
   const groups = new Map<string, ArcherGroup>();
 
   archers.forEach((archer) => {
-    const key = `${archer.bowType}-${archer.ageCategory?.code}`;
+    const key = `${archer.bowType.code}-${archer.ageCategory.code}`;
     if (!groups.has(key)) {
       groups.set(key, {
         bowType: archer.bowType,
@@ -151,179 +151,90 @@ function groupArchers(
   return Array.from(groups.values());
 }
 
-export function assignArchers_new(
-  competition: Competition,
-  keepExistingAssignments: boolean = false
-): TargetAssignment[] {
-  return (
-    competition.archers
-      // Si on veut garder les attributions existantes, on ne garde que les archers sans cible
-      .filter((archer) => !keepExistingAssignments || !archer.target)
-      // Trier les archers par type d'arc et catégorie d'âge
-      .sort((a, b) => {
-        if (a.bowType === b.bowType) {
-          return a.ageCategory.localeCompare(b.ageCategory);
-        }
-        return a.bowType.localeCompare(b.bowType);
-      })
-  );
-}
-
 export function assignArchers(
   competition: Competition,
+  flight: Flight,
   keepExistingAssignments: boolean = false
 ): TargetAssignment[] {
-  const updatedArchers = [...competition.archers];
-  let unassignedArchers: Archer[] = [];
-
-  // Réinitialiser les attributions si demandé
-  if (!keepExistingAssignments) {
-    updatedArchers.forEach((archer) => {
-      archer.target = undefined;
-      archer.flight = undefined;
-    });
-  }
-
-  // Grouper les archers par type d'arc et catégorie d'âge
-  const archerGroups = groupArchers(
-    updatedArchers.filter((a) => !a.target || !keepExistingAssignments),
-    competition.type
+  let assignments: TargetAssignment[] = keepExistingAssignments 
+    ? [...flight.assignments] 
+    : [];
+  
+  // Get archers assigned to this flight
+  const flightArchers = competition.archers.filter(archer => 
+    archer.flightId === flight.id
   );
-
-  // Calculer le nombre total de positions disponibles par départ
-  const flightCapacities = competition.flights.map((flight) => {
-    return {
-      flightId: flight.id,
-      targets: flight.targets,
-      totalPositions: flight.targets.length * 4,
-    };
+  
+  // If keeping existing assignments, find archers that are not yet assigned
+  const unassignedArchers = keepExistingAssignments
+    ? flightArchers.filter(archer => 
+        !assignments.some(assignment => assignment.archerId === archer.id)
+      )
+    : flightArchers;
+  
+  // Group unassigned archers by bow type and age category
+  const archerGroups = groupArchers(unassignedArchers, competition.type);
+  
+  // Create a map of available positions for each target
+  const availablePositions = new Map<string, TargetPosition[]>();
+  
+  // Initialize available positions
+  flight.targets.forEach(target => {
+    availablePositions.set(target.id, ["A", "B", "C", "D"]);
   });
-
-  // Pour chaque départ
-  competition.flights.forEach((flight) => {
-    // Créer une map des positions disponibles pour chaque cible
-    const availablePositions = new Map<number, TargetPosition[]>();
-
-    // Initialiser les positions disponibles
-    flight.targets.forEach((target) => {
-      availablePositions.set(target.number, ["A", "B", "C", "D"]);
-    });
-
-    // Marquer les positions déjà occupées si keepExistingAssignments
-    if (keepExistingAssignments) {
-      updatedArchers.forEach((archer) => {
-        if (archer.target && archer.flightId === flight.id) {
-          const positions = availablePositions.get(archer.target.number);
-          if (positions) {
-            const index = positions.indexOf(archer.target.position);
-            if (index > -1) {
-              positions.splice(index, 1);
-            }
-          }
-        }
-      });
-    }
-
-    // Pour chaque groupe d'archers
-    archerGroups.forEach((group) => {
-      // Trouver les cibles compatibles dans ce départ
-      const compatibleTargets = flight.targets
-        .filter(
-          (target) =>
-            target.distance === group.targetConfig.distance &&
-            target.faceSize === group.targetConfig.faceSize
-        )
-        .map((target) => target.number)
-        .sort((a, b) => a - b); // Trier les numéros de cible
-
-      if (compatibleTargets.length === 0) {
-        // Si aucune cible compatible dans ce départ, passer au groupe suivant
-        return;
-      }
-
-      // Pour chaque archer non assigné dans le groupe
-      for (const archer of group.archers) {
-        let assigned = false;
-
-        // Chercher une position disponible sur une cible compatible
-        for (const targetNumber of compatibleTargets) {
-          const positions = availablePositions.get(targetNumber);
-          if (positions && positions.length > 0) {
-            // Prendre la première position disponible
-            const position = positions.shift()!;
-
-            // Mettre à jour l'archer
-            const archerIndex = updatedArchers.findIndex(
-              (a) => a.id === archer.id
-            );
-            updatedArchers[archerIndex] = {
-              ...archer,
-              flightId: flight.id,
-              target: {
-                number: targetNumber,
-                position: position,
-              },
-            };
-            assigned = true;
-            break;
-          }
-        }
-
-        if (!assigned) {
-          // Ajouter l'archer à la liste des non assignés pour réessayer dans un autre départ
-          unassignedArchers.push(archer);
+  
+  // Mark positions that are already occupied if keeping existing assignments
+  if (keepExistingAssignments) {
+    assignments.forEach(assignment => {
+      const positions = availablePositions.get(assignment.targetId);
+      if (positions) {
+        const index = positions.indexOf(assignment.position);
+        if (index > -1) {
+          positions.splice(index, 1);
         }
       }
-    });
-  });
-
-  // Réessayer d'assigner les archers non assignés dans d'autres départ
-  if (unassignedArchers.length > 0) {
-    const unassignedGroups = groupArchers(unassignedArchers, competition.type);
-
-    unassignedGroups.forEach((group) => {
-      group.archers.forEach((archer) => {
-        // Parcourir tous les départs pour trouver une place
-        for (const flight of competition.flights) {
-          const compatibleTargets = flight.targets
-            .filter(
-              (target) =>
-                target.distance === group.targetConfig.distance &&
-                target.faceSize === group.targetConfig.faceSize
-            )
-            .map((target) => target.number)
-            .sort((a, b) => a - b);
-
-          for (const targetNumber of compatibleTargets) {
-            const positions = ["A", "B", "C", "D"].filter((pos) => {
-              // Vérifier si la position est libre
-              return !updatedArchers.some(
-                (a) =>
-                  a.flightId === flight.id &&
-                  a.target?.number === targetNumber &&
-                  a.target?.position === pos
-              );
-            });
-
-            if (positions.length > 0) {
-              const archerIndex = updatedArchers.findIndex(
-                (a) => a.id === archer.id
-              );
-              updatedArchers[archerIndex] = {
-                ...archer,
-                flightId: flight.id,
-                target: {
-                  number: targetNumber,
-                  position: positions[0] as TargetPosition,
-                },
-              };
-              break;
-            }
-          }
-        }
-      });
     });
   }
-
-  return updatedArchers;
+  
+  // For each archer group
+  archerGroups.forEach(group => {
+    // Find compatible targets in this flight
+    const compatibleTargets = flight.targets
+      .filter(target => 
+        target.distance === group.targetConfig.distance &&
+        target.faceSize === group.targetConfig.faceSize
+      )
+      .sort((a, b) => a.number - b.number);
+    
+    if (compatibleTargets.length === 0) {
+      // No compatible targets in this flight, skip to next group
+      return;
+    }
+    
+    // For each unassigned archer in the group
+    for (const archer of group.archers) {
+      // Look for an available position on a compatible target
+      for (const target of compatibleTargets) {
+        const positions = availablePositions.get(target.id);
+        if (positions && positions.length > 0) {
+          // Take the first available position
+          const position = positions.shift()!;
+          
+          // Create a new assignment
+          const newAssignment: TargetAssignment = {
+            id: uuidv4(),
+            archerId: archer.id,
+            targetNumber: target.number,
+            flightId: flight.id,
+            position: position
+          };
+          
+          assignments.push(newAssignment);
+          break;
+        }
+      }
+    }
+  });
+  
+  return assignments;
 }

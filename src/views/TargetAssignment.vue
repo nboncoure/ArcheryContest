@@ -248,7 +248,7 @@ import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useCompetitionStore } from "../stores/competitionsStore";
 import { storeToRefs } from "pinia";
-import { generateScoreSheets } from "../utils/scoresheetPDF";
+import { generateScoreSheets } from "@/utils/scoresheetPDF";
 import type {
   Archer,
   Competition,
@@ -257,9 +257,9 @@ import type {
   TargetPosition,
   TargetAssignment,
 } from "../types";
-import { assignArchers, configureTargets } from "../utils/targetAssignment";
-import TargetGrid from "../components/target/TargetGrid.vue";
-import TargetSidePanel from "../components/target/TargetSidePanel.vue";
+import { assignArchers, configureTargets } from "@/utils/targetAssignment";
+import TargetGrid from "@/components/target/TargetGrid.vue";
+import TargetSidePanel from "@/components/target/TargetSidePanel.vue";
 import {
   PlusIcon,
   TrashIcon,
@@ -269,10 +269,15 @@ import {
   ChevronUpDownIcon,
 } from "@heroicons/vue/24/outline";
 import {
+  Dialog,
+  DialogPanel,
+  DialogTitle,
   Listbox,
   ListboxButton,
   ListboxOptions,
   ListboxOption,
+  TransitionRoot,
+  TransitionChild,
 } from "@headlessui/vue";
 
 const route = useRoute();
@@ -385,13 +390,25 @@ function deleteFlight() {
 }
 
 function addTarget() {
-  if (!competition.value || !currentFlight) return;
+  if (!competition.value || !currentFlight.value) return;
 
   const updatedFlights = competition.value.flights.map((flight: Flight) => {
     if (flight.id === selectedFlightId.value) {
+      // Create a new target with the next number
+      const newTargetNumber = flight.targets.length > 0 
+        ? Math.max(...flight.targets.map(t => t.number)) + 1 
+        : 1;
+      
+      const newTarget: Target = {
+        id: crypto.randomUUID(),
+        number: newTargetNumber,
+        distance: 18, // Default distance
+        faceSize: 40, // Default face size
+      };
+      
       return {
         ...flight,
-        // numberOfTargets: flight.numberOfTargets + 1,
+        targets: [...flight.targets, newTarget]
       };
     }
     return flight;
@@ -406,11 +423,11 @@ function removeTarget(targetNum: number) {
   if (!competition.value || !currentFlight) return;
 
   // Vérifier si la cible est occupée
-  const archersOnTarget = filteredArchers.value.filter(
-    (archer: Archer) => archer.target?.number === targetNum
+  const assignmentsOnTarget = currentFlight.value.assignments.filter(
+    (a) => a.targetNumber === targetNum
   );
 
-  if (archersOnTarget.length > 0) {
+  if (assignmentsOnTarget.length > 0) {
     if (
       !confirm(
         "Cette cible contient des archers. Voulez-vous vraiment la supprimer ?"
@@ -418,41 +435,73 @@ function removeTarget(targetNum: number) {
     ) {
       return;
     }
+    
     // Supprimer les attributions pour cette cible
-    archersOnTarget.forEach((archer: Archer) => {
-      competitionStore.updateArcherTarget(
-        competition.value!.id,
-        archer.id,
-        selectedFlightId.value,
-        undefined
-      );
+    const updatedAssignments = currentFlight.value.assignments.filter(
+      (a) => a.targetNumber !== targetNum
+    );
+    
+    // Mettre à jour les attributions des cibles suivantes
+    updatedAssignments.forEach(assignment => {
+      if (assignment.targetNumber > targetNum) {
+        assignment.targetNumber -= 1;
+      }
+    });
+    
+    // Mettre à jour les cibles
+    const updatedTargets = currentFlight.value.targets.filter(
+      (t) => t.number !== targetNum
+    );
+    
+    // Mettre à jour les numéros des cibles suivantes
+    updatedTargets.forEach(target => {
+      if (target.number > targetNum) {
+        target.number -= 1;
+      }
+    });
+    
+    // Mettre à jour le départ
+    const updatedFlights = competition.value.flights.map((flight: Flight) => {
+      if (flight.id === selectedFlightId.value) {
+        return {
+          ...flight,
+          targets: updatedTargets,
+          assignments: updatedAssignments
+        };
+      }
+      return flight;
+    });
+
+    competitionStore.updateCompetition(competition.value.id, {
+      flights: updatedFlights,
+    });
+  } else {
+    // Si la cible n'est pas occupée, la supprimer directement
+    const updatedTargets = currentFlight.value.targets.filter(
+      (t) => t.number !== targetNum
+    );
+    
+    // Mettre à jour les numéros des cibles suivantes
+    updatedTargets.forEach(target => {
+      if (target.number > targetNum) {
+        target.number -= 1;
+      }
+    });
+    
+    const updatedFlights = competition.value.flights.map((flight: Flight) => {
+      if (flight.id === selectedFlightId.value) {
+        return {
+          ...flight,
+          targets: updatedTargets
+        };
+      }
+      return flight;
+    });
+
+    competitionStore.updateCompetition(competition.value.id, {
+      flights: updatedFlights,
     });
   }
-
-  // Mettre à jour les numéros de cible pour les cibles suivantes
-  filteredArchers.value.forEach((archer: Archer) => {
-    if (archer.target && archer.target.number > targetNum) {
-      archersStore.updateArcherTarget(archer.id, {
-        number: archer.target.number - 1,
-        position: archer.target.position,
-      });
-    }
-  });
-
-  // Mettre à jour le nombre de cibles
-  const updatedFlights = competition.value.flights.map((flight: Flight) => {
-    if (flight.id === selectedFlightId.value) {
-      return {
-        ...flight,
-        // numberOfTargets: flight.numberOfTargets - 1,
-      };
-    }
-    return flight;
-  });
-
-  competitionStore.updateCompetition(competition.value.id, {
-    flights: updatedFlights,
-  });
 }
 
 function updateTargetConfig(target: Target) {
@@ -477,10 +526,12 @@ function updateTargetConfig(target: Target) {
 
 function closeTargetConfigModal() {
   editingTarget.value = null;
+  showTargetConfigModal.value = false; // Add this line to hide the modal
 }
 
 function editTargetConfig(target: Target) {
   editingTarget.value = { ...target };
+  showTargetConfigModal.value = true; // Add this line to show the modal
 }
 
 function handlePositionDragStart(
@@ -685,8 +736,10 @@ function autoConfigure() {
 function autoAssign(keepAssignments: boolean = true) {
   if (!competition.value || !currentFlight.value) return;
 
+  console.log("Auto-assigning...");
   const newAssignments = assignArchers(
     competition.value,
+    currentFlight.value,
     keepAssignments
   );
 

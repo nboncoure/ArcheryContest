@@ -145,6 +145,7 @@ function updateArcherTens(archerId: string, value: number) {
     props.competition.id,
     archerId,
     props.selectedFlightId,
+    props.selectedRoundId,
     props.selectedTargetNumber!,
     value
   );
@@ -158,6 +159,7 @@ function updateArcherNines(archerId: string, value: number) {
     props.competition.id,
     archerId,
     props.selectedFlightId,
+    props.selectedRoundId,
     props.selectedTargetNumber!,
     value
   );

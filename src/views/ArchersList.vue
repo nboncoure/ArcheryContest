@@ -105,7 +105,7 @@
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center gap-2">
                   <BowIcon class="w-5 h-5 text-gray-400" />
-                  {{ archer.bowType.label }}
+                  {{ archer.bowType?.label }}
                 </div>
               </td>
               <td class="px-6 py-4 text-right whitespace-nowrap">
@@ -272,7 +272,7 @@
 
                   <div class="form-group">
                     <label for="bowType">Type d'arc</label>
-                    <select id="bowType" v-model="archerForm.bowType" required>
+                    <select id="bowType" v-model="archerForm.bowType.code" required>
                       <option
                         v-for="(bowType, key) in BOW_TYPES"
                         :key="key"
@@ -494,13 +494,18 @@ const sortedArchers = computed(() => {
 });
 
 watch(
-  [selectedAgeGroup, archerForm],
-  ([age, form]) => {
+  [selectedAgeGroup, () => archerForm.value.bowType?.code, () => archerForm.value.gender],
+  ([age, bowTypeCode, gender]) => {
     archerForm.value.category = findCategoryCode(
       age,
-      form.bowType?.code,
-      form.gender
+      bowTypeCode,
+      gender
     );
+    
+    // Update the full bow type object when code changes
+    if (bowTypeCode) {
+      archerForm.value.bowType = getBowTypeByCode(bowTypeCode);
+    }
   },
   { immediate: true }
 );
@@ -517,8 +522,21 @@ function sort(field: string) {
 function editArcher(archer: Archer) {
   editingArcher.value = archer;
   archerForm.value = { ...archer };
-
-  selectedSpecialCategory.value = "";
+  
+  // Set the age group based on the archer's age category
+  selectedAgeGroup.value = archer.ageCategory.code;
+  
+  // Set special category if applicable
+  if (archer.isBeginner) {
+    selectedSpecialCategory.value = SPECIAL_CATEGORIES.BEGINNER;
+  } else if (archer.isDisabled) {
+    selectedSpecialCategory.value = SPECIAL_CATEGORIES.DISABLED;
+  } else if (archer.isVisuallyImpaired) {
+    selectedSpecialCategory.value = SPECIAL_CATEGORIES.VISUALLY_IMPAIRED;
+  } else {
+    selectedSpecialCategory.value = "";
+  }
+  
   showAddForm.value = true;
 }
 

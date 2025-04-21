@@ -73,15 +73,6 @@ async function processFile(file: File) {
     // Utiliser le service pour traiter le fichier
     const archers = await archerImportService.processFile(file);
     importData.value = archers;
-    
-    // Vérifier les licences problématiques mentionnées pour le débogage
-    const specificLicenses = ["60056577", "65177772", "94028769", "40265127", "23436017", "97019840"];
-    specificLicenses.forEach(license => {
-      const archer = archers.find(a => a.license === license);
-      if (archer && archer.importStatus !== 'ok') {
-        console.warn(`Problème détecté pour la licence ${license}:`, archer.importMessage);
-      }
-    });
   } catch (error) {
     console.error("Erreur lors du traitement du fichier:", error);
     alert(`Erreur lors du traitement du fichier: ${error}`);
@@ -270,7 +261,7 @@ function cancelImport() {
                   {{ archer.category }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  {{ archer.sessionId }}
+                  {{ archer.flightId }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   {{ archer.license }}

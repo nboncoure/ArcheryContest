@@ -43,6 +43,7 @@ export interface Archer {
   firstName: string;
   club: string;
   birthYear: number;
+  departmentNumber: number;
   ageCategory: AgeCategory;
   category?: string;
   bowType: BowType;

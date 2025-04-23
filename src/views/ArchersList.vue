@@ -96,8 +96,11 @@
               <td class="px-6 py-4">
                 <div class="truncate max-w-[150px] md:max-w-[180px] lg:max-w-[220px]" :title="archer.club">
                   {{ archer.club }}
-                </div>
+                </div>    
               </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                {{ archer.departmentNumber }}
+              </td> 
               <td class="px-6 py-4 whitespace-nowrap">{{ archer.category }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
                 {{ archer.gender === "M" ? "Homme" : "Femme" }}
@@ -235,6 +238,16 @@
                       type="text"
                       id="club"
                       v-model="archerForm.club"
+                      required
+                    />
+                  </div>
+                
+                  <div class="form-group">
+                    <label for="club">Numéro de département</label>
+                    <input
+                      type="number"
+                      id="departmentNumber"
+                      v-model="archerForm.departmentNumber"
                       required
                     />
                   </div>
@@ -425,6 +438,7 @@ const archerForm = ref<Partial<Archer>>({
   lastName: "",
   firstName: "",
   club: "",
+  departmentNumber: undefined,
   license: "",
   category: "",
   gender: "M",
@@ -448,6 +462,7 @@ const columns = [
   { key: "lastName", label: "Nom", sortable: true },
   { key: "firstName", label: "Prénom", sortable: true },
   { key: "club", label: "Club", sortable: true },
+  { key: "departmentNumbert", label: "Numéro de département", sortable: true },
   { key: "category", label: "Catégorie", sortable: true },
   { key: "gender", label: "Genre", sortable: true },
   { key: "bowType", label: "Arc", sortable: true },
@@ -568,6 +583,7 @@ function closeForm() {
     lastName: "",
     firstName: "",
     club: "",
+    departmentNumber: undefined,
     category: "",
     gender: "M",
     ageCategory: getAgeCategoryByCode("S"),

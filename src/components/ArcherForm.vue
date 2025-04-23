@@ -21,6 +21,7 @@ const selectedAgeGroup = ref<keyof typeof AGE_GROUPS>(AGE_GROUPS.S);
 const archer = ref<Partial<Archer>>({
   lastName: "",
   firstName: "",
+  departmentNumber: undefined, 
   club: "",
   category: "",
   gender: GENDERS.MALE,
@@ -40,6 +41,11 @@ const archer = ref<Partial<Archer>>({
     <div class="form-group">
       <label for="firstName">Prénom :</label>
       <input type="text" id="firstName" v-model="archer.firstName" required />
+    </div>
+
+    <div class="form-group">
+      <label for="departmentNumber">Numéro de département :</label>
+      <input type="number" id="departmentNumber" v-model="archer.departmentNumber" required />
     </div>
 
     <div class="form-group">

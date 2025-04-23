@@ -95,6 +95,7 @@ export const archerImportService = {
       
       // Génération de l'ID unique
       const id = row["N° Licence"] || row["License"] || row["Numéro de licence"] || uuidv4();
+
       
       // Génération du code de catégorie
       const categoryCode = ageCategory && bowType ? 
@@ -136,6 +137,7 @@ export const archerImportService = {
         firstName: row["Prénom"] || "",
         club: row["Club"] || "",
         birthYear,
+        departmentNumber: row["Dept."] || row["Département"] || "",  //Extraction du département
         flightId,
         ageCategory: ageCategory || AGE_CATEGORIES[0], // Défaut à Poussin si non reconnu
         gender,
@@ -172,7 +174,7 @@ export const archerImportService = {
       
       // Version 2024-2025 des catégories d'âge
       if (age <= 10) return getAgeCategoryByCode("P"); // Poussin
-      if (age <= 12) return getAgeCategoryByCode("B"); // Benjamin
+      if (age <= 12) return getAgeCategoryByCode("B"); // Benjamin Partie là à modifier/enlever
       if (age <= 14) return getAgeCategoryByCode("M"); // Minime
       if (age <= 17) return getAgeCategoryByCode("C"); // Cadet
       if (age <= 20) return getAgeCategoryByCode("J"); // Junior
@@ -183,30 +185,17 @@ export const archerImportService = {
     
     // Si on n'a pas l'année de naissance, on essaye de déterminer d'après le label
     const ageGroupMapNew: Record<string, string> = {
-      "U11": "P",          // Poussin (- de 11 ans)
-      "U13": "B",          // Benjamin (11-12 ans)
-      "U15": "M",          // Minime (13-14 ans)
-      "U18": "C",          // Cadet (15-17 ans)
-      "U21": "J",          // Junior (18-20 ans)
-      "S1": "S",           // Senior 1 (21-39 ans)
-      "S2": "S",           // Senior 2 (40-49 ans)
-      "S3": "V",           // Senior 3 (50-64 ans)
-      "S4": "SV",          // Senior 4 (65+ ans)
-      // Anciennes catégories pour compatibilité
+
+      //Age and their categories
       "- de 11ans": "P",
       "11 / 12 ans": "B",
       "13 / 14 ans": "M",
-      "15 / 16 ans": "C",
-      "17 / 18 ans": "C",  // Maintenant dans les cadets
-      "17 / 20 ans": "J",
-      "21 / 49 ans": "S",
-      "21 / 39 ans": "S",  // S1
-      "40 / 49 ans": "S",  // S2
-      "50 / 59 ans": "V",
-      "50 / 64 ans": "V",  // S3
-      "60 / 64 ans": "V",
-      "60 et +": "SV",
-      "65 et +": "SV",     // S4
+      "15 / 16 ans": "C",   // Partie là à modifier 
+      "17 / 25 ans": "J",
+      "26 / 49 ans": "S",  
+      "50 / 64 ans": "V",  
+      "65 et +": "SV",     
+
       // Catégories directes
       "Poussin": "P",
       "Benjamin": "B",

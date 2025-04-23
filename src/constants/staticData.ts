@@ -25,10 +25,10 @@ export function getAgeCategoryByCode(code: string): AgeCategory {
 }
 
 export const BOW_TYPES: BowType[] = [
-  { code: "SV", label: "Arc nu", isCompound: false },
-  { code: "AV", label: "Arc classique", isCompound: false },
-  { code: "COSV", label: "Arc à poulies nu", isCompound: true },
-  { code: "COAV", label: "Arc à poulies", isCompound: true },
+  { code: "SV", label: "Classique sans viseur", isCompound: false },
+  { code: "AV", label: "Classique avec viseur", isCompound: false },
+  { code: "COSV", label: "Poulie sans viseur", isCompound: true },
+  { code: "COAV", label: "Poulie avec viseur", isCompound: true },
 ];
 
 export function getBowTypeByCode(code: string): BowType {

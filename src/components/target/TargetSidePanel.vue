@@ -65,10 +65,10 @@ defineEmits<{
           "
         >
           <option value="">Tous</option>
-          <option value="SV">Arc nu</option>
-          <option value="AV">Classique</option>
-          <option value="COSV">Poulies sans viseur</option>
-          <option value="COAV">Poulies</option>
+          <option value="SV">Classique sans viseur</option>
+          <option value="AV">Classique avec viseur</option>
+          <option value="COSV">Poulie sans viseur</option>
+          <option value="COAV">Poulie avec viseur</option>
         </select>
       </div>
 

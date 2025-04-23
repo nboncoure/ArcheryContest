@@ -36,6 +36,10 @@ const props = defineProps({
     type: Number,
     default: null
   },
+  archerEights: {
+    type: Number,
+    default: null
+  },
   isScoreValid: {
     type: Boolean,
     default: true
@@ -50,7 +54,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update-arrow', 'update-total', 'update-tens', 'update-nines']);
+const emit = defineEmits(['update-arrow', 'update-total', 'update-tens', 'update-nines', 'update-eights']);
 
 // Helper function to extract the value from an Arrow object
 // Add this helper function if it doesn't exist
@@ -80,6 +84,12 @@ function updateTens(value: number) {
 function updateNines(value: number) {
   if (!isNaN(value)) {
     emit('update-nines', props.archerId, value);
+  }
+}
+
+function updateEights(value: number) {
+  if (!isNaN(value)) {
+    emit('update-eights', props.archerId, value);
   }
 }
 </script>
@@ -163,6 +173,19 @@ function updateNines(value: number) {
           @input="(e) => updateNines(parseInt((e.target as HTMLInputElement).value))"
         />
       </div>
+
+      <div class="data-cell">
+      <div class="flex justify-center">
+        <input
+          type="number"
+          min="0"
+          max="30"
+          class="w-16 text-center"
+          :value="archerEights || ''"
+          @input="(e) => updateEights(parseInt((e.target as HTMLInputElement).value))"
+        />
+      </div>
+    </div>
     </div>
   </div>
 </template>

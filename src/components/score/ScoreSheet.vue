@@ -29,7 +29,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:showDetailedScores', 'update-arrow', 'update-total', 'update-tens', 'update-nines']);
+const emit = defineEmits(['update:showDetailedScores', 'update-arrow', 'update-total', 'update-tens', 'update-nines', 'update-eights']);
 
 function toggleDetailedScores() {
   emit('update:showDetailedScores', !props.showDetailedScores);
@@ -115,6 +115,12 @@ function getArcherNines(archerId: string): number | null {
   return round?.nines || null;
 }
 
+function getArcherEights(archerId: string): number | null {
+  const score = getOrCreateScore(archerId);
+  const round = findRoundById(score, props.selectedRoundId);
+  return round?.eights || null;
+}
+
 function isScoreValid(archerId: string): boolean {
   const score = getOrCreateScore(archerId);
   if (!score) return true;
@@ -156,6 +162,19 @@ function updateArcherNines(archerId: string, value: number) {
   if (!props.competition) return;
   
   competitionStore.updateArcherNines(
+    props.competition.id,
+    archerId,
+    props.selectedFlightId,
+    props.selectedRoundId,
+    props.selectedTargetNumber!,
+    value
+  );
+}
+
+function updateArcherEights(archerId: string, value: number) {
+  if (!props.competition) return;
+  
+  competitionStore.updateArcherEights(
     props.competition.id,
     archerId,
     props.selectedFlightId,
@@ -243,6 +262,10 @@ function updateArrowScore(
             <div class="data-cell">
               9
             </div>
+
+            <div class="data-cell">
+              8
+            </div>
           </div>
           
           <!-- Archer columns -->
@@ -257,6 +280,7 @@ function updateArrowScore(
             :archer-total="getArcherTotal(assignment.archerId)"
             :archer-tens="getArcherTens(assignment.archerId)"
             :archer-nines="getArcherNines(assignment.archerId)"
+            :archer-eights="getArcherEights(assignment.archerId)"
             :is-score-valid="isScoreValid(assignment.archerId)"
             :get-arrow-score="(endIndex, arrowIndex) => getArrowScore(assignment.archerId, endIndex, arrowIndex)"
             :get-end-total="(endIndex) => getEndTotal(assignment.archerId, endIndex)"
@@ -264,6 +288,7 @@ function updateArrowScore(
             @update-total="updateArcherTotal"
             @update-tens="updateArcherTens"
             @update-nines="updateArcherNines"
+            @update-eights="updateArcherEights"
           />
         </div>
       </div>

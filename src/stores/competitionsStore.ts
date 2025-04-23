@@ -239,7 +239,8 @@ export const useCompetitionStore = defineStore("competition", () => {
       })),
       total: 0,
       tens: 0,
-      nines: 0
+      nines: 0,
+      eights: 0,
     }));
 
     const score: ArcherScore = {
@@ -252,6 +253,7 @@ export const useCompetitionStore = defineStore("competition", () => {
       total: 0,
       tens: 0,
       nines: 0,
+      eights: 0,
     };
 
     competition.scores = [...(competition.scores || []), score];
@@ -308,6 +310,9 @@ export const useCompetitionStore = defineStore("competition", () => {
     );
     round.nines = round.ends.reduce(
       (sum, e) => sum + e.arrows.filter(a => a.status === "valid" && a.value === 9).length,
+      0);
+    round.eights = round.ends.reduce(
+      (sum, e) => sum + e.arrows.filter(a => a.status === "valid" && a.value === 8).length,
       0
     );
 
@@ -315,6 +320,7 @@ export const useCompetitionStore = defineStore("competition", () => {
     score.total = score.rounds.reduce((sum, r) => sum + r.total, 0);
     score.tens = score.rounds.reduce((sum, r) => sum + r.tens, 0);
     score.nines = score.rounds.reduce((sum, r) => sum + r.nines, 0);
+    score.eights = score.rounds.reduce((sum, r) => sum + r.eights, 0);
   }
 
   function updateArcherTotal(competitionId: string, archerId: string, flightId: number, roundId: number, targetNumber: number, value: number) {
@@ -397,6 +403,32 @@ export const useCompetitionStore = defineStore("competition", () => {
     }
   }
 
+  function updateArcherEights(competitionId: string, archerId: string, flightId: number, roundId: number, targetNumber: number, value: number) {
+    if (isNaN(value) || value < 0 || value > 30) return;
+
+    const competition = competitions.value.find((c) => c.id === competitionId);
+    if (!competition) return;
+
+    const score = competition.scores.find(
+      (s) => s.archerId === archerId && 
+             s.flightId === flightId &&
+             s.targetNumber === targetNumber
+    );
+    
+    if (score) {
+      if (roundId !== undefined) {
+        const round = score.rounds.find(r => r.id === roundId);
+        if (round) {
+          round.eights = value;
+          // Recalculate the overall score nines after updating a round
+          score.eights = score.rounds.reduce((sum, r) => sum + r.eights, 0);
+        }
+      } else {
+        score.eights = value;
+      }
+    }
+  }
+
   return {
     competitions,
     createCompetition,
@@ -420,5 +452,6 @@ export const useCompetitionStore = defineStore("competition", () => {
     updateArcherTotal,
     updateArcherTens,
     updateArcherNines,
+    updateArcherEights,
   };
 });

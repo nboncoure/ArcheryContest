@@ -21,7 +21,7 @@ const selectedAgeGroup = ref<keyof typeof AGE_GROUPS>(AGE_GROUPS.S);
 const archer = ref<Partial<Archer>>({
   lastName: "",
   firstName: "",
-  departmentNumber: "",
+  departmentNumber: undefined, 
   club: "",
   category: "",
   gender: GENDERS.MALE,

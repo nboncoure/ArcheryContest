@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import * as XLSX from "xlsx";
-import Papa, { parse } from "papaparse";
+import Papa from "papaparse";
 import { 
   getAgeCategoryByCode, 
   AGE_CATEGORIES, 

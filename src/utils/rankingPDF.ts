@@ -147,9 +147,6 @@ export async function generateRankingPDF(
       colorText,
       colorGrey,
       colorBackground,
-      /*showTens,
-      showNines,
-      showEights,*/
     );
     
     // Ajouter un espacement après la catégorie
@@ -292,9 +289,6 @@ function drawCategory(
   colorText: any,
   colorGrey: any,
   colorBackground: any,
-  /*showTens: boolean,
-  showNines: boolean,
-  showEights: boolean,*/
 ): number {
   // Titre de la catégorie - APRÈS le fond
   page.drawText(category.name, {
@@ -329,8 +323,7 @@ function drawCategory(
     { name: 'Club', width: 180, align: 'left' },
     { name: 'Total', width: 50, align: 'center' }
   ];
-  
-  
+
     columns.push({ name: '10', width: 40, align: 'center' });
   
     columns.push({ name: '9', width: 40, align: 'center' });

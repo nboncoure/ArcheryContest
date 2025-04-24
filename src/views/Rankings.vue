@@ -30,9 +30,6 @@ const showExportModal = ref(false);
 const pdfOptions = ref({
   title: '',
   showDate: true,
- /* showTens: true,
-  showNines: true,
-  showEights: true,*/
   maxCategoriesPerPage: 3
 });
 
@@ -169,10 +166,6 @@ async function generatePDF() {
       groupedRankings.value,
       {
         title: pdfOptions.value.title,
-       /* showDate: pdfOptions.value.showDate,
-        showTens: pdfOptions.value.showTens,
-        showNines: pdfOptions.value.showNines,
-        showEights: pdfOptions.value.showEights,*/
         maxCategoriesPerPage: pdfOptions.value.maxCategoriesPerPage
       }
     );
@@ -371,41 +364,6 @@ async function generatePDF() {
                     </label>
                   </div>
                   
-                  <!--<div class="flex items-center">
-                    <input
-                      id="showTens"
-                      v-model="pdfOptions.showTens"
-                      type="checkbox"
-                      class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                    />
-                    <label for="showTens" class="ml-2 block text-sm text-gray-900">
-                      Afficher les 10
-                    </label>
-                  </div>
-                  
-                  <div class="flex items-center">
-                    <input
-                      id="showNines"
-                      v-model="pdfOptions.showNines"
-                      type="checkbox"
-                      class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                    />
-                    <label for="showNines" class="ml-2 block text-sm text-gray-900">
-                      Afficher les 9
-                    </label>
-                  </div>
-
-                  <div class="flex items-center">
-                    <input
-                      id="showEights"
-                      v-model="pdfOptions.showEights"
-                      type="checkbox"
-                      class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                    />
-                    <label for="showEights" class="ml-2 block text-sm text-gray-900">
-                      Afficher les 8
-                    </label>
-                  </div>-->
                   
                   <div class="form-group">
                     <label for="maxCategoriesPerPage" class="block text-sm font-medium text-gray-700">

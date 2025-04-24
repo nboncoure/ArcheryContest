@@ -173,7 +173,7 @@ function updateEights(value: number) {
           @input="(e) => updateNines(parseInt((e.target as HTMLInputElement).value))"
         />
       </div>
-
+  </div>
       <div class="data-cell">
       <div class="flex justify-center">
         <input
@@ -185,7 +185,8 @@ function updateEights(value: number) {
           @input="(e) => updateEights(parseInt((e.target as HTMLInputElement).value))"
         />
       </div>
-    </div>
+
+    
     </div>
   </div>
 </template>

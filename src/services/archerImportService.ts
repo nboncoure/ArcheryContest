@@ -166,23 +166,7 @@ export const archerImportService = {
    * Mappe une chaîne de catégorie d'âge à une AgeCategory
    */
   mapAgeCategory(ageLabel: string, birthYear?: number): AgeCategory | undefined {
-    // Si on a l'année de naissance, on détermine l'âge et on attribue la catégorie
-    const currentYear = new Date().getFullYear();
-    
-    if (birthYear) {
-      const age = currentYear - birthYear;
-      
-      // Version 2024-2025 des catégories d'âge
-      if (age <= 10) return getAgeCategoryByCode("P"); // Poussin
-      if (age <= 12) return getAgeCategoryByCode("B"); // Benjamin Partie là à modifier/enlever
-      if (age <= 14) return getAgeCategoryByCode("M"); // Minime
-      if (age <= 17) return getAgeCategoryByCode("C"); // Cadet
-      if (age <= 20) return getAgeCategoryByCode("J"); // Junior
-      if (age <= 49) return getAgeCategoryByCode("S"); // Senior
-      if (age <= 64) return getAgeCategoryByCode("V"); // Vétéran
-      return getAgeCategoryByCode("SV"); // Super Vétéran (65+)
-    }
-    
+   
     // Si on n'a pas l'année de naissance, on essaye de déterminer d'après le label
     const ageGroupMapNew: Record<string, string> = {
 
@@ -190,21 +174,12 @@ export const archerImportService = {
       "- de 11ans": "P",
       "11 / 12 ans": "B",
       "13 / 14 ans": "M",
-      "15 / 16 ans": "C",   // Partie là à modifier 
+      "15 / 16 ans": "C",   
       "17 / 25 ans": "J",
       "26 / 49 ans": "S",  
       "50 / 64 ans": "V",  
       "65 et +": "SV",     
 
-      // Catégories directes
-      "Poussin": "P",
-      "Benjamin": "B",
-      "Minime": "M",
-      "Cadet": "C",
-      "Junior": "J",
-      "Senior": "S",
-      "Vétéran": "V",
-      "Super Vétéran": "SV",
     };
 
     // Normalisation du texte pour augmenter les chances de correspondance
@@ -215,19 +190,13 @@ export const archerImportService = {
     // Recherche dans les clés du mapping en ignorant la casse
     for (const [key, value] of Object.entries(ageGroupMapNew)) {
       if (key.toLowerCase() === normalizedAge || 
-          normalizedAge.includes(key.toLowerCase()) ||
-          (key.startsWith("U") && normalizedAge.includes("u" + key.substring(1)))) {
+          normalizedAge.includes(key.toLowerCase()))
+          {
         return getAgeCategoryByCode(value);
       }
     }
 
-    // Si on trouve directement le code dans le texte (P, B, M, C, J, S, V, SV)
-    const directCodes = ["P", "B", "M", "C", "J", "S", "V", "SV"];
-    for (const code of directCodes) {
-      if (normalizedAge === code.toLowerCase()) {
-        return getAgeCategoryByCode(code);
-      }
-    }
+   
     
     // Si aucune correspondance n'est trouvée
     console.warn(`Catégorie d'âge non reconnue: ${ageLabel}`);
@@ -250,10 +219,10 @@ export const archerImportService = {
       "COSV": "COSV",      // Compound sans viseur
       "COAV": "COAV",      // Compound avec viseur
       // Noms complets
-      "Arc nu": "SV",
-      "Arc classique": "AV",
-      "Arc à poulies nu": "COSV",
-      "Arc à poulies": "COAV",
+      "Classique sans viseur": "SV",
+      "Classique avec viseur": "AV",
+      "Poulie sans viseur": "COSV",
+      "Poulie avec viseur": "COAV",
       // Variantes
       "Classique": "AV",
       "Poulies": "COAV",

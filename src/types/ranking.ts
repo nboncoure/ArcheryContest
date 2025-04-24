@@ -28,4 +28,7 @@ export interface RankedArcher extends Archer {
   
   /** Nombre de 9 */
   nines?: number | null;
+
+  /** Nombre de 8 */
+  eights?: number | null;
 }

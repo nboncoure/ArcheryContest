@@ -93,6 +93,7 @@ export interface Round {
   total: number;
   tens: number;
   nines: number;
+  eights: number;
 }
 
 export interface ArcherScore {
@@ -105,6 +106,7 @@ export interface ArcherScore {
   total?: number;
   tens?: number;
   nines?: number;
+  eights?: number;
 }
 
 export interface Competition {

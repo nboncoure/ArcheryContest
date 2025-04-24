@@ -32,6 +32,7 @@ const pdfOptions = ref({
   showDate: true,
   showTens: true,
   showNines: true,
+  showEights: true,
   maxCategoriesPerPage: 3
 });
 
@@ -101,10 +102,12 @@ const groupedRankings = computed((): RankingCategory[] => {
         archers: archers.sort((a, b) => {
           const scoreA = getArcherScore(a);
           const scoreB = getArcherScore(b);
+       
 
           // Si un des scores est manquant, le placer à la fin
           if (!scoreA?.total) return 1;
           if (!scoreB?.total) return -1;
+         
 
           // Trier par total décroissant
           if (scoreA.total !== scoreB.total) {
@@ -126,6 +129,7 @@ const groupedRankings = computed((): RankingCategory[] => {
       // Trouver l'index de chaque catégorie dans CATEGORIES
       const indexA = CATEGORIES.findIndex(cat => cat.code === a.name);
       const indexB = CATEGORIES.findIndex(cat => cat.code === b.name);
+
       
       // Si une catégorie n'est pas trouvée, la placer à la fin
       if (indexA === -1) return 1;
@@ -168,6 +172,7 @@ async function generatePDF() {
         showDate: pdfOptions.value.showDate,
         showTens: pdfOptions.value.showTens,
         showNines: pdfOptions.value.showNines,
+        showEights: pdfOptions.value.showEights,
         maxCategoriesPerPage: pdfOptions.value.maxCategoriesPerPage
       }
     );
@@ -226,7 +231,7 @@ async function generatePDF() {
             <label for="bowType">Type d'arc</label>
             <select id="bowType" v-model="selectedBowType">
               <option value="">Tous</option>
-              <option value="SV">Classique sans viseur</option>
+              <option value="SV">Classique sans viseur</option> 
               <option value="AV">Classique avec viseur</option>
               <option value="COSV">Poulie sans viseur</option>
               <option value="COAV">Poulie avec viseur</option>
@@ -264,6 +269,9 @@ async function generatePDF() {
                 </th>
                 <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">
                   9
+                </th>
+                <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase">
+                  8
                 </th>
               </tr>
             </thead>
@@ -305,6 +313,11 @@ async function generatePDF() {
                 <td class="px-6 py-4 text-center whitespace-nowrap">
                   <div class="text-sm text-gray-900">
                     {{ getArcherScore(archer)?.nines || '—' }}
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-center whitespace-nowrap">
+                  <div class="text-sm text-gray-900">
+                    {{ getArcherScore(archer)?.eights || '—' }}
                   </div>
                 </td>
               </tr>
@@ -379,6 +392,18 @@ async function generatePDF() {
                     />
                     <label for="showNines" class="ml-2 block text-sm text-gray-900">
                       Afficher les 9
+                    </label>
+                  </div>
+
+                  <div class="flex items-center">
+                    <input
+                      id="showEights"
+                      v-model="pdfOptions.showEights"
+                      type="checkbox"
+                      class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                    />
+                    <label for="showEights" class="ml-2 block text-sm text-gray-900">
+                      Afficher les 8
                     </label>
                   </div>
                   

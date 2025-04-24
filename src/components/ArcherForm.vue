@@ -44,7 +44,7 @@ const archer = ref<Partial<Archer>>({
     </div>
 
     <div class="form-group">
-      <label for="departmentNumber">Numéro de département :</label>
+      <label for="departmentNumber">Numéro de département :</label> 
       <input type="number" id="departmentNumber" v-model="archer.departmentNumber" required />
     </div>
 

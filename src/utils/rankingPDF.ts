@@ -137,6 +137,7 @@ export async function generateRankingPDF(
     yPosition = drawCategory(
       page,
       category,
+      competition,
       pagePadding,
       yPosition,
       contentWidth,
@@ -279,6 +280,7 @@ function drawContinuationHeader(
 function drawCategory(
   page: any,
   category: RankingCategory,
+  competition: Competition,
   x: number,
   y: number,
   width: number,
@@ -353,6 +355,8 @@ function drawCategory(
   // Lignes des archers
   category.archers.forEach((archer, index) => {
     const isEvenRow = index % 2 === 0;
+
+    const score = competition.scores.find((s) => s.archerId === archer.id)
     
     // Rank
     page.drawText((index + 1).toString(), {
@@ -380,7 +384,7 @@ function drawCategory(
     });
     
     // Total
-    page.drawText(archer.total?.toString() || '—', {
+    page.drawText(score?.total?.toString() || '—', {
       x: xPositions[3] + columns[3].width / 2 - 5,
       y: currentY,
       size: 10,
@@ -389,7 +393,7 @@ function drawCategory(
     
     // 10s
       const tensIndex = 4;
-      page.drawText(archer.tens?.toString() || '—', {
+      page.drawText(score?.tens?.toString() || '—', {
         x: xPositions[tensIndex] + columns[tensIndex].width / 2 - 5,
         y: currentY,
         size: 10,
@@ -400,7 +404,7 @@ function drawCategory(
     // 9s
     
       const ninesIndex = 5;
-      page.drawText(archer.nines?.toString() || '—', {
+      page.drawText(score?.nines?.toString() || '—', {
         x: xPositions[ninesIndex] + columns[ninesIndex].width / 2 - 5,
         y: currentY,
         size: 10,
@@ -411,7 +415,7 @@ function drawCategory(
      // 8s
     
       const eightsIndex = 6;
-      page.drawText(archer.eights?.toString() || '—', {
+      page.drawText(score?.eights?.toString() || '—', {
         x: xPositions[eightsIndex] + columns[eightsIndex].width / 2 - 5,
         y: currentY,
         size: 10,

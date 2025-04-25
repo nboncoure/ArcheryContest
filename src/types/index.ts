@@ -100,8 +100,8 @@ export interface ArcherScore {
   id: string;
   archerId: string;
   flightId: number;
-  targetNumber: number;
-  position: TargetPosition;
+  /*targetNumber: number;
+  position: TargetPosition;*/
   rounds: Round[];
   total?: number;
   tens?: number;

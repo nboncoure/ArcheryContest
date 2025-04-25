@@ -42,6 +42,8 @@ export interface Archer {
   lastName: string;
   firstName: string;
   club: string;
+  beginner: string;
+  disabled: string;
   birthYear: number;
   departmentNumber: number;
   ageCategory: AgeCategory;
@@ -93,20 +95,18 @@ export interface Round {
   total: number;
   tens: number;
   nines: number;
-  eights: number;
+  eights: number; //Ajout de la variable eights(huit) pour le calcul des points par série
 }
 
 export interface ArcherScore {
   id: string;
   archerId: string;
   flightId: number;
-  /*targetNumber: number;
-  position: TargetPosition;*/
   rounds: Round[];
   total?: number;
   tens?: number;
   nines?: number;
-  eights?: number;
+  eights?: number; //Ajout de la variable eights(huit) dans le score de l'archer
 }
 
 export interface Competition {

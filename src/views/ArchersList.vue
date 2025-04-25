@@ -92,7 +92,13 @@
               <td class="px-6 py-4 whitespace-nowrap">{{ archer.lastName }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
                 {{ archer.firstName }}
-              </td>              
+              </td>          
+              <td class="px-6 py-4 whitespace-nowrap">
+                {{ archer.beginner }}
+              </td>     
+              <td class="px-6 py-4 whitespace-nowrap">
+                {{ archer.disabled }}
+              </td> 
               <td class="px-6 py-4">
                 <div class="truncate max-w-[150px] md:max-w-[180px] lg:max-w-[220px]" :title="archer.club">
                   {{ archer.club }}
@@ -284,8 +290,23 @@
                   </div>
 
                   <div class="form-group">
+                    <label for="beginner">Débutant</label>
+                    <select id="beginner" v-model="archerForm.beginner" required>
+                      <option value="D">D</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="disabled">Situation de handicape</label>
+                    <select id="disabled" v-model="archerForm.disabled" required>
+                      <option value="O">Oui</option>
+                      <option value="N">Non</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
                     <label for="bowType">Type d'arc</label>
-                    <select id="bowType" v-model="archerForm.bowType.code" required>
+                    <select id="bowType" v-model="archerForm.bowType!.code" required>
                       <option
                         v-for="(bowType, key) in BOW_TYPES"
                         :key="key"
@@ -438,6 +459,8 @@ const archerForm = ref<Partial<Archer>>({
   lastName: "",
   firstName: "",
   club: "",
+  beginner: "",
+  disabled: "",
   departmentNumber: undefined,
   license: "",
   category: "",
@@ -461,6 +484,8 @@ const sortDirection = ref<"asc" | "desc">("asc");
 const columns = [
   { key: "lastName", label: "Nom", sortable: true },
   { key: "firstName", label: "Prénom", sortable: true },
+  { key: "beginner", label: "Débutant", sortable: true },
+  { key: "disabled", label: "Situation de handicape", sortable: true },
   { key: "club", label: "Club", sortable: true },
   { key: "departmentNumbert", label: "Numéro de département", sortable: true },
   { key: "category", label: "Catégorie", sortable: true },
@@ -582,6 +607,8 @@ function closeForm() {
   archerForm.value = {
     lastName: "",
     firstName: "",
+    beginner: "",
+    disabled: "",
     club: "",
     departmentNumber: undefined,
     category: "",

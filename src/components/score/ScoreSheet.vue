@@ -75,8 +75,8 @@ function getOrCreateScore(archerId: string): ArcherScore {
     props.competition.id,
     archerId,
     props.selectedFlightId,
-    props.selectedTargetNumber!,
-    position
+    /*props.selectedTargetNumber!,
+    position,*/
   );
 }
 
@@ -138,8 +138,8 @@ function updateArcherTotal(archerId: string, value: number) {
     archerId,
     props.selectedFlightId,
     props.selectedRoundId,
-    props.selectedTargetNumber!,
-    value
+   /* props.selectedTargetNumber!,*/
+    value,
   );
 }
 
@@ -152,8 +152,8 @@ function updateArcherTens(archerId: string, value: number) {
     archerId,
     props.selectedFlightId,
     props.selectedRoundId,
-    props.selectedTargetNumber!,
-    value
+   /* props.selectedTargetNumber!,*/
+    value,
   );
 }
 
@@ -166,8 +166,8 @@ function updateArcherNines(archerId: string, value: number) {
     archerId,
     props.selectedFlightId,
     props.selectedRoundId,
-    props.selectedTargetNumber!,
-    value
+    /*props.selectedTargetNumber!,*/
+    value,
   );
 }
 
@@ -179,8 +179,8 @@ function updateArcherEights(archerId: string, value: number) {
     archerId,
     props.selectedFlightId,
     props.selectedRoundId,
-    props.selectedTargetNumber!,
-    value
+   /* props.selectedTargetNumber!,*/
+    value,
   );
 }
 
@@ -193,18 +193,18 @@ function updateArrowScore(
 ) {
   if (!props.competition) return;
   
-  const position = targetAssignments.value.find((a) => a.archerId === archerId)?.position!;
+  /*const position = targetAssignments.value.find((a) => a.archerId === archerId)?.position!;*/
   
   competitionStore.updateArrowScore(
     props.competition.id,
     archerId,
     props.selectedFlightId,
-    props.selectedTargetNumber!,
-    position,
+  /*props.selectedTargetNumber!,
+    position,*/
     props.selectedRoundId,
     endIndex,
     arrowIndex,
-    value
+    value,
   );
 }
 </script>

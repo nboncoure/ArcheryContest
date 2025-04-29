@@ -107,6 +107,7 @@ export interface ArcherScore {
   tens?: number;
   nines?: number;
   eights?: number; //Ajout de la variable eights(huit) dans le score de l'archer
+  birthYear?: number;
 }
 
 export interface Competition {

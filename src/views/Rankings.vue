@@ -117,8 +117,19 @@ const groupedRankings = computed((): RankingCategory[] => {
           }
 
           // En cas d'égalité de 10, trier par nombre de 9
-          return scoreB.nines! - scoreA.nines!;
+          if (scoreA.nines !== scoreB.nines) {
+            return scoreB.nines! - scoreA.nines!;
+          }
+
+          if (scoreA.eights !== scoreB.eights) {
+            return scoreB.eights! - scoreA.eights!;
+          }
+
+          return scoreA.birthYear! - scoreB.birthYear! ; // Trier par année de naissance croissante
+
         }),
+      
+
       };
     })
     // Remplacer le tri alphabétique par un tri basé sur l'ordre dans CATEGORIES

@@ -308,7 +308,7 @@ async function generatePDF() {
                     {{ getArcherScore(archer)?.nines || '—' }}
                   </div>
                 </td>
-                <td class="px-6 py-4 text-center whitespace-nowrap">
+                <td class="px-6 py-4 text-center whitespace-nowrap"> <!--Permet de récupérer le score ou d'afficher '—' s'il ny'a rien -->
                   <div class="text-sm text-gray-900">
                     {{ getArcherScore(archer)?.eights || '—' }}
                   </div>

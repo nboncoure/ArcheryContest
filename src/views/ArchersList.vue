@@ -291,14 +291,14 @@
 
                   <div class="form-group">
                     <label for="beginner">Débutant</label>
-                    <select id="beginner" v-model="archerForm.beginner" required>
+                    <select id="beginner" v-model="archerForm.beginner" >
                       <option value="D">D</option>
                     </select>
                   </div>
 
                   <div class="form-group">
                     <label for="disabled">Situation de handicape</label>
-                    <select id="disabled" v-model="archerForm.disabled" required>
+                    <select id="disabled" v-model="archerForm.disabled" >
                       <option value="O">Oui</option>
                       <option value="N">Non</option>
                     </select>

@@ -36,7 +36,7 @@ const props = defineProps({
     type: Number,
     default: null
   },
-  archerEights: {
+  archerEights: { 
     type: Number,
     default: null
   },
@@ -87,7 +87,7 @@ function updateNines(value: number) {
   }
 }
 
-function updateEights(value: number) {
+function updateEights(value: number) { //Mise à jour de la fonction pour les 8 par rapport à l'id de l'archer
   if (!isNaN(value)) {
     emit('update-eights', props.archerId, value);
   }
@@ -175,7 +175,7 @@ function updateEights(value: number) {
       </div>
   </div>
       <div class="data-cell">
-      <div class="flex justify-center">
+      <div class="flex justify-center"> <!--Case pour insérer le nombre de ce même chiffre -->
         <input
           type="number"
           min="0"

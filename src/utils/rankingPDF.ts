@@ -2,6 +2,10 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import type { Competition, Archer } from '@/types';
 import type { RankingCategory } from '@/types/ranking';
 import { CATEGORIES } from '@/constants/staticData'; // Import the CATEGORIES constant
+import ArcherScoreColumn from '@/components/score/ArcherScoreColumn.vue';
+import ScoreEntry from '@/views/ScoreEntry.vue';
+import ScoreSheet from '@/components/score/ScoreSheet.vue';
+import Rankings from '@/views/Rankings.vue';
 
 
 
@@ -400,9 +404,7 @@ function drawCategory(
         font: fontRegular
       });
     
-    
     // 9s
-    
       const ninesIndex = 5;
       page.drawText(score?.nines?.toString() || '—', {
         x: xPositions[ninesIndex] + columns[ninesIndex].width / 2 - 5,
@@ -411,9 +413,7 @@ function drawCategory(
         font: fontRegular
       });
     
-
      // 8s
-    
       const eightsIndex = 6;
       page.drawText(score?.eights?.toString() || '—', {
         x: xPositions[eightsIndex] + columns[eightsIndex].width / 2 - 5,

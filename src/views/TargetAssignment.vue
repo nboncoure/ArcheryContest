@@ -177,7 +177,7 @@
               leave-to="opacity-0 scale-95"
             >
               <DialogPanel
-                class="w-full max-w-3xl p-6 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl"
+                class="w-full max-w-md p-6 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl"
               >
                 <DialogTitle
                   as="h3"
@@ -187,16 +187,13 @@
                 </DialogTitle>
 
                 <div
-                  class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+                  v-if="editingTarget"
+                  class="grid grid-cols-1"
                 >
-                  <template
-                    v-for="target in currentFlight?.targets"
-                    :key="target.number"
-                  >
                     <div class="p-4 rounded-lg bg-gray-50">
                       <div class="flex items-center justify-between mb-3">
                         <h3 class="font-medium text-gray-900">
-                          Cible {{ target.number }}
+                          Cible {{ editingTarget.number }}
                         </h3>
                       </div>
                       <div class="space-y-3">
@@ -204,16 +201,16 @@
                           <label class="text-sm">Distance (m)</label>
                           <input
                             type="number"
-                            v-model.number="target.distance"
+                            v-model.number="editingTarget.distance"
                             min="0"
-                            @change="updateTargetConfig(target)"
+                            @change="updateTargetConfig(editingTarget)"
                           />
                         </div>
                         <div class="mb-0 form-group">
                           <label class="text-sm">Blason (cm)</label>
                           <select
-                            v-model.number="target.faceSize"
-                            @change="updateTargetConfig(target)"
+                            v-model.number="editingTarget.faceSize"
+                            @change="updateTargetConfig(editingTarget)"
                           >
                             <option :value="80">80cm</option>
                             <option :value="60">60cm</option>
@@ -223,7 +220,7 @@
                         </div>
                       </div>
                     </div>
-                  </template>
+             
                 </div>
 
                 <div class="flex justify-end mt-6">
@@ -294,11 +291,10 @@ const draggedArcher = ref<{
   assignment?: TargetAssignment;
 } | null>(null);
 
-const editingTarget = ref<Target | null>(null);
+const editingTarget = ref<Target | undefined>();
 const showTargetConfigModal = ref(false);
 const selectedFlightId = ref<number>();
 const filters = ref({
-  flightId: 1,
   category: "",
   bowType: "",
 });
@@ -319,7 +315,7 @@ if (competition.value && competition.value.flights.length > 0) {
 }
 
 const categories = computed(() =>
-  [...new Set(archers.value.map((a) => a.category))].sort()
+  [...new Set(archers.value.map((a) => a.category).filter((c) => c !== undefined))].sort()
 );
 
 const filteredArchers = computed(() =>
@@ -374,14 +370,6 @@ function deleteFlight() {
       flights: updatedFlights,
     });
 
-    // Supprimer les attributions de cibles pour ce départ
-    archers.value.forEach((archer: Archer) => {
-      if (archer.flightId === selectedFlightId.value) {
-        archersStore.updateArcherTarget(archer.id, undefined); // TODO
-        archersStore.updateArcherFlight(archer.id, undefined); // TODO
-      }
-    });
-
     // Sélectionner le premier départ restant
     if (updatedFlights.length > 0) {
       selectedFlightId.value = updatedFlights[0].id;
@@ -400,7 +388,6 @@ function addTarget() {
         : 1;
       
       const newTarget: Target = {
-        id: crypto.randomUUID(),
         number: newTargetNumber,
         distance: 18, // Default distance
         faceSize: 40, // Default face size
@@ -423,7 +410,7 @@ function removeTarget(targetNum: number) {
   if (!competition.value || !currentFlight) return;
 
   // Vérifier si la cible est occupée
-  const assignmentsOnTarget = currentFlight.value.assignments.filter(
+  const assignmentsOnTarget = currentFlight.value!.assignments.filter(
     (a) => a.targetNumber === targetNum
   );
 
@@ -437,7 +424,7 @@ function removeTarget(targetNum: number) {
     }
     
     // Supprimer les attributions pour cette cible
-    const updatedAssignments = currentFlight.value.assignments.filter(
+    const updatedAssignments = currentFlight.value!.assignments.filter(
       (a) => a.targetNumber !== targetNum
     );
     
@@ -449,7 +436,7 @@ function removeTarget(targetNum: number) {
     });
     
     // Mettre à jour les cibles
-    const updatedTargets = currentFlight.value.targets.filter(
+    const updatedTargets = currentFlight.value!.targets.filter(
       (t) => t.number !== targetNum
     );
     
@@ -477,7 +464,7 @@ function removeTarget(targetNum: number) {
     });
   } else {
     // Si la cible n'est pas occupée, la supprimer directement
-    const updatedTargets = currentFlight.value.targets.filter(
+    const updatedTargets = currentFlight.value?.targets.filter(
       (t) => t.number !== targetNum
     );
     
@@ -525,8 +512,8 @@ function updateTargetConfig(target: Target) {
 }
 
 function closeTargetConfigModal() {
-  editingTarget.value = null;
   showTargetConfigModal.value = false; // Add this line to hide the modal
+  editingTarget.value = undefined;
 }
 
 function editTargetConfig(target: Target) {
@@ -790,6 +777,7 @@ function generateScoresheets() {
         await generateScoreSheets({
           competition: competition.value!,
           flight: currentFlight.value!,
+          session: currentSession.value!,
           target,
           assignments: targetAssignments,
           archers: competition.value!.archers,

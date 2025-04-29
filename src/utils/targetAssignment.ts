@@ -16,10 +16,7 @@ type ArcherGroup = {
   bowType: BowType;
   age: AgeCategory;
   archers: Archer[];
-  targetConfig: {
-    distance: number;
-    faceSize: number;
-  };
+  targetConfig: Partial<Target>;
 };
 
 function createBalancedGroups<T>(items: T[], maxGroupSize: number = 10): T[][] {
@@ -114,7 +111,6 @@ export function configureTargets(competition: Competition): Flight[] {
         assignments: [],
         targets: targetConfigs.map(
           (targetConfig: Partial<Target>, i: number): Target => ({
-            id: uuidv4(), // Ajouter un ID pour chaque cible
             number: i + 1,
             distance: targetConfig.distance || 0,
             faceSize: targetConfig.faceSize || 0,
@@ -176,17 +172,17 @@ export function assignArchers(
   const archerGroups = groupArchers(unassignedArchers, competition.type);
   
   // Create a map of available positions for each target
-  const availablePositions = new Map<string, TargetPosition[]>();
+  const availablePositions = new Map<number, TargetPosition[]>();
   
   // Initialize available positions
   flight.targets.forEach(target => {
-    availablePositions.set(target.id, ["A", "B", "C", "D"]);
+    availablePositions.set(target.number, ["A", "B", "C", "D"]);
   });
   
   // Mark positions that are already occupied if keeping existing assignments
   if (keepExistingAssignments) {
     assignments.forEach(assignment => {
-      const positions = availablePositions.get(assignment.targetId);
+      const positions = availablePositions.get(assignment.targetNumber);
       if (positions) {
         const index = positions.indexOf(assignment.position);
         if (index > -1) {
@@ -215,14 +211,13 @@ export function assignArchers(
     for (const archer of group.archers) {
       // Look for an available position on a compatible target
       for (const target of compatibleTargets) {
-        const positions = availablePositions.get(target.id);
+        const positions = availablePositions.get(target.number);
         if (positions && positions.length > 0) {
           // Take the first available position
           const position = positions.shift()!;
           
           // Create a new assignment
           const newAssignment: TargetAssignment = {
-            id: uuidv4(),
             archerId: archer.id,
             targetNumber: target.number,
             flightId: flight.id,

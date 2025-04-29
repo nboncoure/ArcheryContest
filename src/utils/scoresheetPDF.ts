@@ -1,9 +1,9 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import type { Competition, Session, Target, TargetAssignment, Archer } from '../types';
+import type { Competition, Target, TargetAssignment, Archer, Flight } from '../types';
 
 interface ScoreSheetData {
   competition: Competition;
-  session: Session;
+  flight: Flight;
   target: Target;
   assignments: TargetAssignment[];
   archers: Archer[];
@@ -38,7 +38,7 @@ export async function generateScoreSheets(data: ScoreSheetData) {
       font
     });
     
-    page.drawText(`Départ: ${data.session.name}`, {
+    page.drawText(`Départ: ${data.flight.name}`, {
       x: 350,
       y: 730,
       size: 12,

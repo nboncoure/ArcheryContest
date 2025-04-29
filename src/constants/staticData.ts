@@ -5,7 +5,6 @@ import {
   BowType,
   BowTypeCode,
   CompetitionType,
-  CompetitionTargetConfig,
   Target,
 } from "../types";
 

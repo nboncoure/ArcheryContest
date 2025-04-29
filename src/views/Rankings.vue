@@ -30,9 +30,6 @@ const showExportModal = ref(false);
 const pdfOptions = ref({
   title: '',
   showDate: true,
-  showTens: true,
-  showNines: true,
-  showEights: true,
   maxCategoriesPerPage: 3
 });
 
@@ -120,8 +117,19 @@ const groupedRankings = computed((): RankingCategory[] => {
           }
 
           // En cas d'égalité de 10, trier par nombre de 9
-          return scoreB.nines! - scoreA.nines!;
+          if (scoreA.nines !== scoreB.nines) {
+            return scoreB.nines! - scoreA.nines!;
+          }
+
+          if (scoreA.eights !== scoreB.eights) {
+            return scoreB.eights! - scoreA.eights!;
+          }
+
+          return scoreA.birthYear! - scoreB.birthYear! ; // Trier par année de naissance croissante
+
         }),
+      
+
       };
     })
     // Remplacer le tri alphabétique par un tri basé sur l'ordre dans CATEGORIES
@@ -169,10 +177,6 @@ async function generatePDF() {
       groupedRankings.value,
       {
         title: pdfOptions.value.title,
-        showDate: pdfOptions.value.showDate,
-        showTens: pdfOptions.value.showTens,
-        showNines: pdfOptions.value.showNines,
-        showEights: pdfOptions.value.showEights,
         maxCategoriesPerPage: pdfOptions.value.maxCategoriesPerPage
       }
     );
@@ -315,7 +319,7 @@ async function generatePDF() {
                     {{ getArcherScore(archer)?.nines || '—' }}
                   </div>
                 </td>
-                <td class="px-6 py-4 text-center whitespace-nowrap">
+                <td class="px-6 py-4 text-center whitespace-nowrap"> <!--Permet de récupérer le score ou d'afficher '—' s'il ny'a rien -->
                   <div class="text-sm text-gray-900">
                     {{ getArcherScore(archer)?.eights || '—' }}
                   </div>
@@ -371,41 +375,6 @@ async function generatePDF() {
                     </label>
                   </div>
                   
-                  <div class="flex items-center">
-                    <input
-                      id="showTens"
-                      v-model="pdfOptions.showTens"
-                      type="checkbox"
-                      class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                    />
-                    <label for="showTens" class="ml-2 block text-sm text-gray-900">
-                      Afficher les 10
-                    </label>
-                  </div>
-                  
-                  <div class="flex items-center">
-                    <input
-                      id="showNines"
-                      v-model="pdfOptions.showNines"
-                      type="checkbox"
-                      class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                    />
-                    <label for="showNines" class="ml-2 block text-sm text-gray-900">
-                      Afficher les 9
-                    </label>
-                  </div>
-
-                  <div class="flex items-center">
-                    <input
-                      id="showEights"
-                      v-model="pdfOptions.showEights"
-                      type="checkbox"
-                      class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                    />
-                    <label for="showEights" class="ml-2 block text-sm text-gray-900">
-                      Afficher les 8
-                    </label>
-                  </div>
                   
                   <div class="form-group">
                     <label for="maxCategoriesPerPage" class="block text-sm font-medium text-gray-700">

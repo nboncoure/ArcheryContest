@@ -94,10 +94,13 @@
                 {{ archer.firstName }}
               </td>          
               <td class="px-6 py-4 whitespace-nowrap">
-                {{ archer.beginner }}
+                {{ archer.isBeginner? "Oui" : "" }}
               </td>     
               <td class="px-6 py-4 whitespace-nowrap">
-                {{ archer.disabled }}
+                {{ archer.isDisabled? "Oui" : "" }}
+              </td> 
+               <td class="px-6 py-4 whitespace-nowrap">
+                {{ archer.isVisuallyImpaired? "Oui" : "" }}
               </td> 
               <td class="px-6 py-4">
                 <div class="truncate max-w-[150px] md:max-w-[180px] lg:max-w-[220px]" :title="archer.club">
@@ -247,7 +250,7 @@
                       required
                     />
                   </div>
-                
+
                   <div class="form-group">
                     <label for="club">Numéro de département</label>
                     <input
@@ -286,21 +289,6 @@
                     <select id="gender" v-model="archerForm.gender" required>
                       <option value="M">Homme</option>
                       <option value="F">Femme</option>
-                    </select>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="beginner">Débutant</label>
-                    <select id="beginner" v-model="archerForm.beginner" >
-                      <option value="D">D</option>
-                    </select>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="disabled">Situation de handicape</label>
-                    <select id="disabled" v-model="archerForm.disabled" >
-                      <option value="O">Oui</option>
-                      <option value="N">Non</option>
                     </select>
                   </div>
 
@@ -459,8 +447,6 @@ const archerForm = ref<Partial<Archer>>({
   lastName: "",
   firstName: "",
   club: "",
-  beginner: false,
-  disabled: false,
   departmentNumber: undefined,
   license: "",
   category: "",
@@ -484,8 +470,9 @@ const sortDirection = ref<"asc" | "desc">("asc");
 const columns = [
   { key: "lastName", label: "Nom", sortable: true },
   { key: "firstName", label: "Prénom", sortable: true },
-  { key: "beginner", label: "Débutant", sortable: true },
-  { key: "disabled", label: "Situation de handicape", sortable: true },
+  { key: "isBeginner", label: "Débutant", sortable: true },
+  { key: "isDisabled", label: "Situation de handicape", sortable: true },
+  { key: "isVisuallyImpaired", label: "Malvoyant", sortable: true },
   { key: "club", label: "Club", sortable: true },
   { key: "departmentNumbert", label: "Numéro de département", sortable: true },
   { key: "category", label: "Catégorie", sortable: true },
@@ -607,8 +594,6 @@ function closeForm() {
   archerForm.value = {
     lastName: "",
     firstName: "",
-    beginner: false,
-    disabled: false,
     club: "",
     departmentNumber: undefined,
     category: "",

@@ -26,7 +26,7 @@ const selectedBowType = ref('');
 const isGeneratingPDF = ref(false);
 const showExportModal = ref(false);
 
-// Options d'export PDF
+// PDF export options
 const pdfOptions = ref({
   title: '',
   showDate: true,
@@ -37,7 +37,7 @@ const competition = computed(() =>
   competitions.value.find((c) => c.id === route.params.id)
 );
 
-// Initialiser le titre du PDF avec le nom de la compétition
+// Initiate the PDF title with the competition name
 onMounted(() => {
   if (competition.value) {
     pdfOptions.value.title = `Classements - ${competition.value.name}`;
@@ -52,7 +52,7 @@ const filteredArchers = computed(() => {
   if (!competition.value) return [];
 
   return competition.value.archers.filter((archer) => {
-    // Appliquer les filtres de catégorie et type d'arc
+    // Apply category and bow type filters
     if (selectedCategory.value && archer.category !== selectedCategory.value)
       return false;
     if (selectedBowType.value && archer.bowType.code !== selectedBowType.value)
@@ -65,7 +65,7 @@ const filteredArchers = computed(() => {
 const groupedRankings = computed((): RankingCategory[] => {
   const groups = new Map<string, Archer[]>();
 
-  // Grouper les archers par catégorie
+  // Group archers by category
   filteredArchers.value.forEach((archer) => {
     const key = archer.category || 'Sans catégorie';
     if (!groups.has(key)) {
@@ -74,22 +74,22 @@ const groupedRankings = computed((): RankingCategory[] => {
     groups.get(key)!.push(archer);
   });
 
-  // Trier les archers dans chaque groupe
+  // Sort archers in each group
   return Array.from(groups.entries())
     .map(([name, archers]) => {
-      // Générer la description de la catégorie
+      // Generate the category description
       let description = '';
       
-      // Chercher la catégorie correspondante dans CATEGORIES
+      // Search for the corresponding category in CATEGORIES
       const categoryData = CATEGORIES.find(cat => cat.code === name);
       
       if (categoryData) {
-        // Récupérer les informations détaillées
+        // Recover detailed information
         const gender = categoryData.gender === 'M' ? 'Homme' : 'Femme';
         const ageCategory = getAgeCategoryByCode(categoryData.ageCategory);
         const bowType = getBowTypeByCode(categoryData.bowType);
         
-        // Construire la description
+        // Building the description
         description = `${gender} ${ageCategory.minAge}/${ageCategory.maxAge} ans ${bowType.label}`;
       }
       
@@ -101,22 +101,22 @@ const groupedRankings = computed((): RankingCategory[] => {
           const scoreB = getArcherScore(b);
        
 
-          // Si un des scores est manquant, le placer à la fin
+          // If the score is missing, place it at the end
           if (!scoreA?.total) return 1;
           if (!scoreB?.total) return -1;
          
 
-          // Trier par total décroissant
+          // Sort by total descending
           if (scoreA.total !== scoreB.total) {
             return scoreB.total - scoreA.total;
           }
 
-          // En cas d'égalité, trier par nombre de 10
+          // If tied, sort by number of 10
           if (scoreA.tens !== scoreB.tens) {
             return scoreB.tens! - scoreA.tens!;
           }
 
-          // En cas d'égalité de 10, trier par nombre de 9
+          // If tied of 10, sort by number of 9
           if (scoreA.nines !== scoreB.nines) {
             return scoreB.nines! - scoreA.nines!;
           }
@@ -125,25 +125,25 @@ const groupedRankings = computed((): RankingCategory[] => {
             return scoreB.eights! - scoreA.eights!;
           }
 
-          return scoreA.birthYear! - scoreB.birthYear! ; // Trier par année de naissance croissante
+          return scoreA.birthYear! - scoreB.birthYear! ; // Sort by birth year ascending
 
         }),
       
 
       };
     })
-    // Remplacer le tri alphabétique par un tri basé sur l'ordre dans CATEGORIES
+    // Replace the alphabetical sort with a sort based on the order in CATEGORIES
     .sort((a, b) => {
-      // Trouver l'index de chaque catégorie dans CATEGORIES
+      // Find the index of each category in CATEGORIES
       const indexA = CATEGORIES.findIndex(cat => cat.code === a.name);
       const indexB = CATEGORIES.findIndex(cat => cat.code === b.name);
 
       
-      // Si une catégorie n'est pas trouvée, la placer à la fin
+      // If a category is not found, place it at the end
       if (indexA === -1) return 1;
       if (indexB === -1) return -1;
       
-      // Sinon, trier selon l'ordre dans CATEGORIES
+      // Else, sort by order in CATEGORIES
       return indexA - indexB;
     });
 });
@@ -155,14 +155,14 @@ function getArcherScore(archer: Archer): ArcherScore | undefined {
 }
 
 /**
- * Ouvre la modal de configuration de l'export PDF
+ * Open the PDF export configuration modal
  */
 function exportToPDF() {
   showExportModal.value = true;
 }
 
 /**
- * Génère le PDF avec les options sélectionnées
+ * Genrate the PDF with the selected options
  */
 async function generatePDF() {
   if (!competition.value || isGeneratingPDF.value) return;
@@ -171,7 +171,7 @@ async function generatePDF() {
     isGeneratingPDF.value = true;
     showExportModal.value = false;
     
-    // Générer le PDF
+    // Generate the PDF
     const pdfBytes = await generateRankingPDF(
       competition.value,
       groupedRankings.value,
@@ -181,7 +181,7 @@ async function generatePDF() {
       }
     );
     
-    // Créer un blob et le télécharger
+    // Create a blob and download it
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -190,7 +190,7 @@ async function generatePDF() {
     document.body.appendChild(link);
     link.click();
     
-    // Nettoyer
+    // Clean
     URL.revokeObjectURL(url);
     document.body.removeChild(link);
   } catch (error) {
@@ -209,7 +209,7 @@ async function generatePDF() {
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-2xl font-bold text-gray-900">Classements</h1>
           
-          <!-- Bouton d'export PDF -->
+          <!-- PDF export button -->
           <button 
             class="btn btn-primary flex items-center gap-2"
             @click="exportToPDF"
@@ -220,7 +220,7 @@ async function generatePDF() {
           </button>
         </div>
 
-        <!-- Filtres -->
+        <!-- Filters -->
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div class="form-group">
             <label for="category">Catégorie</label>
@@ -245,7 +245,7 @@ async function generatePDF() {
       </div>
     </div>
 
-    <!-- Classements par catégorie -->
+    <!-- Ranking by categories -->
     <div v-for="category in groupedRankings" :key="category.name" class="mb-6 card">
       <div class="p-6">
         <h2 class="mb-4 text-xl font-semibold text-gray-900">
@@ -319,7 +319,7 @@ async function generatePDF() {
                     {{ getArcherScore(archer)?.nines || '—' }}
                   </div>
                 </td>
-                <td class="px-6 py-4 text-center whitespace-nowrap"> <!--Permet de récupérer le score ou d'afficher '—' s'il ny'a rien -->
+                <td class="px-6 py-4 text-center whitespace-nowrap"> 
                   <div class="text-sm text-gray-900">
                     {{ getArcherScore(archer)?.eights || '—' }}
                   </div>
@@ -331,7 +331,7 @@ async function generatePDF() {
       </div>
     </div>
 
-    <!-- Modal de configuration de l'export PDF -->
+    <!-- PDF export's configuration modal -->
     <TransitionRoot appear :show="showExportModal" as="template">
       <Dialog as="div" @close="showExportModal = false" class="relative z-10">
         <TransitionChild

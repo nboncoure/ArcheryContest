@@ -11,6 +11,7 @@ import TargetAssignment from './views/TargetAssignment.vue'
 import ArchersList from './views/ArchersList.vue'
 import ScoreEntry from './views/ScoreEntry.vue'
 import Rankings from './views/Rankings.vue'
+import ArchersAttendance from './views/ArchersAttendance.vue'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -28,7 +29,8 @@ const router = createRouter({
         { path: 'import', component: ImportArchers },
         { path: 'targets', component: TargetAssignment },
         { path: 'scores', component: ScoreEntry },
-        { path: 'rankings', component: Rankings }
+        { path: 'rankings', component: Rankings },
+        { path: 'attendance', component: ArchersAttendance },
       ]
     },
     { path: '/competition/:id/edit', component: CompetitionForm },

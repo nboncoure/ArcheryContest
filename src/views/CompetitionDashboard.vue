@@ -23,6 +23,7 @@ import {
   TrophyIcon,
   ExclamationTriangleIcon,
   PencilIcon,
+  CheckBadgeIcon,
 } from "@heroicons/vue/24/outline";
 import type { Competition } from "@/types";
 
@@ -200,6 +201,20 @@ function saveCompetition() {
           >
             <ViewfinderCircleIcon class="w-5 h-5 mr-2" />
             Cibles
+          </router-link>
+
+          <router-link
+            :to="`/competition/${competition.id}/attendance`" 
+            class="inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 group"
+            :class="[
+              isActiveRoute('attendance')
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+            ]"
+          > 
+
+          <CheckBadgeIcon class="w-5 h-5 mr-2" /> 
+            Présence
           </router-link>
 
           <router-link

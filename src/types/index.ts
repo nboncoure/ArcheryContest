@@ -53,6 +53,7 @@ export interface Archer {
   isBeginner: boolean;
   isDisabled: boolean;
   isVisuallyImpaired: boolean;
+  isPresent: boolean;
 }
 
 export interface Target {

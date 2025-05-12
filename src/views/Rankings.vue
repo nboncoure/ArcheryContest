@@ -117,8 +117,19 @@ const groupedRankings = computed((): RankingCategory[] => {
           }
 
           // En cas d'égalité de 10, trier par nombre de 9
-          return scoreB.nines! - scoreA.nines!;
+          if (scoreA.nines !== scoreB.nines) {
+            return scoreB.nines! - scoreA.nines!;
+          }
+
+          if (scoreA.eights !== scoreB.eights) {
+            return scoreB.eights! - scoreA.eights!;
+          }
+
+          return scoreA.birthYear! - scoreB.birthYear! ; // Trier par année de naissance croissante
+
         }),
+      
+
       };
     })
     // Remplacer le tri alphabétique par un tri basé sur l'ordre dans CATEGORIES
@@ -308,7 +319,7 @@ async function generatePDF() {
                     {{ getArcherScore(archer)?.nines || '—' }}
                   </div>
                 </td>
-                <td class="px-6 py-4 text-center whitespace-nowrap">
+                <td class="px-6 py-4 text-center whitespace-nowrap"> <!--Permet de récupérer le score ou d'afficher '—' s'il ny'a rien -->
                   <div class="text-sm text-gray-900">
                     {{ getArcherScore(archer)?.eights || '—' }}
                   </div>

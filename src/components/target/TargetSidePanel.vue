@@ -5,7 +5,6 @@ import type { Archer } from "@/types";
 
 defineProps<{
   modelValue: {
-    flight: number;
     category: string;
     bowType: string;
   };
@@ -17,7 +16,7 @@ const keepAssignments = ref(true);
 
 defineEmits<{
   "update:modelValue": [
-    value: { flight: number; category: string; bowType: string }
+    value: { category: string; bowType: string }
   ];
   "auto-assign": [keepAssignments: boolean];
   "archer-drag-start": [event: DragEvent, archer: Archer];

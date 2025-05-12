@@ -10,7 +10,7 @@ import Rankings from '@/views/Rankings.vue';
 
 
 /**
- * Groupe d'archers dans une catégorie pour le classement
+ * Archer group in a category for the ranking
  */
 interface RankingGroup {
   name: string;
@@ -18,7 +18,7 @@ interface RankingGroup {
 }
 
 /**
- * Archer avec son classement
+ * Archer with his ranking
  */
 interface RankedArcher extends Archer {
   rank?: number;
@@ -29,17 +29,17 @@ interface RankedArcher extends Archer {
 }
 
 /**
- * Point d'entrée pour générer le PDF des classements
- * @param competition La compétition concernée
- * @param categories Les catégories de classement (résultat de groupedRankings dans Rankings.vue)
- * @param options Options de génération du PDF
+ * Entry point for generating the ranking PDF
+ * @param competition The competition concerned
+ * @param categories Categories of the ranking 
+ * @param options Options of the PDF generation
  */
 export async function generateRankingPDF(
   competition: Competition,
   categories: RankingCategory[],
   options: RankingPDFOptions = {}
 ): Promise<Uint8Array> {
-  // Paramètres par défaut
+  // Default settings
   const {
     title = `Classements - ${competition.name}`,
     showDate = true,
@@ -47,53 +47,53 @@ export async function generateRankingPDF(
     maxCategoriesPerPage = 3
   } = options;
 
-  // Créer un nouveau document PDF
+  // Create a new PDF document
   const pdfDoc = await PDFDocument.create();
   
-  // Charger les polices
+  // Loading fonts
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const fontItalic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
-  // Configurer les couleurs
+  // Configure colors
   const colorPrimary = rgb(0.15, 0.39, 0.92); // #2563eb (primary)
   const colorText = rgb(0.17, 0.17, 0.19); // #2c3e50 (text)
   const colorGrey = rgb(0.5, 0.5, 0.5);
   const colorBackground = rgb(0.98, 0.98, 0.98);
 
-  // Dimensions et positions
+  // Dimensions and positions
   const pagePadding = 40;
   const pageWidth = 595.28; // A4 width in points
   const pageHeight = 841.89; // A4 height in points
   const contentWidth = pageWidth - (pagePadding * 2);
   
-  // Hauteurs des éléments
+  // Elements height
   const headerHeight = 60;
   const categoryHeaderHeight = 40;
   const rowHeight = 25;
   const categoryMargin = 20;
   
-  // Grouper les catégories pour l'optimisation par page
-  // Trier les catégories selon l'ordre défini dans CATEGORIES
+  // Group categories for page optimization
+  // Sort by the order defined in CATEGORIES
   const categoriesToProcess = [...categories].sort((a, b) => {
-    // Trouver l'index de chaque catégorie dans CATEGORIES
+    // Finding each category index in CATEGORIES
     const indexA = CATEGORIES.findIndex(cat => cat.code === a.name);
     const indexB = CATEGORIES.findIndex(cat => cat.code === b.name);
     
-    // Si une catégorie n'est pas trouvée, la placer à la fin
+    // If category not found, place it at the end
     if (indexA === -1) return 1;
     if (indexB === -1) return -1;
     
-    // Sinon, trier selon l'ordre dans CATEGORIES
+    // Else, sort by order in CATEGORIES
     return indexA - indexB;
   });
   
-  // Créer la première page
+  // Creating the first page
   let page = pdfDoc.addPage([pageWidth, pageHeight]);
   let yPosition = pageHeight - pagePadding;
   let categoriesOnCurrentPage = 0;
   
-  // Dessiner l'en-tête général sur la première page
+  // Drawing the general header in the first page
   yPosition = drawHeader(
     page, 
     title, 
@@ -108,23 +108,23 @@ export async function generateRankingPDF(
     showDate
   );
   
-  // Traiter chaque catégorie
+  // Treating each category
   while (categoriesToProcess.length > 0) {
     const category = categoriesToProcess[0];
     const archerCount = category.archers.length;
     
-    // Calculer l'espace nécessaire pour cette catégorie
+    // Calculate the space needed for this category
     const categoryHeight = categoryHeaderHeight + (rowHeight * (archerCount + 1));
     const totalHeight = categoryHeight + categoryMargin;
     
-    // Si pas assez d'espace sur la page actuelle ou qu'on a atteint le max de catégories par page
+    // If not enough space on the current page or if we reached the max categories per page
     if ((yPosition - totalHeight) < pagePadding || categoriesOnCurrentPage >= maxCategoriesPerPage) {
-      // Créer une nouvelle page
+      // Create a new page
       page = pdfDoc.addPage([pageWidth, pageHeight]);
       yPosition = pageHeight - pagePadding;
       categoriesOnCurrentPage = 0;
       
-      // En-tête de continuation sur les pages suivantes
+      // Continuation header for the next pages
       yPosition = drawContinuationHeader(
         page, 
         title, 
@@ -137,7 +137,7 @@ export async function generateRankingPDF(
       );
     }
     
-    // Dessiner la catégorie
+    // Drawing the category
     yPosition = drawCategory(
       page,
       category,
@@ -154,15 +154,15 @@ export async function generateRankingPDF(
       colorBackground,
     );
     
-    // Ajouter un espacement après la catégorie
+    // Add a margin after the category
     yPosition -= categoryMargin;
     
-    // Passer à la catégorie suivante
+    // Skip to the next category
     categoriesToProcess.shift();
     categoriesOnCurrentPage++;
   }
   
-  // Ajouter un pied de page à chaque page
+  // Adding the footer to each page
   const pageCount = pdfDoc.getPageCount();
   for (let i = 0; i < pageCount; i++) {
     const page = pdfDoc.getPage(i);
@@ -179,12 +179,12 @@ export async function generateRankingPDF(
     );
   }
   
-  // Générer le PDF
+  // Generate the PDF
   return await pdfDoc.save();
 }
 
 /**
- * Dessine l'en-tête principal du document
+ * Drawing the principal header of the document
  */
 function drawHeader(
   page: any,
@@ -199,7 +199,7 @@ function drawHeader(
   colorPrimary: any,
   showDate: boolean
 ): number {
-  // Titre du document
+  // Document title
   page.drawText(title, {
     x: x,
     y: y - 20,
@@ -208,7 +208,7 @@ function drawHeader(
     color: colorPrimary
   });
   
-  // Informations de la compétition
+  // Competiton informations
   page.drawText(`Compétition: ${competition.name}`, {
     x: x,
     y: y - 40,
@@ -226,7 +226,7 @@ function drawHeader(
     });
   }
   
-  // Lieu
+  // Place 
   page.drawText(`Lieu: ${competition.location}`, {
     x: x,
     y: y - 55,
@@ -234,7 +234,7 @@ function drawHeader(
     font: fontRegular
   });
   
-  // Ligne de séparation
+  // Separation line
   page.drawLine({
     start: { x, y: y - 65 },
     end: { x: x + width, y: y - 65 },
@@ -246,7 +246,7 @@ function drawHeader(
 }
 
 /**
- * Dessine l'en-tête des pages suivantes
+ * Draw the header of the next pages
  */
 function drawContinuationHeader(
   page: any,
@@ -258,7 +258,7 @@ function drawContinuationHeader(
   fontBold: any,
   colorPrimary: any
 ): number {
-  // Titre du document
+  // Document title
   page.drawText(title, {
     x: x,
     y: y - 20,
@@ -267,7 +267,7 @@ function drawContinuationHeader(
     color: colorPrimary
   });
   
-  // Ligne de séparation
+  // Separation line
   page.drawLine({
     start: { x, y: y - 30 },
     end: { x: x + width, y: y - 30 },
@@ -279,7 +279,7 @@ function drawContinuationHeader(
 }
 
 /**
- * Dessine une catégorie de classement
+ * Drawing a ranking category
  */
 function drawCategory(
   page: any,
@@ -296,7 +296,7 @@ function drawCategory(
   colorGrey: any,
   colorBackground: any,
 ): number {
-  // Titre de la catégorie - APRÈS le fond
+  // Category title after the background
   page.drawText(category.name, {
     x: x + 5, // Petit padding à gauche
     y: y - 20,
@@ -305,10 +305,10 @@ function drawCategory(
     color: colorPrimary
   });
   
-  // Initialiser la position Y pour les en-têtes de colonnes
+  // Initiate Y position for column headers
   let currentY = y - 35;
   
-  // Ajouter la description de la catégorie si elle existe
+  // Adding the category description if it exists
   if (category.description) {
     page.drawText(category.description, {
       x: x + 5,
@@ -318,11 +318,11 @@ function drawCategory(
       color: colorText
     });
     
-    // Ajuster la position Y pour les en-têtes de colonnes après la description
+    // Adjust Y position for column headers after the description
     currentY -= 15;
   }
   
-  // Déterminer les colonnes
+  // Determining the columns
   const columns = [
     { name: 'Rank', width: 35, align: 'center' },
     { name: 'Nom', width: 150, align: 'left' },
@@ -336,7 +336,7 @@ function drawCategory(
 
     columns.push({ name: '8', width: 40, align: 'center' });
   
-  // Calculer les positions X des colonnes
+  // Calculate X positions of columns
   let currentX = x;
   const xPositions = columns.map(col => {
     const position = currentX;
@@ -344,7 +344,7 @@ function drawCategory(
     return position;
   });
   
-  // En-têtes des colonnes
+  // Columns headers
   columns.forEach((col, index) => {
     page.drawText(col.name, {
       x: xPositions[index] + (col.align === 'center' ? col.width / 2 - 10 : 5),
@@ -356,7 +356,7 @@ function drawCategory(
   
   currentY -= 20;
   
-  // Lignes des archers
+  // Archers line
   category.archers.forEach((archer, index) => {
     const isEvenRow = index % 2 === 0;
 
@@ -370,7 +370,7 @@ function drawCategory(
       font: fontRegular
     });
     
-    // Nom
+    // Nome
     page.drawText(`${archer.lastName} ${archer.firstName}`, {
       x: xPositions[1] + 5,
       y: currentY,
@@ -380,7 +380,7 @@ function drawCategory(
     
     // Club
     const club = archer.club || '';
-    page.drawText(club.substring(0, 25), { // Limiter la longueur
+    page.drawText(club.substring(0, 25), { // Limit the length
       x: xPositions[2] + 5,
       y: currentY,
       size: 10,
@@ -426,7 +426,7 @@ function drawCategory(
     currentY -= 20;
   });
   
-  // Ligne de séparation en bas
+  // Bottoms separating line
   page.drawLine({
     start: { x, y: currentY - 5 },
     end: { x: x + width, y: currentY - 5 },
@@ -438,7 +438,7 @@ function drawCategory(
 }
 
 /**
- * Dessine le pied de page
+ * Draw the footer
  */
 function drawFooter(
   page: any,
@@ -453,7 +453,7 @@ function drawFooter(
 ) {
   const footerY = padding / 2;
   
-  // Numéro de page
+  // Page number
   page.drawText(`Page ${pageNumber}/${totalPages}`, {
     x: pageWidth - padding - 60,
     y: footerY,
@@ -462,7 +462,7 @@ function drawFooter(
     color: colorGrey
   });
   
-  // Nom de la compétition
+  // Competition name
   page.drawText(competition.name, {
     x: padding,
     y: footerY,
@@ -471,7 +471,7 @@ function drawFooter(
     color: colorGrey
   });
   
-  // Date et heure d'impression
+  // Impression date and time
   const now = new Date();
   const dateStr = now.toLocaleDateString();
   const timeStr = now.toLocaleTimeString();

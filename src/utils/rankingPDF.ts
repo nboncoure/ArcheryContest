@@ -3,18 +3,7 @@ import type { Competition, Archer } from '@/types';
 import type { RankingCategory } from '@/types/ranking';
 import { CATEGORIES } from '@/constants/staticData'; // Import the CATEGORIES constant
 
-/**
- * Options pour la génération du PDF des classements
- */
-interface RankingPDFOptions {
-  title?: string;
-  showDate?: boolean;
-  showLogo?: boolean;
-  showTens?: boolean;
-  showNines?: boolean;
-  maxArchersPerPage?: number;
-  maxCategoriesPerPage?: number;
-}
+
 
 /**
  * Groupe d'archers dans une catégorie pour le classement
@@ -32,6 +21,7 @@ interface RankedArcher extends Archer {
   total?: number | null;
   tens?: number | null;
   nines?: number | null;
+  eights?: number | null;
 }
 
 /**
@@ -49,9 +39,6 @@ export async function generateRankingPDF(
   const {
     title = `Classements - ${competition.name}`,
     showDate = true,
-    showLogo = true,
-    showTens = true,
-    showNines = true,
     maxArchersPerPage = 30,
     maxCategoriesPerPage = 3
   } = options;
@@ -150,6 +137,7 @@ export async function generateRankingPDF(
     yPosition = drawCategory(
       page,
       category,
+      competition,
       pagePadding,
       yPosition,
       contentWidth,
@@ -160,8 +148,6 @@ export async function generateRankingPDF(
       colorText,
       colorGrey,
       colorBackground,
-      showTens,
-      showNines
     );
     
     // Ajouter un espacement après la catégorie
@@ -294,6 +280,7 @@ function drawContinuationHeader(
 function drawCategory(
   page: any,
   category: RankingCategory,
+  competition: Competition,
   x: number,
   y: number,
   width: number,
@@ -304,8 +291,6 @@ function drawCategory(
   colorText: any,
   colorGrey: any,
   colorBackground: any,
-  showTens: boolean,
-  showNines: boolean
 ): number {
   // Titre de la catégorie - APRÈS le fond
   page.drawText(category.name, {
@@ -336,18 +321,16 @@ function drawCategory(
   // Déterminer les colonnes
   const columns = [
     { name: 'Rank', width: 35, align: 'center' },
-    { name: 'Nom', width: 200, align: 'left' },
+    { name: 'Nom', width: 150, align: 'left' },
     { name: 'Club', width: 180, align: 'left' },
     { name: 'Total', width: 50, align: 'center' }
   ];
-  
-  if (showTens) {
+
     columns.push({ name: '10', width: 40, align: 'center' });
-  }
   
-  if (showNines) {
     columns.push({ name: '9', width: 40, align: 'center' });
-  }
+
+    columns.push({ name: '8', width: 40, align: 'center' });
   
   // Calculer les positions X des colonnes
   let currentX = x;
@@ -372,6 +355,8 @@ function drawCategory(
   // Lignes des archers
   category.archers.forEach((archer, index) => {
     const isEvenRow = index % 2 === 0;
+
+    const score = competition.scores.find((s) => s.archerId === archer.id)
     
     // Rank
     page.drawText((index + 1).toString(), {
@@ -399,7 +384,7 @@ function drawCategory(
     });
     
     // Total
-    page.drawText(archer.total?.toString() || '—', {
+    page.drawText(score?.total?.toString() || '—', {
       x: xPositions[3] + columns[3].width / 2 - 5,
       y: currentY,
       size: 10,
@@ -407,26 +392,36 @@ function drawCategory(
     });
     
     // 10s
-    if (showTens) {
       const tensIndex = 4;
-      page.drawText(archer.tens?.toString() || '—', {
+      page.drawText(score?.tens?.toString() || '—', {
         x: xPositions[tensIndex] + columns[tensIndex].width / 2 - 5,
         y: currentY,
         size: 10,
         font: fontRegular
       });
-    }
+    
     
     // 9s
-    if (showNines) {
-      const ninesIndex = showTens ? 5 : 4;
-      page.drawText(archer.nines?.toString() || '—', {
+    
+      const ninesIndex = 5;
+      page.drawText(score?.nines?.toString() || '—', {
         x: xPositions[ninesIndex] + columns[ninesIndex].width / 2 - 5,
         y: currentY,
         size: 10,
         font: fontRegular
       });
-    }
+    
+
+     // 8s
+    
+      const eightsIndex = 6;
+      page.drawText(score?.eights?.toString() || '—', {
+        x: xPositions[eightsIndex] + columns[eightsIndex].width / 2 - 5,
+        y: currentY,
+        size: 10,
+        font: fontRegular
+  });
+    
     
     currentY -= 20;
   });

@@ -147,6 +147,7 @@ export const archerImportService = {
         isBeginner: row["Débutant"] === "D" || row["Débutant"] === "Oui",
         isDisabled: row["Handicapè"] === "H" || row["Handicapé"] === "Oui",
         isVisuallyImpaired: row["Malvoyant"] === "M" || row["Malvoyant"] === "Oui",
+        isPresent: false,
         importStatus,
         importMessage,
       };

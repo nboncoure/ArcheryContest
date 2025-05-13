@@ -5,7 +5,7 @@ import { useCompetitionStore } from '@/stores/competitionsStore';
 import { storeToRefs } from 'pinia';
 import { Switch } from '@headlessui/vue'
 import type { Archer } from '../types';
-import { DocumentArrowDownIcon } from '@heroicons/vue/24/outline';
+import { DocumentArrowDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
 
 
 const route = useRoute();
@@ -19,12 +19,14 @@ const filters = ref({
   bowType: "",
 });
 
-const sortField = ref("lastName");
+const sortField = ref("club");
 const sortDirection = ref<"asc" | "desc">("asc");
 
 const columns = [
   { key: "lastName", label: "Nom", sortable: true },
   { key: "firstName", label: "Prénom", sortable: true },
+  { key: "club", label: "Club", sortable: true },
+  { key: "category", label: "Catégorie", sortable: true },
   { key: "isPresent", label: "Présent", sortable: true },
 ];
 
@@ -80,7 +82,25 @@ const sortedArchers = computed(() => {
             {{ 'Rapport d\'arbitrage' }}
           </button>
         </div>
-        <tr>
+   <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="form-group">
+          <label for="search">Rechercher</label>
+          <div class="relative">
+            <MagnifyingGlassIcon
+              class="h-5 w-5 absolute right-3 top-2.5 text-gray-400"
+            />
+            <input
+              type="text"
+              id="search"
+              v-model="filters.search"
+              placeholder="Nom, prénom, club..."
+              class="pl-10 "
+            />
+          </div>
+        </div>
+   </div>
+
+          <tr>
               <th
                 v-for="column in columns"
                 :key="column.key"
@@ -112,7 +132,13 @@ const sortedArchers = computed(() => {
               <td class="px-6 py-4 whitespace-nowrap">{{ archer.lastName }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
                 {{ archer.firstName }}
-              </td>          
+              </td>  
+              <td class="px-6 py-4">
+                <div class="truncate max-w-[150px] md:max-w-[180px] lg:max-w-[220px]" :title="archer.club">
+                  {{ archer.club }}
+                </div>    
+              </td>  
+              <td class="px-6 py-4 whitespace-nowrap">{{ archer.category }}</td>      
               <td class="px-6 py-4 whitespace-nowrap">
     <Switch
     v-model="archer.isPresent"
@@ -131,6 +157,7 @@ const sortedArchers = computed(() => {
       </div>
     </div>
   </div>
+  
   
         <!-- Sélection du départ -->
       

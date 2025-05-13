@@ -42,8 +42,6 @@ export interface Archer {
   lastName: string;
   firstName: string;
   club: string;
-  beginner: string;
-  disabled: string;
   birthYear: number;
   departmentNumber: number;
   ageCategory: AgeCategory;

@@ -137,8 +137,6 @@ export const archerImportService = {
         firstName: row["Prénom"] || "",
         club: row["Club"] || "",
         birthYear,
-        beginner: row["Débutant"] || "",
-        disabled: row["Handicapé"] || "",
         departmentNumber: row["Dept."] || row["Département"] || "",  //Extraction du département
         flightId,
         ageCategory: ageCategory || AGE_CATEGORIES[0], // Défaut à Poussin si non reconnu
@@ -150,7 +148,7 @@ export const archerImportService = {
         isDisabled: row["Handicapè"] === "H" || row["Handicapé"] === "Oui",
         isVisuallyImpaired: row["Malvoyant"] === "M" || row["Malvoyant"] === "Oui",
         importStatus,
-        importMessage
+        importMessage,
       };
       
       processed.push(archer);

@@ -250,6 +250,12 @@ function cancelImport() {
                 >
                   Situation de handicape
                 </th>
+                 <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
+                  Malvoyant
+                </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -307,10 +313,13 @@ function cancelImport() {
                   {{ archer.departmentNumber }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  {{ archer.beginner }}
+                  {{ archer.isBeginner? 'Oui' : '' }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  {{ archer.disabled }}
+                  {{ archer.isDisabled? 'Oui' : '' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  {{ archer.isVisuallyImpaired? 'Oui' : '' }}
                 </td>
               </tr>
             </tbody>

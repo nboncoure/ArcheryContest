@@ -22,7 +22,10 @@ export async function generateScoreSheets(data: ScoreSheetData) {
     // Charger la police
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    
+
+    const headerHeight = 60;
+    const categoryHeaderHeight = 40;
+      
     // Ajouter les informations de la compétition
     page.drawText(data.competition.name, {
       x: 150,

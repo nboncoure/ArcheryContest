@@ -777,7 +777,6 @@ function generateScoresheets() {
         await generateScoreSheets({
           competition: competition.value!,
           flight: currentFlight.value!,
-          session: currentSession.value!,
           target,
           assignments: targetAssignments,
           archers: competition.value!.archers,

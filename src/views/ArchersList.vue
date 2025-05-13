@@ -14,14 +14,14 @@
           <label for="search">Rechercher</label>
           <div class="relative">
             <MagnifyingGlassIcon
-              class="h-5 w-5 absolute left-3 top-2.5 text-gray-400"
+              class="h-5 w-5 absolute right-3 top-2.5 text-gray-400"
             />
             <input
               type="text"
               id="search"
               v-model="filters.search"
               placeholder="Nom, prénom, club..."
-              class="pl-10"
+              class="pl-10 "
             />
           </div>
         </div>

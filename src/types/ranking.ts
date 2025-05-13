@@ -1,34 +1,34 @@
 import type { Archer } from "./index";
 
 /**
- * Interface pour une catégorie de classement
+ * Ranking category interface
  */
 export interface RankingCategory {
-  /** Nom de la catégorie */
+  /** Category name */
   name: string;
 
   description?: string;
   
-  /** Liste des archers dans cette catégorie, triés par classement */
+  /** Archer list in this category, sorted by ranking */
   archers: RankedArcher[];
 }
 
 /**
- * Interface pour un archer avec ses données de classement
+ * Interface for an archer with ranking data
  */
 export interface RankedArcher extends Archer {
-  /** Position dans le classement */
+  /** Position in the ranking */
   rank?: number;
   
-  /** Score total */
+  /** Total score */
   total?: number | null;
   
-  /** Nombre de 10 */
+  /** Number of 10 */
   tens?: number | null;
   
-  /** Nombre de 9 */
+  /** Number of 9 */
   nines?: number | null;
 
-  /** Nombre de 8 */
+  /** Number of 8 */
   eights?: number | null;
 }

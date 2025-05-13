@@ -1,53 +1,71 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { useRoute } from "vue-router";
-import { useCompetitionStore } from "../stores/competitionsStore";
-import { storeToRefs } from "pinia";
-import ArcherSelector from "@/components/score/ArcherSelector.vue";
-import TargetSelector from "@/components/score/TargetSelector.vue";
-import ScoreSheet from "@/components/score/ScoreSheet.vue";
-import {
-  Listbox,
-  ListboxButton,
-  ListboxOptions,
-  ListboxOption,
-} from "@headlessui/vue";
-import { ChevronUpDownIcon, CheckIcon } from "@heroicons/vue/24/outline";
+import { ref, computed } from 'vue';
+import { useRoute } from 'vue-router';
+import { useCompetitionStore } from '@/stores/competitionsStore';
+import { storeToRefs } from 'pinia';
+import { Switch } from '@headlessui/vue'
+import type { Archer } from '../types';
+import { DocumentArrowDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
+
 
 const route = useRoute();
 const competitionStore = useCompetitionStore();
 const { competitions } = storeToRefs(competitionStore);
+const competitionId = route.params.id as string;
 
-const selectedFlightId = ref<number>();
-const selectedRoundId = ref<number>(1);
-const selectedTargetNumber = ref<number>();
-const showDetailedScores = ref(false);
+const filters = ref({
+  search: "",
+  category: "",
+  bowType: "",
+});
 
-const competition = computed(() =>
-  competitions.value.find((c) => c.id === route.params.id)
+const sortField = ref("club");
+const sortDirection = ref<"asc" | "desc">("asc");
+
+const columns = [
+  { key: "lastName", label: "Nom", sortable: true },
+  { key: "firstName", label: "Prénom", sortable: true },
+  { key: "club", label: "Club", sortable: true },
+  { key: "category", label: "Catégorie", sortable: true },
+  { key: "isPresent", label: "Présent", sortable: true },
+];
+
+const archers = computed(
+  () => competitions.value.find((c) => c.id === competitionId)?.archers || []
 );
 
-// Initialiser les scores s'ils n'existent pas
-if (competition.value && !competition.value.scores) {
-  competitionStore.updateCompetition(competition.value.id, {
-    scores: []
+const filteredArchers = computed(() => {
+  return archers.value.filter((archer) => {
+    const searchMatch =
+      !filters.value.search ||
+      [archer.lastName, archer.firstName, archer.club]
+        .join(" ")
+        .toLowerCase()
+        .includes(filters.value.search.toLowerCase());
+
+    const categoryMatch =
+      !filters.value.category || archer.category === filters.value.category;
+
+    const bowTypeMatch =
+      !filters.value.bowType || archer.bowType.code === filters.value.bowType;
+
+    return searchMatch && categoryMatch && bowTypeMatch;
   });
-}
+});
 
-const currentFlight = computed(() =>
-  competition.value?.flights.find((f) => f.id === selectedFlightId.value)
-);
+const sortedArchers = computed(() => {
+  return [...filteredArchers.value].sort((a, b) => {
+    const aValue = a[sortField.value as keyof Archer];
+    const bValue = b[sortField.value as keyof Archer];
 
-// Initialiser le départ sélectionné avec le premier départ
-if (competition.value && competition.value.flights.length > 0) {
-  selectedFlightId.value = competition.value.flights[0].id;
-}
+    if (aValue === null || aValue === undefined) return 1;
+    if (bValue === null || bValue === undefined) return -1;
 
-const targets = computed(() => currentFlight.value?.targets || []);
+    const comparison = String(aValue).localeCompare(String(bValue));
+    return sortDirection.value === "asc" ? comparison : -comparison;
+  });
+})
 
-const selectedTarget = computed(() =>
-  targets.value.find((t) => t.number === selectedTargetNumber.value)
-);
 </script>
 
 <template>
@@ -57,168 +75,93 @@ const selectedTarget = computed(() =>
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-2xl font-bold text-gray-900">Archers présents</h1>
           <!-- Removed the button from here -->
+            <button 
+            class="btn btn-primary flex items-center gap-2"
+          >
+            <DocumentArrowDownIcon class="w-5 h-5" />
+            {{ 'Rapport d\'arbitrage' }}
+          </button>
         </div>
-
-        <!-- Sélection du départ -->
-        <div class="flex items-center gap-4 mb-6">
-          <div class="mb-0 form-group">
-            <Listbox v-model="selectedFlightId">
-              <div class="relative w-40">
-                <ListboxButton
-                  class="relative w-full py-2 pl-3 pr-10 text-left bg-white rounded-lg shadow-md cursor-default focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm"
-                >
-                  <span class="block truncate">{{
-                    competition?.flights.find(
-                      (flight) => flight.id === selectedFlightId
-                    )?.name
-                  }}</span>
-                  <span
-                    class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none"
-                  >
-                    <ChevronUpDownIcon
-                      class="w-5 h-5 text-gray-400"
-                      aria-hidden="true"
-                    />
-                  </span>
-                </ListboxButton>
-                <transition
-                  leave-active-class="transition duration-100 ease-in"
-                  leave-from-class="opacity-100"
-                  leave-to-class="opacity-0"
-                >
-                  <ListboxOptions
-                    class="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black/5 focus:outline-none sm:text-sm"
-                  >
-                    <ListboxOption
-                      v-slot="{ active, selected }"
-                      v-for="flight in competition?.flights"
-                      :key="flight.id"
-                      :value="flight.id"
-                      as="template"
-                    >
-                      <li
-                        :class="[
-                          active ? 'bg-amber-100 text-amber-900' : 'text-gray-900',
-                          'relative cursor-default text-left select-none py-2 pl-10 pr-4',
-                        ]"
-                      >
-                        <span
-                          :class="[
-                            selected ? 'font-medium' : 'font-normal',
-                            'block truncate',
-                          ]"
-                          >{{ flight.name }}</span
-                        >
-                        <span
-                          v-if="selected"
-                          class="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600"
-                        >
-                          <CheckIcon class="w-5 h-5" aria-hidden="true" />
-                        </span>
-                      </li>
-                    </ListboxOption>
-                  </ListboxOptions>
-                </transition>
-              </div>
-            </Listbox>
-          </div>
-          <div class="mb-0 form-group">
-            <Listbox v-model="selectedRoundId">
-              <div class="relative w-40">
-                <ListboxButton
-                  class="relative w-full py-2 pl-3 pr-10 text-left bg-white rounded-lg shadow-md cursor-default focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm"
-                >
-                  <span class="block truncate">
-                    Série {{ selectedRoundId }}
-                  </span>
-                  <span
-                    class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none"
-                  >
-                    <ChevronUpDownIcon
-                      class="w-5 h-5 text-gray-400"
-                      aria-hidden="true"
-                    />
-                  </span>
-                </ListboxButton>
-                <transition
-                  leave-active-class="transition duration-100 ease-in"
-                  leave-from-class="opacity-100"
-                  leave-to-class="opacity-0"
-                >
-                  <ListboxOptions
-                    class="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black/5 focus:outline-none sm:text-sm"
-                  >
-                    <ListboxOption
-                      v-slot="{ active, selected }"
-                      v-for="round in [1, 2]"
-                      :key="round"
-                      :value="round"
-                      as="template"
-                    >
-                      <li
-                        :class="[
-                          active ? 'bg-amber-100 text-amber-900' : 'text-gray-900',
-                          'relative cursor-default text-left select-none py-2 pl-10 pr-4',
-                        ]"
-                      >
-                        <span
-                          :class="[
-                            selected ? 'font-medium' : 'font-normal',
-                            'block truncate',
-                          ]"
-                        >
-                          Série {{ round }}
-                        </span>
-                        <span
-                          v-if="selected"
-                          class="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600"
-                        >
-                          <CheckIcon class="w-5 h-5" aria-hidden="true" />
-                        </span>
-                      </li>
-                    </ListboxOption>
-                  </ListboxOptions>
-                </transition>
-              </div>
-            </Listbox>
-          </div>
-        </div>
-
-        <!-- Sélection de la cible -->
-        <div class="flex items-center gap-4 mb-6">
-          <div class="w-80">
-            <ArcherSelector
-              :archers="competition?.archers || []"
-              :assignments="currentFlight?.assignments || []"
-              @select-target="selectedTargetNumber = $event"
+   <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="form-group">
+          <label for="search">Rechercher</label>
+          <div class="relative">
+            <MagnifyingGlassIcon
+              class="h-5 w-5 absolute right-3 top-2.5 text-gray-400"
+            />
+            <input
+              type="text"
+              id="search"
+              v-model="filters.search"
+              placeholder="Nom, prénom, club..."
+              class="pl-10 "
             />
           </div>
         </div>
+   </div>
 
-        <TargetSelector
-          v-model="selectedTargetNumber"
-          :targets="targets"
-          :assignments="currentFlight?.assignments || []"
-          :scores="competition?.scores || []"
-          :selectedRoundId="selectedRoundId"
-          @select="selectedTargetNumber = $event"
-        />
+          <tr>
+              <th
+                v-for="column in columns"
+                :key="column.key"
+                @click="() => column.sortable && sort(column.key)"
+                :class="[
+                  'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider',
+                  column.sortable && 'cursor-pointer hover:text-gray-700',
+                  column.key === 'club' && 'w-40 md:w-48 lg:w-56',
+                ]"
+              >
+                <div class="flex items-center gap-1">
+                  {{ column.label }}
+                  <template v-if="column.sortable && sortField === column.key">
+                    <ChevronUpIcon
+                      v-if="sortDirection === 'asc'"
+                      class="w-4 h-4"
+                    />
+                    <ChevronDownIcon v-else class="w-4 h-4" />
+                  </template>
+                </div>
+              </th>
+            </tr>
+           <tbody class="bg-white divide-y divide-gray-200">
+            <tr
+              v-for="archer in sortedArchers"
+              :key="archer.id"
+              class="hover:bg-gray-50"
+            >
+              <td class="px-6 py-4 whitespace-nowrap">{{ archer.lastName }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                {{ archer.firstName }}
+              </td>  
+              <td class="px-6 py-4">
+                <div class="truncate max-w-[150px] md:max-w-[180px] lg:max-w-[220px]" :title="archer.club">
+                  {{ archer.club }}
+                </div>    
+              </td>  
+              <td class="px-6 py-4 whitespace-nowrap">{{ archer.category }}</td>      
+              <td class="px-6 py-4 whitespace-nowrap">
+    <Switch
+    v-model="archer.isPresent"
+    :class="archer.isPresent ? 'bg-blue-600' : 'bg-gray-200'"
+    class="relative inline-flex h-6 w-11 items-center rounded-full"
+  >
+    <span class="sr-only">Enable notifications</span>
+    <span
+      :class="archer.isPresent ? 'translate-x-6' : 'translate-x-1'"
+      class="inline-block h-4 w-4 transform rounded-full bg-white transition" />
+  </Switch>
+              </td>
+            </tr>
+          </tbody>
+           
       </div>
     </div>
-
-    <!-- Feuille de marque -->
-    <ScoreSheet
-      :competition="competition"
-      :selectedFlightId="selectedFlightId"
-      :selectedRoundId="selectedRoundId"
-      :selectedTargetNumber="selectedTargetNumber"
-      v-model:showDetailedScores="showDetailedScores"
-    />
   </div>
+  
+  
+        <!-- Sélection du départ -->
+      
 </template>
 
-<style scoped>
-.score-entry {
-  @apply max-w-7xl mx-auto p-6;
-}
-</style>
+
+

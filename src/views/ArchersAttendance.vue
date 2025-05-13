@@ -1,200 +1,23 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCompetitionStore } from '@/stores/competitionsStore';
 import { storeToRefs } from 'pinia';
 import { Switch } from '@headlessui/vue'
 import type { Archer } from '../types';
-import { generateRankingPDF } from '@/utils/rankingPDF';
-import type { RankingCategory } from '@/types/ranking';
 import { DocumentArrowDownIcon } from '@heroicons/vue/24/outline';
-import { CATEGORIES, getAgeCategoryByCode, getBowTypeByCode } from '@/constants/staticData';
 
 
 const route = useRoute();
 const competitionStore = useCompetitionStore();
 const { competitions } = storeToRefs(competitionStore);
+const competitionId = route.params.id as string;
 
-const selectedCategory = ref('');
-const selectedBowType = ref('');
-const isGeneratingPDF = ref(false);
-const showExportModal = ref(false);
-
-// PDF export options
-const pdfOptions = ref({
-  title: '',
-  showDate: true,
-  maxCategoriesPerPage: 3
+const filters = ref({
+  search: "",
+  category: "",
+  bowType: "",
 });
-
-const competition = computed(() =>
-  competitions.value.find((c) => c.id === route.params.id)
-);
-
-// Initiate the PDF title with the competition name
-onMounted(() => {
-  if (competition.value) {
-    pdfOptions.value.title = `Classements - ${competition.value.name}`;
-  }
-});
-
-const categories = computed(() =>
-  [...new Set(competition.value?.archers.map((a) => a.category))].sort()
-);
-
-const filteredArchers = computed(() => {
-  if (!competition.value) return [];
-
-  return competition.value.archers.filter((archer) => {
-    // Apply category and bow type filters
-    if (selectedCategory.value && archer.category !== selectedCategory.value)
-      return false;
-    if (selectedBowType.value && archer.bowType.code !== selectedBowType.value)
-      return false;
-
-    return true;
-  });
-});
-
-const groupedRankings = computed((): RankingCategory[] => {
-  const groups = new Map<string, Archer[]>();
-
-  // Group archers by category
-  filteredArchers.value.forEach((archer) => {
-    const key = archer.category || 'Sans catégorie';
-    if (!groups.has(key)) {
-      groups.set(key, []);
-    }
-    groups.get(key)!.push(archer);
-  });
-
-  // Sort archers in each group
-  return Array.from(groups.entries())
-    .map(([name, archers]) => {
-      // Generate the category description
-      let description = '';
-      
-      // Search for the corresponding category in CATEGORIES
-      const categoryData = CATEGORIES.find(cat => cat.code === name);
-      
-      if (categoryData) {
-        // Recover detailed information
-        const gender = categoryData.gender === 'M' ? 'Homme' : 'Femme';
-        const ageCategory = getAgeCategoryByCode(categoryData.ageCategory);
-        const bowType = getBowTypeByCode(categoryData.bowType);
-        
-        // Building the description
-        description = `${gender} ${ageCategory.minAge}/${ageCategory.maxAge} ans ${bowType.label}`;
-      }
-      
-      return {
-        name,
-        description,
-        archers: archers.sort((a, b) => {
-          const scoreA = getArcherScore(a);
-          const scoreB = getArcherScore(b);
-       
-
-          // If the score is missing, place it at the end
-          if (!scoreA?.total) return 1;
-          if (!scoreB?.total) return -1;
-         
-
-          // Sort by total descending
-          if (scoreA.total !== scoreB.total) {
-            return scoreB.total - scoreA.total;
-          }
-
-          // If tied, sort by number of 10
-          if (scoreA.tens !== scoreB.tens) {
-            return scoreB.tens! - scoreA.tens!;
-          }
-
-          // If tied of 10, sort by number of 9
-          if (scoreA.nines !== scoreB.nines) {
-            return scoreB.nines! - scoreA.nines!;
-          }
-
-          if (scoreA.eights !== scoreB.eights) {
-            return scoreB.eights! - scoreA.eights!;
-          }
-
-          return scoreA.birthYear! - scoreB.birthYear! ; // Sort by birth year ascending
-
-        }),
-      
-
-      };
-    })
-    // Replace the alphabetical sort with a sort based on the order in CATEGORIES
-    .sort((a, b) => {
-      // Find the index of each category in CATEGORIES
-      const indexA = CATEGORIES.findIndex(cat => cat.code === a.name);
-      const indexB = CATEGORIES.findIndex(cat => cat.code === b.name);
-
-      
-      // If a category is not found, place it at the end
-      if (indexA === -1) return 1;
-      if (indexB === -1) return -1;
-      
-      // Else, sort by order in CATEGORIES
-      return indexA - indexB;
-    });
-});
-
-function getArcherScore(archer: Archer): ArcherScore | undefined {
-  return competition.value?.scores.find(
-    (s) => s.archerId === archer.id
-  );
-}
-
-/**
- * Open the PDF export configuration modal
- */
-function exportToPDF() {
-  showExportModal.value = true;
-}
-
-/**
- * Genrate the PDF with the selected options
- */
-async function generatePDF() {
-  if (!competition.value || isGeneratingPDF.value) return;
-  
-  try {
-    isGeneratingPDF.value = true;
-    showExportModal.value = false;
-    
-    // Generate the PDF
-    const pdfBytes = await generateRankingPDF(
-      competition.value,
-      groupedRankings.value,
-      {
-        title: pdfOptions.value.title,
-        maxCategoriesPerPage: pdfOptions.value.maxCategoriesPerPage
-      }
-    );
-    
-    // Create a blob and download it
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `classements-${competition.value.name.toLowerCase().replace(/\s+/g, '-')}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    
-    // Clean
-    URL.revokeObjectURL(url);
-    document.body.removeChild(link);
-  } catch (error) {
-    console.error('Erreur lors de la génération du PDF:', error);
-    alert('Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.');
-  } finally {
-    isGeneratingPDF.value = false;
-  }
-
-}
 
 const sortField = ref("lastName");
 const sortDirection = ref<"asc" | "desc">("asc");
@@ -204,6 +27,29 @@ const columns = [
   { key: "firstName", label: "Prénom", sortable: true },
   { key: "isPresent", label: "Présent", sortable: true },
 ];
+
+const archers = computed(
+  () => competitions.value.find((c) => c.id === competitionId)?.archers || []
+);
+
+const filteredArchers = computed(() => {
+  return archers.value.filter((archer) => {
+    const searchMatch =
+      !filters.value.search ||
+      [archer.lastName, archer.firstName, archer.club]
+        .join(" ")
+        .toLowerCase()
+        .includes(filters.value.search.toLowerCase());
+
+    const categoryMatch =
+      !filters.value.category || archer.category === filters.value.category;
+
+    const bowTypeMatch =
+      !filters.value.bowType || archer.bowType.code === filters.value.bowType;
+
+    return searchMatch && categoryMatch && bowTypeMatch;
+  });
+});
 
 const sortedArchers = computed(() => {
   return [...filteredArchers.value].sort((a, b) => {
@@ -229,11 +75,9 @@ const sortedArchers = computed(() => {
           <!-- Removed the button from here -->
             <button 
             class="btn btn-primary flex items-center gap-2"
-            @click="exportToPDF"
-            :disabled="isGeneratingPDF"
           >
             <DocumentArrowDownIcon class="w-5 h-5" />
-            {{ isGeneratingPDF ? 'Génération du PDF...' : 'Rapport d\'arbitrage' }}
+            {{ 'Rapport d\'arbitrage' }}
           </button>
         </div>
         <tr>

@@ -89,7 +89,7 @@ const groupedRankings = computed((): RankingCategory[] => {
         const bowType = getBowTypeByCode(categoryData.bowType);
         
         // Building the description
-        description = `${gender} ${ageCategory.minAge}/${ageCategory.maxAge} ans ${bowType.label}`;
+        description = `${ageCategory.minAge}/${ageCategory.maxAge} ans ${gender} ${bowType.label}`;
       }
       
       return {
@@ -103,7 +103,7 @@ const groupedRankings = computed((): RankingCategory[] => {
           // If the score is missing, place it at the end
           if (!scoreA?.total) return 1;
           if (!scoreB?.total) return -1;
-         
+          
 
           // Sort by total descending
           if (scoreA.total !== scoreB.total) {

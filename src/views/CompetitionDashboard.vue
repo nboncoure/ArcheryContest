@@ -330,6 +330,24 @@ function saveCompetition() {
                     />
                   </div>
 
+                  <div class="form-group">
+                    <label for="arbitratorName">Nom de l'arbitre</label>
+                    <input
+                      type="text"
+                      id="arbitratorName"
+                      v-model="form.arbitratorName"
+                    />
+                  </div>
+
+                    <div class="form-group">
+                    <label for="organizingClub">Club oranisateur</label>
+                    <input
+                      type="text"
+                      id="organizingClub"
+                      v-model="form.organizingClub"
+                    />
+                  </div>
+
                   <div class="flex justify-end gap-3 mt-6">
                     <button
                       type="button"

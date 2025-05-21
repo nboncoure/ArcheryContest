@@ -13,6 +13,7 @@ const form = ref({
   name: "",
   date: "",
   location: "",
+  organizingClub: "",
   type: "indoor" as const,
   numberOfSessions: 1,
   numberOfTargets: 10,
@@ -81,6 +82,11 @@ function handleSubmit() {
           min="1"
           required
         />
+      </div>
+
+       <div class="form-group">
+        <label for="organizingClub">Club organisateur</label>
+        <input type="organizingClub" id="organizingClub" v-model="form.organizingClub" />
       </div>
 
       <div class="actions">

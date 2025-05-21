@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { useCompetitionStore } from '@/stores/competitionsStore';
 import { storeToRefs } from 'pinia';
 import { Switch } from '@headlessui/vue'
+import { generateAttendancesheetPDF } from '@/utils/attendancesheetPDF';
 import type { Archer } from '../types';
 import { DocumentArrowDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
 
@@ -12,6 +13,14 @@ const route = useRoute();
 const competitionStore = useCompetitionStore();
 const { competitions } = storeToRefs(competitionStore);
 const competitionId = route.params.id as string;
+
+const isGeneratingPDF = ref(false);
+const showExportModal = ref(false);
+
+const competition = computed(() =>
+  competitions.value.find((c) => c.id === route.params.id)
+);
+
 
 const filters = ref({
   search: "",
@@ -38,7 +47,7 @@ const filteredArchers = computed(() => {
   return archers.value.filter((archer) => {
     const searchMatch =
       !filters.value.search ||
-      [archer.lastName, archer.firstName, archer.club]
+      [archer.lastName, archer.firstName, archer.club, archer.category]
         .join(" ")
         .toLowerCase()
         .includes(filters.value.search.toLowerCase());
@@ -66,6 +75,43 @@ const sortedArchers = computed(() => {
   });
 })
 
+
+const pdfOptions = ref({
+  title: '',
+});
+
+async function generatePDF() {
+  if (!competition.value || isGeneratingPDF.value) return; 
+  
+  try {
+    isGeneratingPDF.value = true;
+    showExportModal.value = false;
+    
+    // Generate the PDF
+    const pdfBytes = await generateAttendancesheetPDF(
+       competition.value,
+       archers.value,
+    );
+
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Rapport arbitre.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    
+
+   URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF:', error);
+    alert('Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.');
+  } finally {
+    isGeneratingPDF.value = false;
+  }
+}
+
 </script>
 
 <template>
@@ -77,6 +123,7 @@ const sortedArchers = computed(() => {
           <!-- Removed the button from here -->
             <button 
             class="btn btn-primary flex items-center gap-2"
+            @click="generatePDF"
           >
             <DocumentArrowDownIcon class="w-5 h-5" />
             {{ 'Rapport d\'arbitrage' }}
@@ -157,10 +204,6 @@ const sortedArchers = computed(() => {
       </div>
     </div>
   </div>
-  
-  
-        <!-- Sélection du départ -->
-      
 </template>
 
 

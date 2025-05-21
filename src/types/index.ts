@@ -123,4 +123,6 @@ export interface Competition {
   createdAt: string;
   updatedAt: string;
   scores: ArcherScore[];
+  organizingClub: string;
+  arbitratorName: string;
 }

@@ -19,59 +19,60 @@ export async function generateScoreSheets(
     const url = 'arc.pdf'
     const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer())
     
-    const pdfDoc = await PDFDocument.load(existingPdfBytes);
-    let page = pdfDoc.getPages()[0];
-    page.setRotation(degrees(90));
+    const pdfSrc = await PDFDocument.load(existingPdfBytes);
+    const pdfDoc = await PDFDocument.create();  
+    
 
-    const [pdfPage] = await pdfDoc.copyPages(pdfDoc, [0])
+   // let page = pdfDoc.getPages()[0];
 
     const colorText = rgb(0.15, 0.39, 0.92); // #2563eb (text)
-    
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
    
-    const maxAssignmentsPerPage = 1;
+    assignments.forEach(async (assignment)  => {
+      const archer = archers.find(archer => archer.id === assignment.archerId);
+      const [page] = await pdfDoc.copyPages(pdfSrc, [0])
+      page.setRotation(degrees(90));
+      pdfDoc.addPage(page);
 
-    if (assignments.length > maxAssignmentsPerPage) {
-      assignments.forEach(assignment  => {
-        const archer = archers.find(archer => archer.id === assignment.archerId);
-       
-        
-  page.drawText(`${archer?.lastName} ${archer?.firstName}`, {
-    x: 100,
-    y: 500,
-    size: 12,
-    font: fontBold,
-    color: colorText,
-  });
+      page.drawText(`${archer?.lastName} ${archer?.firstName}`, {
+        rotate: degrees(90),
+        x: 96,
+        y: 75,
+        size: 12,
+        font: fontBold,
+        color: colorText,
+      });
 
-  page.drawText(`${archer?.club}`, {
-    x: 25,
-    y: 445,
-    size: 9,
-    font: fontBold,
-    color: colorText,
-  });
+      page.drawText(`${archer?.club}`, {
+        rotate: degrees(90),
+        x: 150,
+        y: 25,
+        size: 9,
+        font: fontBold,
+        color: colorText,
+      });
 
-  page.drawText(`${archer?.birthYear}`, {
-    x: 410,
-    y: 375,
-    size: 12,
-    font: fontBold,
-    color: colorText,
-  });
+      page.drawText(`${archer?.birthYear}`, {
+        rotate: degrees(90),
+        x: 220,
+        y: 410,
+        size: 12,
+        font: fontBold,
+        color: colorText,
+      });
 
-  page.drawText(`${archer?.license}`, {
-    x: 400,
-    y: 320,
-    size: 12,
-    font: fontBold,
-    color: colorText,
-  });
+      page.drawText(`${archer?.license}`, {
+        rotate: degrees(90),
+        x: 275,
+        y: 400,
+        size: 12,
+        font: fontBold,
+        color: colorText,
+      });
 
-    page = pdfDoc.addPage(pdfPage);
-  });
-  }
+        page = pdfDoc.addPage(pdfPage);
+      });
     
     const pdfBytes = await pdfDoc.save()
 

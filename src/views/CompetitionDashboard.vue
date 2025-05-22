@@ -340,7 +340,7 @@ function saveCompetition() {
                   </div>
 
                     <div class="form-group">
-                    <label for="organizingClub">Club oranisateur</label>
+                    <label for="organizingClub">Club organisateur</label>
                     <input
                       type="text"
                       id="organizingClub"

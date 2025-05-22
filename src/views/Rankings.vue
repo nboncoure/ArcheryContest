@@ -84,7 +84,7 @@ const groupedRankings = computed((): RankingCategory[] => {
       
       if (categoryData) {
         // Recover detailed information
-        const gender = categoryData.gender === 'M' ? 'Homme' : 'Femme';
+        const gender = categoryData.gender === 'M' ? 'Masculin' : 'Féminin';
         const ageCategory = getAgeCategoryByCode(categoryData.ageCategory);
         const bowType = getBowTypeByCode(categoryData.bowType);
         

@@ -21,7 +21,6 @@ const competition = computed(() =>
   competitions.value.find((c) => c.id === route.params.id)
 );
 
-
 const filters = ref({
   search: "",
   category: "",

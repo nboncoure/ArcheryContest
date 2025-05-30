@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { useCompetitionStore } from '@/stores/competitionsStore';
 import { storeToRefs } from 'pinia';
 import type { Archer, ArcherScore } from '@/types';
+import { generateRankingByClubPDF } from '@/utils/rankingByClubPDF';
 import { generateRankingPDF } from '@/utils/rankingPDF';
 import type { RankingCategory } from '@/types/ranking';
 import { 
@@ -19,6 +20,8 @@ import { CATEGORIES, getAgeCategoryByCode, getBowTypeByCode } from '@/constants/
 const route = useRoute();
 const competitionStore = useCompetitionStore();
 const { competitions } = storeToRefs(competitionStore);
+const competitionId = route.params.id as string;
+
 
 const selectedCategory = ref('');
 const selectedBowType = ref('');
@@ -34,6 +37,10 @@ const pdfOptions = ref({
 
 const competition = computed(() =>
   competitions.value.find((c) => c.id === route.params.id)
+);
+
+const archers = computed(
+  () => competitions.value.find((c) => c.id === competitionId)?.archers || []
 );
 
 // Initiate the PDF title with the competition name
@@ -199,6 +206,39 @@ async function generatePDF() {
     isGeneratingPDF.value = false;
   }
 }
+
+async function generateClubPDF() {
+  if (!competition.value || isGeneratingPDF.value) return; 
+  
+  try {
+      isGeneratingPDF.value = true;
+      showExportModal.value = false;
+    
+    // Generate the PDF
+  const pdfBytes = await generateRankingByClubPDF(
+    competition.value,
+    archers.value,
+  );
+
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `Placement des archers par club.pdf`;
+  document.body.appendChild(link);
+  link.click();
+    
+
+  URL.revokeObjectURL(url);
+  document.body.removeChild(link);
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF:', error);
+    alert('Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.');
+    } finally {
+      isGeneratingPDF.value = false;
+    }
+  }
+
 </script>
 
 <template>
@@ -207,8 +247,7 @@ async function generatePDF() {
       <div class="p-6">
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-2xl font-bold text-gray-900">Classements</h1>
-          
-          <!-- PDF export button -->
+
           <button 
             class="btn btn-primary flex items-center gap-2"
             @click="exportToPDF"
@@ -216,6 +255,14 @@ async function generatePDF() {
           >
             <DocumentArrowDownIcon class="w-5 h-5" />
             {{ isGeneratingPDF ? 'Génération du PDF...' : 'Exporter en PDF' }}
+          </button>
+
+          <button 
+            class="btn btn-primary flex items-center gap-2"
+            @click="generateClubPDF"
+          >
+            <DocumentArrowDownIcon class="w-5 h-5" />
+            {{ 'Placement par club' }}
           </button>
         </div>
 

@@ -116,7 +116,7 @@ export interface Competition {
   location: string;
   type: CompetitionType;
   numberOfTargets: number;
-  numberOfFlights: number;
+  numberOfSessions: number;
   archers: Archer[];
   flights: Flight[];
   status: CompetitionStatus;

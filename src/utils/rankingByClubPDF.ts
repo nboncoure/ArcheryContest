@@ -22,7 +22,7 @@ export async function generateRankingByClubPDF(
   const pngUrl = 'LogoUfolep.svg.png'
   const pngImageBytes = await fetch(pngUrl).then((res) => res.arrayBuffer())
   const pngImage = await pdfDoc.embedPng(pngImageBytes)
-  const pngDims = pngImage.scale(0.08)
+  const pngDims = pngImage.scale(0.05)
 
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -30,7 +30,7 @@ export async function generateRankingByClubPDF(
   const pagePadding = 50;
   const pageWidth = 595.28; // A4 width in points
   const pageHeight = 841.89; // A4 height in points
-  const contentWidth = pageWidth - (pagePadding * 2); 
+  const contentWidth = pageWidth - (pagePadding * 2);
 
   const headerHeight = 120;
   const clubHeaderHeight = 25;
@@ -43,6 +43,7 @@ export async function generateRankingByClubPDF(
   const flightGroups = groupArchersByFlightAndClub(archers, competition.flights);
 
   let currentPageNumber = 1;
+  let archerRank = 1; 
 
   // Process each flight
   for (let flightIndex = 0; flightIndex < flightGroups.length; flightIndex++) {
@@ -73,7 +74,7 @@ export async function generateRankingByClubPDF(
     while (clubIndex < flightGroup.clubs.length) {
       const club = flightGroup.clubs[clubIndex];
       const archerCount = club.archers.length;
-      
+
       // Calculate space needed for this club
       const spaceNeeded = clubHeaderHeight + tableHeaderHeight + (rowHeight * archerCount) + clubMargin;
 
@@ -83,7 +84,7 @@ export async function generateRankingByClubPDF(
         currentPageNumber++;
         page = pdfDoc.addPage([pageWidth, pageHeight]);
         yPosition = pageHeight - pagePadding;
-        
+
         // Redraw header on new page
         yPosition = drawHeader(
           page,
@@ -101,7 +102,7 @@ export async function generateRankingByClubPDF(
       }
 
       // Draw club section
-      yPosition = drawClubSection(
+      const result = drawClubSection(
         page,
         club,
         pagePadding,
@@ -112,8 +113,12 @@ export async function generateRankingByClubPDF(
         clubHeaderHeight,
         tableHeaderHeight,
         rowHeight,
-        flightGroup.assignments
+        flightGroup.assignments,
+        archerRank
       );
+
+      archerRank = result.archerRank; // Update rank for next club
+      yPosition = result.yPosition; // Update y position after drawing club
 
       yPosition -= clubMargin; // Add space between clubs
       clubIndex++;
@@ -133,7 +138,7 @@ function groupArchersByFlightAndClub(archers: Archer[], flights: Flight[]): Flig
   if (!flights || flights.length === 0 || flights.every(f => !f.assignments || f.assignments.length === 0)) {
     // Group all archers by club
     const clubMap = new Map<string, ClubGroup>();
-    
+
     allArchers.forEach(archer => {
       const key = `${archer.departmentNumber}-${archer.club}`;
       if (!clubMap.has(key)) {
@@ -180,13 +185,13 @@ function groupArchersByFlightAndClub(archers: Archer[], flights: Flight[]): Flig
   // Group by flight
   const flightGroups: FlightGroup[] = flights.map(flight => {
     // Get archers assigned to this flight
-    const flightArchers = allArchers.filter(archer => 
+    const flightArchers = allArchers.filter(archer =>
       flight.assignments && flight.assignments.some(assignment => assignment.archerId === archer.id)
     );
 
     // Group by club
     const clubMap = new Map<string, ClubGroup>();
-    
+
     flightArchers.forEach(archer => {
       const key = `${archer.departmentNumber}-${archer.club}`;
       if (!clubMap.has(key)) {
@@ -253,18 +258,18 @@ function drawHeader(
   // Draw logo
   page.drawImage(pngImage, {
     x: x,
-    y: y - pngDims.height - 10,
+    y: y - 15,
     width: pngDims.width,
     height: pngDims.height,
   });
 
   // Draw title centered
   const title = 'VOTRE PLACE SUR LE PAS DE TIR';
-  const titleWidth = fontBold.widthOfTextAtSize(title, 18);
+  const titleWidth = fontBold.widthOfTextAtSize(title, 14);
   page.drawText(title, {
-    x: (pageWidth - titleWidth) / 2,
+    x: (pageWidth - titleWidth) - 300,
     y: y - 35,
-    size: 18,
+    size: 14,
     font: fontBold,
   });
 
@@ -272,22 +277,22 @@ function drawHeader(
   const flightInfo = `Départ N° ${flight.id}`;
   const flightInfoWidth = fontBold.widthOfTextAtSize(flightInfo, 14);
   page.drawText(flightInfo, {
-    x: (pageWidth - flightInfoWidth) / 2,
-    y: y - 55,
+    x: (pageWidth - flightInfoWidth) - 200,
+    y: y - 35,
     size: 14,
     font: fontBold,
   });
 
   const pageInfo = `page : ${pageNumber}`;
-  const pageInfoWidth = fontRegular.widthOfTextAtSize(pageInfo, 12);
+  const pageInfoWidth = fontRegular.widthOfTextAtSize(pageInfo, 14);
   page.drawText(pageInfo, {
-    x: (pageWidth - pageInfoWidth) / 2,
-    y: y - 72,
-    size: 12,
-    font: fontRegular,
+    x: (pageWidth - pageInfoWidth) - 100,
+    y: y - 35,
+    size: 14,
+    font: fontBold,
   });
-
-  return y - height;
+  
+  return y - height + 40;
 }
 
 function drawClubSection(
@@ -301,21 +306,22 @@ function drawClubSection(
   clubHeaderHeight: number,
   tableHeaderHeight: number,
   rowHeight: number,
-  assignments: Map<string, TargetAssignment>
-): number {
+  assignments: Map<string, TargetAssignment>,
+  archerRank: number
+): { yPosition: number, archerRank: number } {
   let currentY = y;
 
   // Define column widths and positions
   const columns = [
-    { name: 'Cible', x: 0, width: 40 },
-    { name: 'Pos.', x: 40, width: 35 },
-    { name: 'Nom', x: 75, width: 130 },
-    { name: 'Prénom', x: 205, width: 130 },
-    { name: 'Catégorie', x: 335, width: 60 },
-    { name: 'Arc', x: 395, width: 40 },
+    { name: 'N°', x: 0, width: 40 },
+    { name: 'Nom', x: 40, width: 110 },
+    { name: 'Prénom', x: 150, width: 110 },
+    { name: 'Cible', x: 260, width: 40 },
+    { name: 'Licence', x: 300, width: 60 },
+    { name: 'Catégorie', x: 360, width: 50 },
   ];
 
-  const tableWidth = 435;
+  const tableWidth = 465;
   const tableStartX = x;
 
   // Draw club header with yellow background
@@ -324,7 +330,7 @@ function drawClubSection(
     y: currentY - clubHeaderHeight,
     width: tableWidth,
     height: clubHeaderHeight,
-    color: rgb(1, 1, 0), // Yellow
+    color: rgb(0.9, 0.9, 0.9),
     borderColor: rgb(0, 0, 0),
     borderWidth: 1,
   });
@@ -403,8 +409,8 @@ function drawClubSection(
   // Draw archer rows
   club.archers.forEach((archer, index) => {
     // Alternate row colors - green for even rows
-    const rowColor = index % 2 === 0 ? rgb(0.85, 1, 0.85) : rgb(1, 1, 1);
-    
+    const rowColor = index % 2 === 0 ? rgb(1, 1, 1) : rgb(1, 1, 1);
+
     // Draw row background with border
     page.drawRectangle({
       x: tableStartX,
@@ -433,7 +439,7 @@ function drawClubSection(
 
     // Draw cell content
     // Target number
-    page.drawText(assignment ? assignment.targetNumber.toString() : '', {
+    page.drawText((archerRank++).toString(), {
       x: tableStartX + columns[0].x + 3,
       y: currentY - 14,
       size: 9,
@@ -441,7 +447,7 @@ function drawClubSection(
     });
 
     // Position
-    page.drawText(assignment ? assignment.position : '', {
+    page.drawText(archer.lastName.toUpperCase(), {
       x: tableStartX + columns[1].x + 3,
       y: currentY - 14,
       size: 9,
@@ -449,7 +455,7 @@ function drawClubSection(
     });
 
     // Last name
-    page.drawText(archer.lastName.toUpperCase(), {
+    page.drawText(archer.firstName, {
       x: tableStartX + columns[2].x + 3,
       y: currentY - 14,
       size: 9,
@@ -457,7 +463,7 @@ function drawClubSection(
     });
 
     // First name
-    page.drawText(archer.firstName, {
+    page.drawText(assignment ? `${assignment.targetNumber.toString()} ${assignment.position}` : '', {
       x: tableStartX + columns[3].x + 3,
       y: currentY - 14,
       size: 9,
@@ -465,7 +471,7 @@ function drawClubSection(
     });
 
     // Category
-    const category = `${archer.ageCategory.code}${archer.gender}`;
+    const category = `${archer.license}`;
     page.drawText(category, {
       x: tableStartX + columns[4].x + 3,
       y: currentY - 14,
@@ -474,26 +480,15 @@ function drawClubSection(
     });
 
     // Bow type
-    page.drawText(archer.bowType.code, {
+    page.drawText(`${archer.ageCategory.minAge}/${archer.ageCategory.maxAge} ans ${archer.gender} ${archer.bowType.code}`, {
       x: tableStartX + columns[5].x + 3,
       y: currentY - 14,
       size: 9,
       font: fontRegular,
     });
 
-    // Target assignment info on the right
-    if (assignment) {
-      const targetInfo = `-> ${assignment.targetNumber} en N°${assignment.position}`;
-      page.drawText(targetInfo, {
-        x: tableStartX + tableWidth + 10,
-        y: currentY - 14,
-        size: 9,
-        font: fontRegular,
-      });
-    }
-
     currentY -= rowHeight;
   });
 
-  return currentY;
+return { yPosition: currentY, archerRank };
 }

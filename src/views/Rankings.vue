@@ -248,7 +248,7 @@ async function generatePDF() {
     <div v-for="category in groupedRankings" :key="category.name" class="mb-6 card">
       <div class="p-6">
         <h2 class="mb-4 text-xl font-semibold text-gray-900">
-          {{ category.name }}
+          {{ category.name }} 
         </h2>
 
         <div class="overflow-x-auto">

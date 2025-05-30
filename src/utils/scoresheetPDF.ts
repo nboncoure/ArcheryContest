@@ -70,8 +70,6 @@ export async function generateScoreSheets(
         font: fontBold,
         color: colorText,
       });
-
-        page = pdfDoc.addPage(pdfPage);
       });
     
     const pdfBytes = await pdfDoc.save()

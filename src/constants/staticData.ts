@@ -170,20 +170,14 @@ export const CATEGORIES: {
   {
     ageCategory: "P",
     bowType: "SV",
-    gender: "M",
-    code: "PMSV",
-  },
-  {
-    ageCategory: "P",
-    bowType: "SV",
     gender: "F",
     code: "PFSV",
   },
   {
     ageCategory: "P",
-    bowType: "AV",
+    bowType: "SV",
     gender: "M",
-    code: "PMAV",
+    code: "PMSV",
   },
   {
     ageCategory: "P",
@@ -191,14 +185,14 @@ export const CATEGORIES: {
     gender: "F",
     code: "PFAV",
   },
+  {
+    ageCategory: "P",
+    bowType: "AV",
+    gender: "M",
+    code: "PMAV",
+  },
 
   // Benjamins : 11/12 ans
-  {
-    ageCategory: "B",
-    bowType: "SV",
-    gender: "M",
-    code: "BMSV",
-  },
   {
     ageCategory: "B",
     bowType: "SV",
@@ -207,9 +201,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "B",
-    bowType: "AV",
+    bowType: "SV",
     gender: "M",
-    code: "BMAV",
+    code: "BMSV",
   },
   {
     ageCategory: "B",
@@ -217,8 +211,20 @@ export const CATEGORIES: {
     gender: "F",
     code: "BFAV",
   },
+  {
+    ageCategory: "B",
+    bowType: "AV",
+    gender: "M",
+    code: "BMAV",
+  },
 
   // Minimes : 13/14 ans
+  {
+    ageCategory: "M",
+    bowType: "SV",
+    gender: "F",
+    code: "MFSV",
+  },
   {
     ageCategory: "M",
     bowType: "SV",
@@ -227,9 +233,10 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "M",
-    bowType: "SV",
+    bowType: "AV",
     gender: "F",
-    code: "MFSV",
+    code: "MFAV",
+    
   },
   {
     ageCategory: "M",
@@ -239,9 +246,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "M",
-    bowType: "AV",
+    bowType: "COSV",
     gender: "F",
-    code: "MFAV",
+    code: "MFCOSV",
   },
   {
     ageCategory: "M",
@@ -251,9 +258,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "M",
-    bowType: "COSV",
+    bowType: "COAV",
     gender: "F",
-    code: "MFCOSV",
+    code: "MFCOAV",
   },
   {
     ageCategory: "M",
@@ -261,20 +268,8 @@ export const CATEGORIES: {
     gender: "M",
     code: "MMCOAV",
   },
-  {
-    ageCategory: "M",
-    bowType: "COAV",
-    gender: "F",
-    code: "MFCOAV",
-  },
 
   // Cadets : 15/16 ans
-  {
-    ageCategory: "C",
-    bowType: "SV",
-    gender: "M",
-    code: "CMSV",
-  },
   {
     ageCategory: "C",
     bowType: "SV",
@@ -283,9 +278,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "C",
-    bowType: "AV",
+    bowType: "SV",
     gender: "M",
-    code: "CMAV",
+    code: "CMSV",
   },
   {
     ageCategory: "C",
@@ -295,9 +290,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "C",
-    bowType: "COSV",
+    bowType: "AV",
     gender: "M",
-    code: "CMCOSV",
+    code: "CMAV",
   },
   {
     ageCategory: "C",
@@ -307,9 +302,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "C",
-    bowType: "COAV",
+    bowType: "COSV",
     gender: "M",
-    code: "CMCOAV",
+    code: "CMCOSV",
   },
   {
     ageCategory: "C",
@@ -317,14 +312,14 @@ export const CATEGORIES: {
     gender: "F",
     code: "CFCOAV",
   },
+  {
+    ageCategory: "C",
+    bowType: "COAV",
+    gender: "M",
+    code: "CMCOAV",
+  },
 
   // Juniors : 17/25 ans
-  {
-    ageCategory: "J",
-    bowType: "SV",
-    gender: "M",
-    code: "JMSV",
-  },
   {
     ageCategory: "J",
     bowType: "SV",
@@ -333,9 +328,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "J",
-    bowType: "AV",
+    bowType: "SV",
     gender: "M",
-    code: "JMAV",
+    code: "JMSV",
   },
   {
     ageCategory: "J",
@@ -345,9 +340,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "J",
-    bowType: "COSV",
+    bowType: "AV",
     gender: "M",
-    code: "JMCOSV",
+    code: "JMAV",
   },
   {
     ageCategory: "J",
@@ -357,9 +352,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "J",
-    bowType: "COAV",
+    bowType: "COSV",
     gender: "M",
-    code: "JMCOAV",
+    code: "JMCOSV",
   },
   {
     ageCategory: "J",
@@ -367,14 +362,14 @@ export const CATEGORIES: {
     gender: "F",
     code: "JFCOAV",
   },
+  {
+    ageCategory: "J",
+    bowType: "COAV",
+    gender: "M",
+    code: "JMCOAV",
+  },
 
   // Seniors : 26/49 ans
-  {
-    ageCategory: "S",
-    bowType: "SV",
-    gender: "M",
-    code: "SMSV",
-  },
   {
     ageCategory: "S",
     bowType: "SV",
@@ -383,9 +378,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "S",
-    bowType: "AV",
+    bowType: "SV",
     gender: "M",
-    code: "SMAV",
+    code: "SMSV",
   },
   {
     ageCategory: "S",
@@ -395,9 +390,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "S",
-    bowType: "COSV",
+    bowType: "AV",
     gender: "M",
-    code: "SMCOSV",
+    code: "SMAV",
   },
   {
     ageCategory: "S",
@@ -407,9 +402,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "S",
-    bowType: "COAV",
+    bowType: "COSV",
     gender: "M",
-    code: "SMCOAV",
+    code: "SMCOSV",
   },
   {
     ageCategory: "S",
@@ -417,14 +412,14 @@ export const CATEGORIES: {
     gender: "F",
     code: "SFCOAV",
   },
+  {
+    ageCategory: "S",
+    bowType: "COAV",
+    gender: "M",
+    code: "SMCOAV",
+  },
 
   // Vétérans : 50/64 ans
-  {
-    ageCategory: "V",
-    bowType: "SV",
-    gender: "M",
-    code: "VMSV",
-  },
   {
     ageCategory: "V",
     bowType: "SV",
@@ -433,9 +428,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "V",
-    bowType: "AV",
+    bowType: "SV",
     gender: "M",
-    code: "VMAV",
+    code: "VMSV",
   },
   {
     ageCategory: "V",
@@ -445,9 +440,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "V",
-    bowType: "COSV",
+    bowType: "AV",
     gender: "M",
-    code: "VMCOSV",
+    code: "VMAV",
   },
   {
     ageCategory: "V",
@@ -457,9 +452,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "V",
-    bowType: "COAV",
+    bowType: "COSV",
     gender: "M",
-    code: "VMCOAV",
+    code: "VMCOSV",
   },
   {
     ageCategory: "V",
@@ -467,14 +462,14 @@ export const CATEGORIES: {
     gender: "F",
     code: "VFCOAV",
   },
+  {
+    ageCategory: "V",
+    bowType: "COAV",
+    gender: "M",
+    code: "VMCOAV",
+  },
 
   // Super Vétérans : 65 ans et plus
-  {
-    ageCategory: "SV",
-    bowType: "SV",
-    gender: "M",
-    code: "SVMSV",
-  },
   {
     ageCategory: "SV",
     bowType: "SV",
@@ -483,9 +478,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "SV",
-    bowType: "AV",
+    bowType: "SV",
     gender: "M",
-    code: "SVMAV",
+    code: "SVMSV",
   },
   {
     ageCategory: "SV",
@@ -495,9 +490,9 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "SV",
-    bowType: "COSV",
+    bowType: "AV",
     gender: "M",
-    code: "SVMCOSV",
+    code: "SVMAV",
   },
   {
     ageCategory: "SV",
@@ -507,15 +502,21 @@ export const CATEGORIES: {
   },
   {
     ageCategory: "SV",
-    bowType: "COAV",
+    bowType: "COSV",
     gender: "M",
-    code: "SVMCOAV",
+    code: "SVMCOSV",
   },
   {
     ageCategory: "SV",
     bowType: "COAV",
     gender: "F",
     code: "SVFCOAV",
+  },
+  {
+    ageCategory: "SV",
+    bowType: "COAV",
+    gender: "M",
+    code: "SVMCOAV",
   },
 ];
 

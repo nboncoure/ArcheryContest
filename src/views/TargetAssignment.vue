@@ -104,7 +104,7 @@
             <PlusIcon class="w-5 h-5" />
             Ajouter une cible
           </button>
-          <button @click="generateScoresheets" class="btn btn-primary">
+          <button @click="generatePDF" class="btn btn-primary">
             <DocumentArrowDownIcon class="w-5 h-5" />
             Feuilles de marque
           </button>
@@ -308,6 +308,8 @@ const currentFlight = computed(() =>
 );
 
 const archers = computed(() => competition.value?.archers || []);
+
+const assignments = computed(() => currentFlight.value?.assignments || []);
 
 // Initialiser le départ sélectionné avec le premier départ
 if (competition.value && competition.value.flights.length > 0) {
@@ -763,29 +765,39 @@ function resetAllAssignments(askConfirmation: boolean = true) {
   }
 }
 
-function generateScoresheets() {
-  if (!competition.value || !currentFlight.value) return;
+const isGeneratingPDF = ref(false);
+const showExportModal = ref(false);
 
-  // Générer un PDF pour chaque cible qui a des archers assignés
-  currentFlight.value.targets.forEach(async (target: Target) => {
-    const targetAssignments = currentFlight.value!.assignments
-      .filter((a: TargetAssignment) => a.targetNumber === target.number)
-      .sort((a: TargetAssignment, b: TargetAssignment) => a.position.localeCompare(b.position));
+async function generatePDF() {
+  if (!competition.value || isGeneratingPDF.value) return; 
+  
+  try {
+    isGeneratingPDF.value = true;
+    showExportModal.value = false;
+    
+    // Generate the PDF
+    const pdfBytes = await generateScoreSheets(
+      assignments.value,
+      archers.value,
+    );
 
-    if (targetAssignments.length > 0) {
-      try {
-        await generateScoreSheets({
-          competition: competition.value!,
-          flight: currentFlight.value!,
-          target,
-          assignments: targetAssignments,
-          archers: competition.value!.archers,
-        });
-      } catch (error) {
-        console.error(`Erreur lors de la génération de la feuille de marque pour la cible ${target.number}:`, error);
-      }
-    }
-  });
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Feuille de marque.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    
+
+   URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF:', error);
+    alert('Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.');
+  } finally {
+    isGeneratingPDF.value = false;
+  }
 }
 </script>
 

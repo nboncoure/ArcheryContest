@@ -84,12 +84,12 @@ const groupedRankings = computed((): RankingCategory[] => {
       
       if (categoryData) {
         // Recover detailed information
-        const gender = categoryData.gender === 'M' ? 'Homme' : 'Femme';
+        const gender = categoryData.gender === 'M' ? 'Masculin' : 'Féminin';
         const ageCategory = getAgeCategoryByCode(categoryData.ageCategory);
         const bowType = getBowTypeByCode(categoryData.bowType);
         
         // Building the description
-        description = `${gender} ${ageCategory.minAge}/${ageCategory.maxAge} ans ${bowType.label}`;
+        description = `${ageCategory.minAge}/${ageCategory.maxAge} ans ${gender} ${bowType.label}`;
       }
       
       return {
@@ -103,7 +103,7 @@ const groupedRankings = computed((): RankingCategory[] => {
           // If the score is missing, place it at the end
           if (!scoreA?.total) return 1;
           if (!scoreB?.total) return -1;
-         
+          
 
           // Sort by total descending
           if (scoreA.total !== scoreB.total) {

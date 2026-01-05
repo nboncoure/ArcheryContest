@@ -150,7 +150,7 @@ function groupArchers(
 export function assignArchers(
   competition: Competition,
   flight: Flight,
-  keepExistingAssignments: boolean = false
+  keepExistingAssignments: boolean = false,
 ): TargetAssignment[] {
   let assignments: TargetAssignment[] = keepExistingAssignments 
     ? [...flight.assignments] 
@@ -158,7 +158,7 @@ export function assignArchers(
   
   // Get archers assigned to this flight
   const flightArchers = competition.archers.filter(archer => 
-    archer.flightId === flight.id
+    !archer.isBeginner && !archer.isDisabled && !archer.isVisuallyImpaired && archer.flightId === flight.id
   );
   
   // If keeping existing assignments, find archers that are not yet assigned

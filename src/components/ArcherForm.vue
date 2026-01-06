@@ -77,6 +77,7 @@ const archer = ref<Partial<Archer>>({
         <option :value="BOW_TYPES.AV">Classique avec viseur</option>
         <option :value="BOW_TYPES.COSV">Poulies sans viseur</option>
         <option :value="BOW_TYPES.COAV">Poulies avec viseur</option>
+        <option :value="BOW_TYPES.AH">Arc handicape</option>
       </select>
     </div>
 

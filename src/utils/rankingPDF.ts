@@ -65,7 +65,7 @@ export async function generateRankingPDF(
   const pagePadding = 40;
   const pageWidth = 595.28; // A4 width in points
   const pageHeight = 841.89; // A4 height in points
-  const contentWidth = pageWidth - (pagePadding * 2);
+  const contentWidth = pageWidth - (pagePadding * 2); 
   
   // Elements height
   const headerHeight = 60;

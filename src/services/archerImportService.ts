@@ -145,7 +145,7 @@ export const archerImportService = {
         category: categoryCode,
         license: license.toString(),
         isBeginner: row["Débutant"] === "D" || row["Débutant"] === "Oui",
-        isDisabled: row["Handicapè"] === "H" || row["Handicapé"] === "Oui",
+        isDisabled: row["Handicapé"] === "H" || row["Handicapé"] === "Oui",
         isVisuallyImpaired: row["Malvoyant"] === "M" || row["Malvoyant"] === "Oui",
         isPresent: false,
         importStatus,
@@ -219,6 +219,7 @@ export const archerImportService = {
       "AV": "AV",          // Avec viseur
       "COSV": "COSV",      // Compound sans viseur
       "COAV": "COAV",      // Compound avec viseur
+      "AH": "AH",
       // Noms complets
       "Classique sans viseur": "SV",
       "Classique avec viseur": "AV",

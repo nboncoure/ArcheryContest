@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref, computed, watch } from "vue";
 import { v4 as uuidv4 } from "uuid";
+import { getBowTypeByCode } from "@/constants/staticData";
 import type {
   Competition,
   CompetitionStatus,
@@ -8,7 +9,7 @@ import type {
   Archer,
   Target,
   TargetAssignment,
-  ArcherScore
+  ArcherScore,
 } from "../types";
 
 const loadCompetitions = (): Competition[] => {
@@ -82,20 +83,22 @@ export const useCompetitionStore = defineStore("competition", () => {
   function addArcher(competitionId: string, archer: Archer) {
     const competition = competitions.value.find((c) => c.id === competitionId);
     if (!competition) return;
-    
     competition.archers.push({
       ...archer,
       id: uuidv4(),
     });
   }
 
+  const BOW_TYPES_AH = getBowTypeByCode("AH")
+
   function updateArcher(competitionId: string, archer: Archer) {
     const competition = competitions.value.find((c) => c.id === competitionId);
     if (!competition) return;
+    console.log(archer)
     
     const index = competition.archers.findIndex((a) => a.id === archer.id);
     if (index !== -1) {
-      competition.archers[index] = archer;
+      competition.archers[index] = { ...archer, isDisabled: archer.bowType.code === 'AH' } ;
     }
   }
 
@@ -298,7 +301,7 @@ export const useCompetitionStore = defineStore("competition", () => {
     // Recalculate round total
     round.total = round.ends.reduce((sum, e) => sum + e.total, 0);
 
-    // Recalculate round tens and nines
+    // Recalculate round tens, nines and eights
     round.tens = round.ends.reduce(
       (sum, e) => sum + e.arrows.filter(a => a.status === "valid" && a.value === 10).length,
       0

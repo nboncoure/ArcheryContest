@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref, watch } from "vue";
 import type { Archer, TargetPosition } from "../types";
+import { getBowTypeByCode } from "@/constants/staticData";
 
 // Charger les données initiales du localStorage
 const loadArchers = (): Archer[] => {
@@ -24,12 +25,13 @@ export const useArchersStore = defineStore("archers", () => {
     archers.value.push(archer);
   }
 
-  function updateArcher(id: string, data: Archer) {
+  /*function updateArcher(id: string, data: Archer) {
     const index = archers.value.findIndex((a) => a.id === id);
     if (index !== -1) {
-      archers.value[index] = { ...archers.value[index], ...data };
+      console.log(`update archer`)
+      archers.value[index] = { ...archers.value[index], ...data, isDisabled: data.bowType === BOW_TYPES_AH };
     }
-  }
+  }*/
 
   function deleteArcher(id: string) {
     const index = archers.value.findIndex((a) => a.id === id);

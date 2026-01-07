@@ -8,7 +8,15 @@ export interface RankingCategory {
   name: string;
 
   description?: string;
-  
+
+  /** Archer list in this category, sorted by ranking */
+  archers: RankedArcher[];
+}
+
+export interface RankingDepartment {
+  /** department number */
+  departmentNumber: number;
+
   /** Archer list in this category, sorted by ranking */
   archers: RankedArcher[];
 }

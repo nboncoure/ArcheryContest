@@ -7,6 +7,7 @@ import type { Archer, ArcherScore } from '@/types';
 import { generateRankingByClubPDF } from '@/utils/rankingByClubPDF';
 import { generateRankingPDF } from '@/utils/rankingPDF';
 import type { RankingCategory } from '@/types/ranking';
+import type { RankingDepartment } from '@/types/ranking';
 import { 
   Dialog, 
   DialogPanel, 
@@ -23,6 +24,7 @@ const { competitions } = storeToRefs(competitionStore);
 const competitionId = route.params.id as string;
 
 
+const selectedDepartment = ref();
 const selectedCategory = ref('');
 const selectedBowType = ref('');
 const isGeneratingPDF = ref(false);
@@ -54,6 +56,10 @@ const categories = computed(() =>
   [...new Set(competition.value?.archers.map((a) => a.category))].sort()
 );
 
+const departments = computed(() =>
+  [...new Set(competition.value?.archers.map((a) => a.departmentNumber))].sort()
+);
+
 const filteredArchers = computed(() => {
   if (!competition.value) return [];
 
@@ -62,6 +68,8 @@ const filteredArchers = computed(() => {
     if (selectedCategory.value && archer.category !== selectedCategory.value)
       return false;
     if (selectedBowType.value && archer.bowType.code !== selectedBowType.value)
+      return false;
+    if (selectedDepartment.value && archer.departmentNumber !== selectedDepartment.value)
       return false;
 
     return true;
@@ -285,6 +293,16 @@ async function generateClubPDF() {
               <option value="AV">Classique avec viseur</option>
               <option value="COSV">Poulie sans viseur</option>
               <option value="COAV">Poulie avec viseur</option>
+              <option value="AH">Arc handicape</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="department">Départements</label>
+            <select id="department" v-model="selectedDepartment">
+              <option value="">Tous</option>
+              <option v-for="dep in departments" :key="dep" :value="dep">
+                {{ dep }}
+              </option> 
             </select>
           </div>
         </div>

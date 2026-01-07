@@ -94,7 +94,6 @@ export const useCompetitionStore = defineStore("competition", () => {
   function updateArcher(competitionId: string, archer: Archer) {
     const competition = competitions.value.find((c) => c.id === competitionId);
     if (!competition) return;
-    console.log(archer)
     
     const index = competition.archers.findIndex((a) => a.id === archer.id);
     if (index !== -1) {

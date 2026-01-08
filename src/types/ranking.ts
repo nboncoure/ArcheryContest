@@ -13,14 +13,6 @@ export interface RankingCategory {
   archers: RankedArcher[];
 }
 
-export interface RankingDepartment {
-  /** department number */
-  departmentNumber: number;
-
-  /** Archer list in this category, sorted by ranking */
-  archers: RankedArcher[];
-}
-
 /**
  * Interface for an archer with ranking data
  */

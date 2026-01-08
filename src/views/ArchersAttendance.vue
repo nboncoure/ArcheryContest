@@ -5,6 +5,7 @@ import { useCompetitionStore } from '@/stores/competitionsStore';
 import { storeToRefs } from 'pinia';
 import { Switch } from '@headlessui/vue'
 import { generateAttendancesheetPDF } from '@/utils/attendancesheetPDF';
+import { generatePlacementByClubPDF } from '@/utils/placementByClubPDF';
 import type { Archer } from '../types';
 import { DocumentArrowDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
 
@@ -111,6 +112,38 @@ async function generatePDF() {
   }
 }
 
+async function generateClubPDF() {
+  if (!competition.value || isGeneratingPDF.value) return; 
+  
+  try {
+      isGeneratingPDF.value = true;
+      showExportModal.value = false;
+    
+    // Generate the PDF
+  const pdfBytes = await generatePlacementByClubPDF(
+    competition.value,
+    archers.value,
+  );
+
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `Placement des archers par club.pdf`;
+  document.body.appendChild(link);
+  link.click();
+    
+
+  URL.revokeObjectURL(url);
+  document.body.removeChild(link);
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF:', error);
+    alert('Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.');
+    } finally {
+      isGeneratingPDF.value = false;
+    }
+  }
+
 </script>
 
 <template>
@@ -126,6 +159,14 @@ async function generatePDF() {
           >
             <DocumentArrowDownIcon class="w-5 h-5" />
             {{ 'Rapport d\'arbitrage' }}
+          </button>
+
+          <button 
+            class="btn btn-primary flex items-center gap-2"
+            @click="generateClubPDF"
+          >
+            <DocumentArrowDownIcon class="w-5 h-5" />
+            {{ 'Placement par club' }}
           </button>
         </div>
    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -178,13 +219,13 @@ async function generatePDF() {
               <td class="px-6 py-4 whitespace-nowrap">{{ archer.lastName }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
                 {{ archer.firstName }}
-              </td>  
+              </td>
               <td class="px-6 py-4">
                 <div class="truncate max-w-[150px] md:max-w-[180px] lg:max-w-[220px]" :title="archer.club">
                   {{ archer.club }}
-                </div>    
-              </td>  
-              <td class="px-6 py-4 whitespace-nowrap">{{ archer.category }}</td>      
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ archer.category }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
     <Switch
     v-model="archer.isPresent"
@@ -199,7 +240,6 @@ async function generatePDF() {
               </td>
             </tr>
           </tbody>
-           
       </div>
     </div>
   </div>

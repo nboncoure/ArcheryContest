@@ -7,7 +7,6 @@ import type { Archer, ArcherScore } from '@/types';
 import { generateRankingByClubPDF } from '@/utils/rankingByClubPDF';
 import { generateRankingPDF } from '@/utils/rankingPDF';
 import type { RankingCategory } from '@/types/ranking';
-import type { RankingDepartment } from '@/types/ranking';
 import { 
   Dialog, 
   DialogPanel, 
@@ -24,7 +23,7 @@ const { competitions } = storeToRefs(competitionStore);
 const competitionId = route.params.id as string;
 
 
-const selectedDepartment = ref();
+const selectedDepartment = ref('');
 const selectedCategory = ref('');
 const selectedBowType = ref('');
 const isGeneratingPDF = ref(false);
@@ -69,7 +68,7 @@ const filteredArchers = computed(() => {
       return false;
     if (selectedBowType.value && archer.bowType.code !== selectedBowType.value)
       return false;
-    if (selectedDepartment.value && archer.departmentNumber !== selectedDepartment.value)
+    if (selectedDepartment.value && archer.departmentNumber !== parseInt(selectedDepartment.value, 10))
       return false;
 
     return true;
@@ -191,7 +190,8 @@ async function generatePDF() {
       groupedRankings.value,
       {
         title: pdfOptions.value.title,
-        maxCategoriesPerPage: pdfOptions.value.maxCategoriesPerPage
+        maxCategoriesPerPage: pdfOptions.value.maxCategoriesPerPage,
+        department: selectedDepartment.value
       }
     );
     

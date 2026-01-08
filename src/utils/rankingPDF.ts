@@ -31,7 +31,7 @@ interface RankedArcher extends Archer {
 /**
  * Entry point for generating the ranking PDF
  * @param competition The competition concerned
- * @param categories Categories of the ranking 
+ * @param categories Categories of the ranking
  * @param options Options of the PDF generation
  */
 export async function generateRankingPDF(
@@ -44,7 +44,8 @@ export async function generateRankingPDF(
     title = `Classements - ${competition.name}`,
     showDate = true,
     maxArchersPerPage = 30,
-    maxCategoriesPerPage = 3
+    maxCategoriesPerPage = 3,
+    department
   } = options;
 
   // Create a new PDF document
@@ -94,7 +95,9 @@ export async function generateRankingPDF(
   let categoriesOnCurrentPage = 0;
   
   // Drawing the general header in the first page
-  yPosition = drawHeader(
+  
+  if (department == '')
+    yPosition = drawHeader(
     page, 
     title, 
     competition, 
@@ -107,7 +110,22 @@ export async function generateRankingPDF(
     colorPrimary,
     showDate
   );
-  
+  else
+    yPosition = drawHeader(
+    page, 
+    `${title} - ${department}`, 
+    competition, 
+    pagePadding, 
+    yPosition, 
+    contentWidth, 
+    headerHeight,
+    fontBold,
+    fontRegular,
+    colorPrimary,
+    showDate
+  );
+    
+
   // Treating each category
   while (categoriesToProcess.length > 0) {
     const category = categoriesToProcess[0];
@@ -125,9 +143,21 @@ export async function generateRankingPDF(
       categoriesOnCurrentPage = 0;
       
       // Continuation header for the next pages
-      yPosition = drawContinuationHeader(
+      if (department == '')
+        yPosition = drawContinuationHeader(
         page, 
         title, 
+        pagePadding, 
+        yPosition, 
+        contentWidth, 
+        40,
+        fontBold,
+        colorPrimary
+      );
+      else
+      yPosition = drawContinuationHeader(
+        page, 
+        `${title} - ${department}`, 
         pagePadding, 
         yPosition, 
         contentWidth, 

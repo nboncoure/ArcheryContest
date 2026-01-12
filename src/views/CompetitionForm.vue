@@ -90,7 +90,7 @@ function handleSubmit() {
       </div>
 
       <div class="actions">
-        <router-link to="/competitions" class="btn btn-cancel"
+        <router-link to="/" class="btn btn-cancel"
           >Annuler</router-link
         >
         <button type="submit" class="btn btn-submit">

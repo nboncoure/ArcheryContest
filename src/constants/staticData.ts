@@ -28,7 +28,7 @@ export const BOW_TYPES: BowType[] = [
   { code: "AV", label: "Classique avec viseur", isCompound: false },
   { code: "COSV", label: "Poulie sans viseur", isCompound: true },
   { code: "COAV", label: "Poulie avec viseur", isCompound: true },
-  { code: "AH", label: "Arc handicape", isCompound: false },
+  { code: "AH", label: "Adulte handicape", isCompound: false },
 ];
 
 export function getBowTypeByCode(code: string): BowType {
@@ -220,13 +220,13 @@ export const CATEGORIES: {
     ageCategory: "P",
     bowType: "AH",
     gender: "F",
-    code: "PFAH",
+    code: "AH",
   },
   {
     ageCategory: "P",
     bowType: "AH",
     gender: "M",
-    code: "PMAH",
+    code: "AH",
   },
 
   // Benjamins : 11/12 ans
@@ -258,13 +258,13 @@ export const CATEGORIES: {
     ageCategory: "B",
     bowType: "AH",
     gender: "F",
-    code: "BFAH",
+    code: "AH",
   },
   {
     ageCategory: "B",
     bowType: "AH",
     gender: "M",
-    code: "BMAH",
+    code: "AH",
   },
 
   // Minimes : 13/14 ans
@@ -320,13 +320,13 @@ export const CATEGORIES: {
     ageCategory: "M",
     bowType: "AH",
     gender: "F",
-    code: "MFAH",
+    code: "AH",
   },
   {
     ageCategory: "M",
     bowType: "AH",
     gender: "M",
-    code: "MMAH",
+    code: "AH",
   },
 
   // Cadets : 15/16 ans
@@ -382,13 +382,13 @@ export const CATEGORIES: {
     ageCategory: "C",
     bowType: "AH",
     gender: "F",
-    code: "CFAH",
+    code: "AH",
   },
   {
     ageCategory: "C",
     bowType: "AH",
     gender: "M",
-    code: "CMAH",
+    code: "AH",
   },
 
   // Juniors : 17/25 ans
@@ -444,13 +444,13 @@ export const CATEGORIES: {
     ageCategory: "J",
     bowType: "AH",
     gender: "F",
-    code: "JFAH",
+    code: "AH",
   },
   {
     ageCategory: "J",
     bowType: "AH",
     gender: "M",
-    code: "JMAH",
+    code: "AH",
   },
 
   // Seniors : 26/49 ans
@@ -506,13 +506,13 @@ export const CATEGORIES: {
     ageCategory: "S",
     bowType: "AH",
     gender: "F",
-    code: "SFAH",
+    code: "AH",
   },
   {
     ageCategory: "S",
     bowType: "AH",
     gender: "M",
-    code: "SMAH",
+    code: "AH",
   },
 
   // Vétérans : 50/64 ans
@@ -568,13 +568,13 @@ export const CATEGORIES: {
     ageCategory: "V",
     bowType: "AH",
     gender: "F",
-    code: "VFAH",
+    code: "AH",
   },
   {
     ageCategory: "V",
     bowType: "AH",
     gender: "M",
-    code: "VMAH",
+    code: "AH",
   },
 
   // Super Vétérans : 65 ans et plus
@@ -630,13 +630,13 @@ export const CATEGORIES: {
     ageCategory: "SV",
     bowType: "AH",
     gender: "F",
-    code: "SVFAH",
+    code: "AH",
   },
   {
     ageCategory: "SV",
     bowType: "AH",
     gender: "M",
-    code: "SVMAH",
+    code: "AH",
   },
 ];
 

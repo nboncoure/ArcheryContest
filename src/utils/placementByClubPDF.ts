@@ -13,7 +13,7 @@ interface FlightGroup {
   assignments: Map<string, TargetAssignment>;
 }
 
-export async function generateRankingByClubPDF(
+export async function generatePlacementByClubPDF(
   competition: Competition,
   archers: Archer[],
 ) {
@@ -214,12 +214,13 @@ function groupArchersByFlightAndClub(archers: Archer[], flights: Flight[]): Flig
       return a.clubName.localeCompare(b.clubName);
     });
 
-    // Sort archers within each club by last name then first name
+    // Sort archers within each club by age category then last name
     clubs.forEach(club => {
       club.archers.sort((a, b) => {
-        const lastNameCompare = a.lastName.localeCompare(b.lastName);
-        if (lastNameCompare !== 0) return lastNameCompare;
-        return a.firstName.localeCompare(b.firstName);
+        if (a.ageCategory.minAge > b.ageCategory.maxAge) {
+          return a.ageCategory.minAge ;
+        }
+        return a.lastName.localeCompare(b.lastName);
       });
     });
 

@@ -72,6 +72,7 @@ async function processFile(file: File) {
   try {
     // Utiliser le service pour traiter le fichier
     const archers = await archerImportService.processFile(file);
+    archers.sort((a, b) => a.importStatus.localeCompare(b.importStatus))
     importData.value = archers;
   } catch (error) {
     console.error("Erreur lors du traitement du fichier:", error);

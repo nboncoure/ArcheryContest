@@ -1,6 +1,7 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import type { Competition, Archer } from '@/types';
 import { stat } from 'original-fs';
+import { BowType } from '../types/index';
 
 
 
@@ -108,7 +109,12 @@ if (showDate) {
         total.beginner = total.beginner + 1;
     }
     else if (archer.isDisabled) {
-        total.disabled = total.disabled + 1;
+      switch (archer.bowType.code){
+        case "AH":
+          total.disabled = total.disabled + 1;
+          total.ah = total.ah + 1;
+          break;
+      }
     }
     else if (archer.isVisuallyImpaired) {
         total.visuallyImpaired = total.visuallyImpaired + 1;
@@ -119,9 +125,9 @@ if (showDate) {
 
   const isPresent = archers.filter(archer => archer.isPresent);
 
-  const statMale = isPresent.filter(archer => archer.gender === "M").reduce(reducer, {sv: 0, av: 0, cosv: 0, coav: 0, p: 0, b: 0, m: 0, c: 0, j: 0, s: 0, v: 0, svAge: 0, disabled: 0, beginner: 0, visuallyImpaired: 0}) ;
+  const statMale = isPresent.filter(archer => archer.gender === "M").reduce(reducer, {sv: 0, av: 0, cosv: 0, coav: 0, ah: 0, p: 0, b: 0, m: 0, c: 0, j: 0, s: 0, v: 0, svAge: 0, disabled: 0, beginner: 0, visuallyImpaired: 0}) ;
 
-  const statFemale = isPresent.filter(archer => archer.gender === "F").reduce(reducer, {sv: 0, av: 0, cosv: 0, coav: 0, p: 0, b: 0, m: 0, c: 0, j: 0, s: 0, v: 0, svAge: 0, disabled: 0, beginner: 0, visuallyImpaired: 0}) ;
+  const statFemale = isPresent.filter(archer => archer.gender === "F").reduce(reducer, {sv: 0, av: 0, cosv: 0, coav: 0, ah: 0, p: 0, b: 0, m: 0, c: 0, j: 0, s: 0, v: 0, svAge: 0, disabled: 0, beginner: 0, visuallyImpaired: 0}) ;
 
  
 
@@ -144,8 +150,10 @@ if (showDate) {
     total.av = statMale.av + statFemale.av;
     total.cosv = statMale.cosv + statFemale.cosv;
     total.coav = statMale.coav + statFemale.coav;
+    total.ah = statMale.ah + statFemale.ah;
 
-     return total }, {total: 0, homme: 0, femme: 0, sv: 0, av: 0, cosv: 0, coav: 0, p: 0, b: 0, m: 0, c: 0, j: 0, s: 0, v: 0, svAge: 0, disabled: 0, beginner: 0, visuallyImpaired: 0});
+
+     return total }, {total: 0, homme: 0, femme: 0, sv: 0, av: 0, cosv: 0, coav: 0, ah: 0, p: 0, b: 0, m: 0, c: 0, j: 0, s: 0, v: 0, svAge: 0, disabled: 0, beginner: 0, visuallyImpaired: 0});
 
   firstPage.drawText(`${statMale.p}`, {
     x: width - 473,
@@ -395,6 +403,14 @@ if (showDate) {
     color: colorText,
   });
 
+  firstPage.drawText(`${statMale.ah}`, {
+    x: width - 125,
+    y: 237,
+    size: 10,
+    font: fontRegular,
+    color: colorText,
+  });
+
   firstPage.drawText(`${statFemale.sv}`, {
     x: width - 473,
     y: 249,
@@ -427,6 +443,14 @@ if (showDate) {
     color: colorText,
   });
 
+  firstPage.drawText(`${statFemale.ah}`, {
+    x: width - 125,
+    y: 249,
+    size: 10,
+    font: fontRegular,
+    color: colorText,
+  });
+
    firstPage.drawText(`${totalArchers.sv}`, {
     x: width - 473,
     y: 225,
@@ -453,6 +477,14 @@ if (showDate) {
 
     firstPage.drawText(`${totalArchers.coav}`, {
     x: width - 300,
+    y: 225,
+    size: 10,
+    font: fontRegular,
+    color: colorText,
+  });
+
+  firstPage.drawText(`${totalArchers.ah}`, {
+    x: width - 125,
     y: 225,
     size: 10,
     font: fontRegular,

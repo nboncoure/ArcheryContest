@@ -97,7 +97,7 @@ const groupedRankings = computed((): RankingCategory[] => {
       
       if (categoryData) {
         // Recover detailed information
-        const gender = categoryData.gender === 'M' ? 'Masculin' : 'Féminin';
+        const gender = categoryData.gender === 'M' ? 'Masculin' : 'Féminine';
         const ageCategory = getAgeCategoryByCode(categoryData.ageCategory);
         const bowType = getBowTypeByCode(categoryData.bowType);
         
@@ -252,7 +252,7 @@ async function generatePDF() {
               <option value="AV">Classique avec viseur</option>
               <option value="COSV">Poulie sans viseur</option>
               <option value="COAV">Poulie avec viseur</option>
-              <option value="AH">Arc handicape</option>
+              <option value="AH">Adulte handicape</option>
             </select>
           </div>
           <div class="form-group">

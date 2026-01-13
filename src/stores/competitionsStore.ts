@@ -85,11 +85,10 @@ export const useCompetitionStore = defineStore("competition", () => {
     if (!competition) return;
     competition.archers.push({
       ...archer,
+      isDisabled: archer.bowType.code === 'AH',
       id: uuidv4(),
     });
   }
-
-  const BOW_TYPES_AH = getBowTypeByCode("AH")
 
   function updateArcher(competitionId: string, archer: Archer) {
     const competition = competitions.value.find((c) => c.id === competitionId);

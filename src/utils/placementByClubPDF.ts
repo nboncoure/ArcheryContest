@@ -161,12 +161,15 @@ function groupArchersByFlightAndClub(archers: Archer[], flights: Flight[]): Flig
       return a.clubName.localeCompare(b.clubName);
     });
 
-    // Sort archers within each club by last name then first name
+    // Sort archers within each club by age category then gender then last name
     clubs.forEach(club => {
       club.archers.sort((a, b) => {
-        const lastNameCompare = a.lastName.localeCompare(b.lastName);
-        if (lastNameCompare !== 0) return lastNameCompare;
-        return a.firstName.localeCompare(b.firstName);
+        if (a.ageCategory.minAge > b.ageCategory.maxAge) {
+          return a.ageCategory.minAge ;
+        }
+        const genderCompare = a.gender.localeCompare(b.gender);
+        if (genderCompare !== 0) return genderCompare;
+        return a.lastName.localeCompare(b.lastName);
       });
     });
 
@@ -214,12 +217,14 @@ function groupArchersByFlightAndClub(archers: Archer[], flights: Flight[]): Flig
       return a.clubName.localeCompare(b.clubName);
     });
 
-    // Sort archers within each club by age category then last name
+    // Sort archers within each club by age category then gender then last name
     clubs.forEach(club => {
       club.archers.sort((a, b) => {
         if (a.ageCategory.minAge > b.ageCategory.maxAge) {
           return a.ageCategory.minAge ;
         }
+        const genderCompare = a.gender.localeCompare(b.gender);
+        if (genderCompare !== 0) return genderCompare;
         return a.lastName.localeCompare(b.lastName);
       });
     });

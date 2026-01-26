@@ -422,6 +422,12 @@ export const useCompetitionStore = defineStore("competition", () => {
     }
   }
 
+  function findCompetitionTargetConfig(competitionId: string, flightId: number | undefined, targetNumber: number | undefined) {
+    const competition = competitions.value.find((c) => c.id === competitionId)
+    const flight = competition?.flights.find((f) => f.id === flightId)
+    return flight?.targets.find((t) => t.number === targetNumber)
+  }
+
   return {
     competitions,
     createCompetition,
@@ -446,5 +452,6 @@ export const useCompetitionStore = defineStore("competition", () => {
     updateArcherTens,
     updateArcherNines,
     updateArcherEights,
+    findCompetitionTargetConfig,
   };
 });

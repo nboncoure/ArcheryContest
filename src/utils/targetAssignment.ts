@@ -59,13 +59,15 @@ if (!Array.prototype.toBalancedGroups) {
 
 export function configureTargets(competition: Competition): Flight[] {
   return competition.archers
-    .map((archer) =>
-      findCompetitionTargetConfig(
+    .map((archer) => {
+      let target = findCompetitionTargetConfig(
         competition.type,
         archer.bowType.code,
         archer.ageCategory.code
       )
-    )
+      target.maxArchers = archer.bowType.isCompound ? 2 : 4
+      return target
+    })
     .reduce(
       (
         acc: { count: number; targetConfig: Partial<Target> }[],
@@ -74,7 +76,8 @@ export function configureTargets(competition: Competition): Flight[] {
         const target = acc.find(
           (t) =>
             t.targetConfig.distance === targetConfig.distance &&
-            t.targetConfig.faceSize === targetConfig.faceSize
+            t.targetConfig.faceSize === targetConfig.faceSize &&
+            t.targetConfig.maxArchers === targetConfig.maxArchers
         );
         if (target) {
           target.count++;
@@ -85,6 +88,10 @@ export function configureTargets(competition: Competition): Flight[] {
       },
       []
     )
+    .map(i => {
+      console.log(i)
+      return i
+    })
     .flatMap(
       ({
         count,
@@ -93,7 +100,7 @@ export function configureTargets(competition: Competition): Flight[] {
         count: number;
         targetConfig: Partial<Target>;
       }) => {
-        const targetsNeeded = Math.ceil(count / 4);
+        const targetsNeeded = Math.ceil(count / (targetConfig.maxArchers || 4));
         return Array.from({ length: targetsNeeded }, (_, i) => targetConfig);
       }
     )
@@ -114,6 +121,7 @@ export function configureTargets(competition: Competition): Flight[] {
             number: i + 1,
             distance: targetConfig.distance || 0,
             faceSize: targetConfig.faceSize || 0,
+            maxArchers: targetConfig.maxArchers || 0,
           })
         ),
       })
@@ -176,7 +184,7 @@ export function assignArchers(
   
   // Initialize available positions
   flight.targets.forEach(target => {
-    availablePositions.set(target.number, ["A", "B", "C", "D"]);
+    availablePositions.set(target.number, (<TargetPosition[]> ["A", "B", "C", "D"]).slice(0, target.maxArchers));
   });
   
   // Mark positions that are already occupied if keeping existing assignments
@@ -198,7 +206,8 @@ export function assignArchers(
     const compatibleTargets = flight.targets
       .filter(target => 
         target.distance === group.targetConfig.distance &&
-        target.faceSize === group.targetConfig.faceSize
+        target.faceSize === group.targetConfig.faceSize &&
+        target.maxArchers === group.targetConfig.maxArchers
       )
       .sort((a, b) => a.number - b.number);
     
@@ -215,7 +224,7 @@ export function assignArchers(
         if (positions && positions.length > 0) {
           // Take the first available position
           const position = positions.shift()!;
-          
+            
           // Create a new assignment
           const newAssignment: TargetAssignment = {
             archerId: archer.id,

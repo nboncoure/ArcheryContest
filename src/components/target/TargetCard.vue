@@ -3,6 +3,7 @@ import { XMarkIcon } from "@heroicons/vue/24/outline";
 import { Icon } from "@iconify/vue";
 import type { Archer, TargetPosition, Target, TargetAssignment } from "@/types";
 import TargetPositionCard from "./TargetPositionCard.vue";
+import { computed } from 'vue'
 
 const props = defineProps<{
   positions: TargetPosition[];
@@ -11,6 +12,10 @@ const props = defineProps<{
   target: Target;
   dragOverPosition?: TargetPosition;
 }>();
+
+const positionBymaxArchers = computed (() => {
+  return props.positions.slice(0, props.target.maxArchers)
+})
 
 defineEmits<{
   "position-drag-start": [event: DragEvent, position: TargetPosition];
@@ -70,7 +75,7 @@ function isDragOver(position: TargetPosition) {
       </button>
     </div>
     <div class="positions">
-      <template v-for="position in positions" :key="`${target.number}-${position}`">
+      <template v-for="position in positionBymaxArchers" :key="`${target.number}-${position}`">
         <TargetPositionCard
           :position="position"
           :archer="getArcherAtPosition(position)"

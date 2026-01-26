@@ -203,14 +203,12 @@
                             type="number"
                             v-model.number="editingTarget.distance"
                             min="0"
-                            @change="updateTargetConfig(editingTarget)"
                           />
                         </div>
                         <div class="mb-0 form-group">
                           <label class="text-sm">Blason (cm)</label>
                           <select
                             v-model.number="editingTarget.faceSize"
-                            @change="updateTargetConfig(editingTarget)"
                           >
                             <option :value="80">80cm</option>
                             <option :value="60">60cm</option>
@@ -218,17 +216,32 @@
                             <option :value="20">20cm</option>
                           </select>
                         </div>
+                        <div class="mb-0 form-group">
+                          <label class="text-sm">Nombre d'archers maximum</label>
+                          <input
+                            type="number"
+                            v-model.number="editingTarget.maxArchers"
+                            min="1"
+                            max="4"
+                          />
+                        </div>
                       </div>
                     </div>
-             
                 </div>
 
                 <div class="flex justify-end mt-6">
                   <button
                     @click="closeTargetConfigModal"
-                    class="btn btn-primary"
+                    class="btn btn-secondary"
                   >
                     Fermer
+                  </button>
+                  <button
+                    @click="updateTargetConfig"
+                    type="submit"
+                    class="btn btn-primary"
+                  >
+                    Valider
                   </button>
                 </div>
               </DialogPanel>
@@ -393,6 +406,7 @@ function addTarget() {
         number: newTargetNumber,
         distance: 18, // Default distance
         faceSize: 40, // Default face size
+        maxArchers: 4, // Default maximum archers
       };
       
       return {
@@ -493,16 +507,32 @@ function removeTarget(targetNum: number) {
   }
 }
 
-function updateTargetConfig(target: Target) {
-  if (!competition.value || !currentFlight) return;
+function updateTargetConfig() {
+  if (!competition.value || !currentFlight || !editingTarget.value)
+    return;
+
+  const targetConfig = competitionStore.findCompetitionTargetConfig(competition.value.id, currentFlight.value?.id, editingTarget.value?.number)
 
   const updatedFlights = competition.value.flights.map((flight: Flight) => {
     if (flight.id === selectedFlightId.value) {
+      const isEmpty = targetConfig?.maxArchers >= editingTarget.value?.maxArchers;
+      const arcToKeep = flight.assignments.filter((a: TargetAssignment) =>
+        a.targetNumber === targetConfig?.number)
+      .filter((ta) =>
+        (<TargetPosition[]> ["A", "B", "C", "D"]).slice(0, editingTarget.value?.maxArchers).includes(ta.position)
+      )
+      .map(a => a.archerId)
+      console.log(arcToKeep);
       return {
         ...flight,
         targets: flight.targets.map((t: Target) =>
-          t.number === target.number ? target : t
+          t.number === editingTarget.value?.number ? editingTarget.value : t
         ),
+        assignments: isEmpty
+        ? flight.assignments.filter((a: TargetAssignment) =>
+          a.targetNumber !== editingTarget.value?.number || arcToKeep.includes(a.archerId)
+        )
+        : flight.assignments
       };
     }
     return flight;
@@ -511,6 +541,8 @@ function updateTargetConfig(target: Target) {
   competitionStore.updateCompetition(competition.value.id, {
     flights: updatedFlights,
   });
+
+  closeTargetConfigModal()
 }
 
 function closeTargetConfigModal() {

@@ -63,14 +63,18 @@ export function configureTargets(competition: Competition): Flight[] {
       let target = findCompetitionTargetConfig(
         competition.type,
         archer.bowType.code,
-        archer.ageCategory.code
+        archer.ageCategory.code,
       )
-      target.maxArchers = archer.bowType.isCompound ? 2 : 4
+      target.maxArchers = archer.bowType.code === competition.autoConfigBowType ? competition.autoConfigMaxNumber : 4
       return target
+    })
+    .map(i => {
+      console.log(i)
+      return i
     })
     .reduce(
       (
-        acc: { count: number; targetConfig: Partial<Target> }[],
+        acc: { count: number; targetConfig: Partial<Target>}[],
         targetConfig: Partial<Target>
       ) => {
         const target = acc.find(
@@ -88,10 +92,6 @@ export function configureTargets(competition: Competition): Flight[] {
       },
       []
     )
-    .map(i => {
-      console.log(i)
-      return i
-    })
     .flatMap(
       ({
         count,
@@ -145,7 +145,7 @@ function groupArchers(
         targetConfig: findCompetitionTargetConfig(
           competitionType,
           archer.bowType.code,
-          archer.ageCategory.code
+          archer.ageCategory.code,
         ),
       });
     }
@@ -184,7 +184,7 @@ export function assignArchers(
   
   // Initialize available positions
   flight.targets.forEach(target => {
-    availablePositions.set(target.number, (<TargetPosition[]> ["A", "B", "C", "D"]).slice(0, target.maxArchers));
+    availablePositions.set(target.number, (<TargetPosition[]> ["A", "B", "C", "D", "E", "F"]).slice(0, target.maxArchers));
   });
   
   // Mark positions that are already occupied if keeping existing assignments

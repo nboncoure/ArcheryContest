@@ -108,7 +108,7 @@
             <DocumentArrowDownIcon class="w-5 h-5" />
             Feuilles de marque
           </button>
-          <button @click="autoConfigure" class="btn btn-primary">
+          <button @click="openAutoConfig" class="btn btn-primary">
             <PlusIcon class="w-5 h-5" />
             Configuration Automatique
           </button>
@@ -250,6 +250,95 @@
         </div>
       </Dialog>
     </TransitionRoot>
+
+    <TransitionRoot appear :show="showAutoConfigModal" as="template">
+      <Dialog as="div" @close="closeAutoConfigModal" class="relative z-10">
+        <TransitionChild
+          as="template"
+          enter="duration-300 ease-out"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="duration-200 ease-in"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black bg-opacity-25" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div
+            class="flex items-center justify-center min-h-full p-4 text-center"
+          >
+            <TransitionChild
+              as="template"
+              enter="duration-300 ease-out"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="duration-200 ease-in"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel
+                class="w-full max-w-md p-6 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl"
+              >
+                <DialogTitle
+                  as="h3"
+                  class="mb-4 text-lg font-medium leading-6 text-gray-900"
+                >
+                  Paramètre de configuration automatique
+                </DialogTitle>
+                <div
+                  class="grid grid-cols-1"
+                >
+                    <div class="p-4 rounded-lg bg-gray-50">
+                      <div class="space-y-3">
+                        <div class="mb-0 form-group">
+                          <label for="bowType" class="text-sm">Type d'arc</label>
+                          <select id="bowType" v-model="autoConfigBowType" required>
+                            <option
+                              v-for="(bowType, key) in BOW_TYPES"
+                              :key="key"
+                              :value="bowType.code"
+                            >
+                              {{ bowType.label }}
+                            </option>
+                          </select>
+                        </div>
+                        <div class="mb-0 form-group">
+                          <label class="text-sm">Nombre d'archers maximum</label>
+                          <input
+                            type="number"
+                            v-model.number="autoConfigMaxNumber"
+                            min="1"
+                            max="6"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end mt-6">
+                  <button
+                    @click="closeAutoConfigModal"
+                    class="btn btn-secondary"
+                  >
+                    Fermer
+                  </button>
+                  <button
+                    @click="submitAutoConfig"
+                    type="submit"
+                    class="btn btn-primary"
+                  >
+                    Valider
+                  </button>
+                </div>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
+
   </div>
 </template>
 
@@ -266,10 +355,12 @@ import type {
   Target,
   TargetPosition,
   TargetAssignment,
+  BowTypeCode,
 } from "../types";
 import { assignArchers, configureTargets } from "@/utils/targetAssignment";
 import TargetGrid from "@/components/target/TargetGrid.vue";
 import TargetSidePanel from "@/components/target/TargetSidePanel.vue";
+import { BOW_TYPES } from "../constants/staticData";
 import {
   PlusIcon,
   TrashIcon,
@@ -306,11 +397,32 @@ const draggedArcher = ref<{
 
 const editingTarget = ref<Target | undefined>();
 const showTargetConfigModal = ref(false);
+const autoConfigBowType = ref<BowTypeCode>("SV");
+const autoConfigMaxNumber = ref(4)
+const showAutoConfigModal = ref(false);
 const selectedFlightId = ref<number>();
 const filters = ref({
   category: "",
   bowType: "",
 });
+
+function closeAutoConfigModal() {
+  showAutoConfigModal.value = false; // Add this line to hide the modal
+}
+
+function openAutoConfig() {
+  showAutoConfigModal.value = true; // Add this line to show the modal
+}
+
+function submitAutoConfig() {
+  showAutoConfigModal.value = false;
+  competitionStore.updateCompetition(competition.value!.id, {
+    ...competition.value,
+    autoConfigBowType: autoConfigBowType.value,
+    autoConfigMaxNumber: autoConfigMaxNumber.value
+  });
+  autoConfigure()
+}
 
 const competition = computed(() =>
   competitions.value.find((c: Competition) => c.id === route.params.id)

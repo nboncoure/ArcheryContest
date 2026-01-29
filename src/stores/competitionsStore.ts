@@ -38,7 +38,7 @@ export const useCompetitionStore = defineStore("competition", () => {
       archers: [],
       scores: [],
       flights: Array.from(
-        { length: competition.numberOfFlights || 1 },
+        { length: competition.numberOfSessions || 1 },
         (_, i) => ({
           id: i,
           name: `Départ ${i + 1}`,
@@ -110,9 +110,12 @@ export const useCompetitionStore = defineStore("competition", () => {
     }
   }
 
-  function importArchers(competitionId: string, archers: Archer[]) {
+  function importArchers(competitionId: string, archers: Archer[], numberOfFlights: number) {
     const competition = competitions.value.find((c) => c.id === competitionId);
     if (!competition) return;
+
+    competition.numberOfSessions = numberOfFlights
+    console.log(numberOfFlights)
 
     const existingIds = new Set(competition.archers.map((a) => a.id));
     const archersToAdd = archers.filter((a) => !existingIds.has(a.id));

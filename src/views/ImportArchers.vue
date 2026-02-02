@@ -87,9 +87,11 @@ function confirmImport() {
     // Utiliser le service pour filtrer les archers valides
     const validArchers = archerImportService.getValidArchers(importData.value);
       
+    const maxFlightId = validArchers.map((a) => a.flightId || 0).reduce((acc, flightId) => Math.max(flightId, acc), 0)
     competitionsStore.importArchers(
       route.params.id as string,
-      validArchers
+      validArchers,
+      maxFlightId
     );
     
     importData.value = [];

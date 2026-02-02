@@ -60,6 +60,7 @@ export interface Target {
   number: number;
   distance: number;
   faceSize: number;
+  maxArchers: number;
 }
 
 export interface TargetAssignment {

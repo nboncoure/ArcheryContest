@@ -222,7 +222,7 @@
                             type="number"
                             v-model.number="editingTarget.maxArchers"
                             min="1"
-                            max="4"
+                            max="6"
                           />
                         </div>
                       </div>
@@ -519,7 +519,7 @@ function updateTargetConfig() {
       const arcToKeep = flight.assignments.filter((a: TargetAssignment) =>
         a.targetNumber === targetConfig?.number)
       .filter((ta) =>
-        (<TargetPosition[]> ["A", "B", "C", "D"]).slice(0, editingTarget.value?.maxArchers).includes(ta.position)
+        (<TargetPosition[]> ["A", "B", "C", "D", "E", "F"]).slice(0, editingTarget.value?.maxArchers).includes(ta.position)
       )
       .map(a => a.archerId)
       console.log(arcToKeep);

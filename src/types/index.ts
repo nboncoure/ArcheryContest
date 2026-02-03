@@ -19,7 +19,7 @@
 
 export type ArcherGender = "M" | "F";
 export type CompetitionType = "indoor" | "outdoor" | "18m";
-export type TargetPosition = "A" | "B" | "C" | "D";
+export type TargetPosition = "A" | "B" | "C" | "D" | "E" | "F";
 export type AgeCategoryCode = "P" | "B" | "M" | "C" | "J" | "S" | "V" | "SV";
 export type BowTypeCode = "SV" | "AV" | "COSV" | "COAV" | "AH";
 export type CompetitionStatus = "draft" | "active" | "completed";

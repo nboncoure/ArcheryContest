@@ -46,7 +46,7 @@ function getAssignmentsForTarget(targetNum: number): TargetAssignment[] {
       <template v-for="(target, index) in targets" :key="target.number">
         <TargetCard
           :target="target"
-          :positions="['A', 'B', 'C', 'D']"
+          :positions="['A', 'B', 'C', 'D', 'E', 'F']"
           :archers="archers"
           :assignments="getAssignmentsForTarget(target.number)"
           :drag-over-position="dragOverPosition"

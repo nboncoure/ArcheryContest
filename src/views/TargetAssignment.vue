@@ -539,7 +539,6 @@ function updateTargetConfig() {
         (<TargetPosition[]> ["A", "B", "C", "D", "E", "F"]).slice(0, editingTarget.value?.maxArchers).includes(ta.position)
       )
       .map(a => a.archerId)
-      console.log(arcToKeep);
       return {
         ...flight,
         targets: flight.targets.map((t: Target) =>

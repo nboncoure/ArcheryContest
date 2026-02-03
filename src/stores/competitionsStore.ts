@@ -115,7 +115,6 @@ export const useCompetitionStore = defineStore("competition", () => {
     if (!competition) return;
 
     competition.numberOfSessions = numberOfFlights
-    console.log(numberOfFlights)
 
     const existingIds = new Set(competition.archers.map((a) => a.id));
     const archersToAdd = archers.filter((a) => !existingIds.has(a.id));

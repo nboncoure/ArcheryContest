@@ -58,8 +58,11 @@ if (!Array.prototype.toBalancedGroups) {
 }
 
 export function configureTargets(competition: Competition): Flight[] {
-  return competition.archers
-    .map((archer) => {
+
+  return Object.values(Object.groupBy(competition.archers, (archer) => archer.flightId || 1 ))
+  .filter(archers => !!archers)
+  .map((flight : Archer[]) => {
+    return flight?.map(archer  => {
       let target = findCompetitionTargetConfig(
         competition.type,
         archer.bowType.code,
@@ -68,13 +71,9 @@ export function configureTargets(competition: Competition): Flight[] {
       target.maxArchers = archer.bowType.code === competition.autoConfigBowType ? competition.autoConfigMaxNumber : 4
       return target
     })
-    .map(i => {
-      console.log(i)
-      return i
-    })
     .reduce(
       (
-        acc: { count: number; targetConfig: Partial<Target>}[],
+        acc: { count: number; targetConfig: Partial<Target> }[],
         targetConfig: Partial<Target>
       ) => {
         const target = acc.find(
@@ -110,8 +109,8 @@ export function configureTargets(competition: Competition): Flight[] {
       }
       return (a.distance ?? 0) - (b.distance ?? 0);
     })
-    .toBalancedGroups(competition.numberOfTargets)
-    .map(
+  })
+  .map(
       (targetConfigs: Partial<Target>[], index: number): Flight => ({
         id: index + 1,
         name: `Départ ${index + 1}`,

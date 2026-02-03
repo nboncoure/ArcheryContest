@@ -108,7 +108,7 @@
             <DocumentArrowDownIcon class="w-5 h-5" />
             Feuilles de marque
           </button>
-          <button @click="autoConfigure" class="btn btn-primary">
+          <button @click="openAutoConfig" class="btn btn-primary">
             <PlusIcon class="w-5 h-5" />
             Configuration Automatique
           </button>
@@ -250,6 +250,13 @@
         </div>
       </Dialog>
     </TransitionRoot>
+
+   <AutoConfigModal
+     :is-open="showAutoConfigModal"
+     @close="closeAutoConfigModal"
+     @submit="autoConfigure"
+  />
+
   </div>
 </template>
 
@@ -268,6 +275,7 @@ import type {
   TargetAssignment,
 } from "../types";
 import { assignArchers, configureTargets } from "@/utils/targetAssignment";
+import AutoConfigModal from "@/components/AutoConfigModal.vue";
 import TargetGrid from "@/components/target/TargetGrid.vue";
 import TargetSidePanel from "@/components/target/TargetSidePanel.vue";
 import {
@@ -306,11 +314,20 @@ const draggedArcher = ref<{
 
 const editingTarget = ref<Target | undefined>();
 const showTargetConfigModal = ref(false);
+const showAutoConfigModal = ref(false);
 const selectedFlightId = ref<number>();
 const filters = ref({
   category: "",
   bowType: "",
 });
+
+function closeAutoConfigModal() {
+  showAutoConfigModal.value = false; // Add this line to hide the modal
+}
+
+function openAutoConfig() {
+  showAutoConfigModal.value = true; // Add this line to show the modal
+}
 
 const competition = computed(() =>
   competitions.value.find((c: Competition) => c.id === route.params.id)
@@ -522,7 +539,6 @@ function updateTargetConfig() {
         (<TargetPosition[]> ["A", "B", "C", "D", "E", "F"]).slice(0, editingTarget.value?.maxArchers).includes(ta.position)
       )
       .map(a => a.archerId)
-      console.log(arcToKeep);
       return {
         ...flight,
         targets: flight.targets.map((t: Target) =>

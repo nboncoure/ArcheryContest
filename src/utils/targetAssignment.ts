@@ -58,14 +58,17 @@ if (!Array.prototype.toBalancedGroups) {
 }
 
 export function configureTargets(competition: Competition): Flight[] {
-  return competition.archers
-    .map((archer) => {
+
+  return Object.values(Object.groupBy(competition.archers, (archer) => archer.flightId || 1 ))
+  .filter(archers => !!archers)
+  .map((flight : Archer[]) => {
+    return flight?.map(archer  => {
       let target = findCompetitionTargetConfig(
         competition.type,
         archer.bowType.code,
-        archer.ageCategory.code
+        archer.ageCategory.code,
       )
-      target.maxArchers = archer.bowType.isCompound ? 2 : 4
+      target.maxArchers = archer.bowType.code === competition.autoConfigBowType ? competition.autoConfigMaxNumber : 4
       return target
     })
     .reduce(
@@ -88,10 +91,6 @@ export function configureTargets(competition: Competition): Flight[] {
       },
       []
     )
-    .map(i => {
-      console.log(i)
-      return i
-    })
     .flatMap(
       ({
         count,
@@ -110,8 +109,8 @@ export function configureTargets(competition: Competition): Flight[] {
       }
       return (a.distance ?? 0) - (b.distance ?? 0);
     })
-    .toBalancedGroups(competition.numberOfTargets)
-    .map(
+  })
+  .map(
       (targetConfigs: Partial<Target>[], index: number): Flight => ({
         id: index + 1,
         name: `Départ ${index + 1}`,
@@ -145,7 +144,7 @@ function groupArchers(
         targetConfig: findCompetitionTargetConfig(
           competitionType,
           archer.bowType.code,
-          archer.ageCategory.code
+          archer.ageCategory.code,
         ),
       });
     }
@@ -184,7 +183,7 @@ export function assignArchers(
   
   // Initialize available positions
   flight.targets.forEach(target => {
-    availablePositions.set(target.number, (<TargetPosition[]> ["A", "B", "C", "D"]).slice(0, target.maxArchers));
+    availablePositions.set(target.number, (<TargetPosition[]> ["A", "B", "C", "D", "E", "F"]).slice(0, target.maxArchers));
   });
   
   // Mark positions that are already occupied if keeping existing assignments

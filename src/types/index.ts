@@ -126,4 +126,6 @@ export interface Competition {
   scores: ArcherScore[];
   organizingClub: string;
   arbitratorName: string;
+  autoConfigBowType: BowTypeCode;
+  autoConfigMaxNumber: number;
 }

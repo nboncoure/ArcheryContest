@@ -320,6 +320,17 @@ function saveCompetition() {
                   </div>
 
                   <div class="form-group">
+                    <label for="numberOfSessions">Nombre de départs</label>
+                    <input
+                      type="number"
+                      id="numberOfSessions"
+                      v-model="form.numberOfSessions"
+                      min="1"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
                     <label for="numberOfTargets">Nombre de cibles</label>
                     <input
                       type="number"

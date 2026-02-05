@@ -80,6 +80,10 @@
                 <PlusIcon class="w-5 h-5" />
                 Ajouter un départ
               </button>
+              <button @click="openFlightTimeModal" class="btn btn-primary">
+                {{ currentFlight?.startTime ? format(currentFlight?.startTime, 'dd/MM/yyyy H:mm') : '' }}
+                <PencilIcon class="w-5 h-5" />
+              </button>
               <button
                 v-if="currentFlight && competition!.flights.length > 1"
                 @click="deleteFlight"
@@ -257,6 +261,13 @@
      @submit="autoConfigure"
   />
 
+  <FlightTimeModal
+    v-if="currentFlight"
+    :is-open="showFlightTimeModal"
+    :current-flight="currentFlight"
+    @close="closeFlightTimeModal"
+  />
+
   </div>
 </template>
 
@@ -265,6 +276,7 @@ import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useCompetitionStore } from "../stores/competitionsStore";
 import { storeToRefs } from "pinia";
+import { format } from "date-fns";
 import { generateScoreSheets } from "@/utils/scoresheetPDF";
 import type {
   Archer,
@@ -276,6 +288,7 @@ import type {
 } from "../types";
 import { assignArchers, configureTargets } from "@/utils/targetAssignment";
 import AutoConfigModal from "@/components/AutoConfigModal.vue";
+import FlightTimeModal from "@/components/FlightTimeModal.vue";
 import TargetGrid from "@/components/target/TargetGrid.vue";
 import TargetSidePanel from "@/components/target/TargetSidePanel.vue";
 import {
@@ -285,6 +298,7 @@ import {
   DocumentArrowDownIcon,
   CheckIcon,
   ChevronUpDownIcon,
+  PencilIcon,
 } from "@heroicons/vue/24/outline";
 import {
   Dialog,
@@ -315,6 +329,7 @@ const draggedArcher = ref<{
 const editingTarget = ref<Target | undefined>();
 const showTargetConfigModal = ref(false);
 const showAutoConfigModal = ref(false);
+const showFlightTimeModal = ref(false);
 const selectedFlightId = ref<number>();
 const filters = ref({
   category: "",
@@ -327,6 +342,14 @@ function closeAutoConfigModal() {
 
 function openAutoConfig() {
   showAutoConfigModal.value = true; // Add this line to show the modal
+}
+
+function openFlightTimeModal() {
+  showFlightTimeModal.value = true; // Add this line to show the modal
+}
+
+function closeFlightTimeModal() {
+  showFlightTimeModal.value = false; // Add this line to show the modal
 }
 
 const competition = computed(() =>
@@ -827,6 +850,7 @@ async function generatePDF() {
     const pdfBytes = await generateScoreSheets(
       assignments.value,
       archers.value,
+      currentFlight.value
     );
 
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });

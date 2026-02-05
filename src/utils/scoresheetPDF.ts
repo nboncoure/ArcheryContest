@@ -1,7 +1,6 @@
 import { degrees, PDFDocument, PDFPage, rgb, StandardFonts } from 'pdf-lib';
 import type { Competition, Target, TargetAssignment, Archer, Flight } from '../types';
-// import TargetAssignment from '@/views/TargetAssignment.vue';
-
+import { format } from "date-fns";
 interface ScoreSheetData {
   competition: Competition;
   flight: Flight;
@@ -13,6 +12,7 @@ interface ScoreSheetData {
 export async function generateScoreSheets(
   assignments: TargetAssignment[],
   archers: Archer[],
+  flight: Flight,
   ) {
   {
     // Charger le modèle PDF
@@ -70,7 +70,36 @@ export async function generateScoreSheets(
         font: fontBold,
         color: colorText,
       });
-      });
+
+      if (flight?.startTime) {
+        page.drawText(`${format(flight.startTime, 'dd/MM/yyyy')}`, {
+          rotate: degrees(90),
+          x: 45,
+          y: 290,
+          size: 12,
+          font: fontBold,
+          color: colorText,
+        });
+
+        page.drawText(`${format(flight.startTime, 'H')}`, {
+          rotate: degrees(90),
+          x: 45,
+          y: 415,
+          size: 12,
+          font: fontBold,
+          color: colorText,
+        });
+
+        page.drawText(`${format(flight.startTime, 'mm')}`, {
+          rotate: degrees(90),
+          x: 45,
+          y: 465,
+          size: 12,
+          font: fontBold,
+          color: colorText,
+        });
+      }
+    });
     
     const pdfBytes = await pdfDoc.save()
 

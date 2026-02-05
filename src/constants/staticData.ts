@@ -28,7 +28,7 @@ export const BOW_TYPES: BowType[] = [
   { code: "AV", label: "Classique avec viseur", isCompound: false },
   { code: "COSV", label: "Poulie sans viseur", isCompound: true },
   { code: "COAV", label: "Poulie avec viseur", isCompound: true },
-  { code: "AH", label: "Adulte handicape", isCompound: false },
+  { code: "AH", label: "Autre handicape", isCompound: false },
 ];
 
 export function getBowTypeByCode(code: string): BowType {

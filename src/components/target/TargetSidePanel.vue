@@ -68,7 +68,7 @@ defineEmits<{
           <option value="AV">Classique avec viseur</option>
           <option value="COSV">Poulie sans viseur</option>
           <option value="COAV">Poulie avec viseur</option>
-          <option value="AH">Adulte handicape</option>
+          <option value="AH">Autre handicape</option>
         </select>
       </div>
 

@@ -134,7 +134,7 @@ export const useCompetitionStore = defineStore("competition", () => {
     const flight: Flight = {
       id: competition.flights.length,
       name: `Départ ${competition.flights.length + 1}`,
-      startTime: competition.date,
+      startTime: new Date(`${competition.date} 15:00:00 `),
       assignments: [],
       targets: Array.from(
         { length: competition.numberOfTargets },

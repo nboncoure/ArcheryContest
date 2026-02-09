@@ -185,6 +185,16 @@
       @close="closeForm"
       @save="saveArcher"
     />
+
+    <ConfirmModal
+      :is-open="showDeleteArcherConfirmModal"
+      title="Supprimer l'archer"
+      message="Êtes-vous sûr de vouloir supprimer cet archer ? Cette action ne peut pas être annulée."
+      confirm-label="Supprimer"
+      variant="danger"
+      @close="showDeleteArcherConfirmModal = false; archerToDelete = null"
+      @confirm="confirmDeleteArcher"
+    />
   </div>
 </template>
 
@@ -211,6 +221,7 @@ import {
 } from "@heroicons/vue/24/outline";
 import { BOW_TYPES } from "../constants/staticData";
 import ArcherFormModal from "@/components/ArcherFormModal.vue";
+import ConfirmModal from "@/components/ConfirmModal.vue";
 import type { Archer } from "../types";
 
 const route = useRoute();
@@ -221,6 +232,8 @@ const competitionId = route.params.id as string;
 
 const showAddForm = ref(false);
 const editingArcher = ref<Archer | null>(null);
+const showDeleteArcherConfirmModal = ref(false);
+const archerToDelete = ref<string | null>(null);
 
 const filters = ref({
   search: "",
@@ -299,8 +312,15 @@ function editArcher(archer: Archer) {
 }
 
 function deleteArcher(id: string) {
-  if (confirm("Êtes-vous sûr de vouloir supprimer cet archer ?")) {
-    competitionsStore.deleteArcher(competitionId, id);
+  archerToDelete.value = id;
+  showDeleteArcherConfirmModal.value = true;
+}
+
+function confirmDeleteArcher() {
+  showDeleteArcherConfirmModal.value = false;
+  if (archerToDelete.value) {
+    competitionsStore.deleteArcher(competitionId, archerToDelete.value);
+    archerToDelete.value = null;
   }
 }
 

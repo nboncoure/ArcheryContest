@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { XMarkIcon } from "@heroicons/vue/24/outline";
+import { ref } from "vue";
+import { XMarkIcon, Bars3Icon } from "@heroicons/vue/24/outline";
 import { Icon } from "@iconify/vue";
 import type { Archer, TargetPosition, Target, TargetAssignment } from "@/types";
 import TargetPositionCard from "./TargetPositionCard.vue";
@@ -11,13 +12,15 @@ const props = defineProps<{
   assignments: TargetAssignment[];
   target: Target;
   dragOverPosition?: TargetPosition;
+  isTargetDragOver?: boolean;
+  isBeingDragged?: boolean;
 }>();
 
 const positionBymaxArchers = computed (() => {
   return props.positions.slice(0, props.target.maxArchers)
 })
 
-defineEmits<{
+const emit = defineEmits<{
   "position-drag-start": [event: DragEvent, position: TargetPosition];
   "position-drag-over": [event: DragEvent, position: TargetPosition];
   "position-drag-leave": [event: DragEvent, position: TargetPosition];
@@ -25,7 +28,14 @@ defineEmits<{
   "remove-archer": [position: TargetPosition];
   "remove-target": [number: number];
   "edit-config": [];
+  "target-drag-start": [event: DragEvent];
+  "target-drag-end": [];
+  "target-drag-over": [event: DragEvent];
+  "target-drag-leave": [event: DragEvent];
+  "target-drop": [event: DragEvent];
 }>();
+
+const cardRef = ref<HTMLElement>();
 
 function getArcherAtPosition(position: TargetPosition): Archer | undefined {
   const assignment = props.assignments.find(
@@ -37,11 +47,61 @@ function getArcherAtPosition(position: TargetPosition): Archer | undefined {
 function isDragOver(position: TargetPosition) {
   return props.dragOverPosition === position;
 }
+
+function onTargetDragStart(event: DragEvent) {
+  event.dataTransfer!.setData("target-number", String(props.target.number));
+  event.dataTransfer!.effectAllowed = "move";
+
+  // Use the whole card as drag image
+  if (cardRef.value) {
+    const rect = cardRef.value.getBoundingClientRect();
+    event.dataTransfer!.setDragImage(
+      cardRef.value,
+      event.clientX - rect.left,
+      event.clientY - rect.top
+    );
+  }
+
+  emit("target-drag-start", event);
+}
+
+function onTargetDragEnd() {
+  emit("target-drag-end");
+}
+
+function isTargetDrag(event: DragEvent): boolean {
+  return event.dataTransfer?.types.includes("target-number") ?? false;
+}
+
+function onTargetDragOver(event: DragEvent) {
+  if (!isTargetDrag(event)) return;
+  event.preventDefault();
+  event.dataTransfer!.dropEffect = "move";
+}
 </script>
 
 <template>
-  <div class="target-card">
+  <div
+    ref="cardRef"
+    class="target-card"
+    :class="{
+      'target-drag-over': isTargetDragOver,
+      'is-being-dragged': isBeingDragged,
+    }"
+    @dragover="onTargetDragOver"
+    @dragleave.self="(e: DragEvent) => $emit('target-drag-leave', e)"
+    @drop.prevent="(e: DragEvent) => $emit('target-drop', e)"
+  >
     <div class="target-header">
+      <div
+        class="drag-handle"
+        draggable="true"
+        @dragstart="onTargetDragStart"
+        @dragend="onTargetDragEnd"
+        title="Glisser pour reordonner"
+      >
+        <Bars3Icon class="w-5 h-5" />
+      </div>
       <div style="width: -webkit-fill-available">
         <div class="target-number">Cible {{ target.number }}</div>
         <div class="flex items-center gap-4 mt-1 text-sm text-gray-600">
@@ -93,11 +153,23 @@ function isDragOver(position: TargetPosition) {
 
 <style scoped>
 .target-card {
-  @apply bg-gray-50 rounded-lg overflow-hidden;
+  @apply bg-gray-50 rounded-lg overflow-hidden transition-all duration-200;
+}
+
+.target-card.is-being-dragged {
+  @apply opacity-40 border-2 border-dashed border-gray-400;
+}
+
+.target-card.target-drag-over {
+  @apply ring-2 ring-primary bg-blue-50 scale-[1.02];
 }
 
 .target-header {
-  @apply bg-gray-100 px-3 py-2 flex justify-between items-start;
+  @apply bg-gray-100 px-3 py-2 flex justify-between items-start gap-2;
+}
+
+.drag-handle {
+  @apply text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing p-1 -ml-1 mt-0.5;
 }
 
 .target-number {

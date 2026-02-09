@@ -135,6 +135,7 @@
           @remove-archer="removeFromTarget"
           @edit-config="editTargetConfig"
           @remove-target="removeTarget"
+          @swap-targets="swapTargets"
         />
       </div>
 
@@ -173,6 +174,46 @@
     @close="closeFlightTimeModal"
   />
 
+  <ConfirmModal
+    :is-open="showResetConfirmModal"
+    title="Réinitialiser les assignations"
+    message="Êtes-vous sûr de vouloir réinitialiser les assignations de ce départ ? Cette action ne peut pas être annulée."
+    confirm-label="Réinitialiser"
+    variant="danger"
+    @close="showResetConfirmModal = false"
+    @confirm="confirmResetAssignments"
+  />
+
+  <ConfirmModal
+    :is-open="showAutoConfigConfirmModal"
+    title="Archers déjà assignés"
+    message="Des archers sont déjà assignés aux cibles. Voulez-vous réinitialiser toutes les assignations avant de reconfigurer les cibles ?"
+    confirm-label="Réinitialiser et reconfigurer"
+    variant="warning"
+    @close="showAutoConfigConfirmModal = false"
+    @confirm="confirmAutoConfigure"
+  />
+
+  <ConfirmModal
+    :is-open="showDeleteFlightConfirmModal"
+    title="Supprimer ce départ"
+    message="Êtes-vous sûr de vouloir supprimer ce départ ? Les cibles et assignations associées seront perdues."
+    confirm-label="Supprimer"
+    variant="danger"
+    @close="showDeleteFlightConfirmModal = false"
+    @confirm="confirmDeleteFlight"
+  />
+
+  <ConfirmModal
+    :is-open="showDeleteTargetConfirmModal"
+    title="Cible occupée"
+    message="Cette cible contient des archers. Voulez-vous vraiment la supprimer ?"
+    confirm-label="Supprimer"
+    variant="danger"
+    @close="showDeleteTargetConfirmModal = false; targetToDelete = null"
+    @confirm="confirmDeleteTarget"
+  />
+
   </div>
 </template>
 
@@ -193,6 +234,7 @@ import type {
 import { assignArchers, configureTargets } from "@/utils/targetAssignment";
 import { useTargetDragDrop } from "@/composables/useTargetDragDrop";
 import AutoConfigModal from "@/components/AutoConfigModal.vue";
+import ConfirmModal from "@/components/ConfirmModal.vue";
 import FlightTimeModal from "@/components/FlightTimeModal.vue";
 import TargetConfigModal from "@/components/target/TargetConfigModal.vue";
 import TargetGrid from "@/components/target/TargetGrid.vue";
@@ -221,6 +263,11 @@ const editingTarget = ref<Target | undefined>();
 const showTargetConfigModal = ref(false);
 const showAutoConfigModal = ref(false);
 const showFlightTimeModal = ref(false);
+const showResetConfirmModal = ref(false);
+const showAutoConfigConfirmModal = ref(false);
+const showDeleteFlightConfirmModal = ref(false);
+const showDeleteTargetConfirmModal = ref(false);
+const targetToDelete = ref<number | null>(null);
 const selectedFlightId = ref<number>();
 const showAllFlights = ref(false);
 const filters = ref({
@@ -308,19 +355,22 @@ function addFlight() {
 
 function deleteFlight() {
   if (!competition.value || !currentFlight) return;
+  showDeleteFlightConfirmModal.value = true;
+}
 
-  if (confirm("Êtes-vous sûr de vouloir supprimer ce départ ?")) {
-    const updatedFlights = competition.value.flights.filter(
-      (f: Flight) => f.id !== selectedFlightId.value
-    );
-    competitionStore.updateCompetition(competition.value.id, {
-      flights: updatedFlights,
-    });
+function confirmDeleteFlight() {
+  showDeleteFlightConfirmModal.value = false;
+  if (!competition.value) return;
 
-    // Sélectionner le premier départ restant
-    if (updatedFlights.length > 0) {
-      selectedFlightId.value = updatedFlights[0].id;
-    }
+  const updatedFlights = competition.value.flights.filter(
+    (f: Flight) => f.id !== selectedFlightId.value
+  );
+  competitionStore.updateCompetition(competition.value.id, {
+    flights: updatedFlights,
+  });
+
+  if (updatedFlights.length > 0) {
+    selectedFlightId.value = updatedFlights[0].id;
   }
 }
 
@@ -355,88 +405,64 @@ function addTarget() {
 }
 
 function removeTarget(targetNum: number) {
-  if (!competition.value || !currentFlight) return;
+  if (!competition.value || !currentFlight.value) return;
 
-  // Vérifier si la cible est occupée
-  const assignmentsOnTarget = currentFlight.value!.assignments.filter(
+  const assignmentsOnTarget = currentFlight.value.assignments.filter(
     (a) => a.targetNumber === targetNum
   );
 
   if (assignmentsOnTarget.length > 0) {
-    if (
-      !confirm(
-        "Cette cible contient des archers. Voulez-vous vraiment la supprimer ?"
-      )
-    ) {
-      return;
-    }
-    
-    // Supprimer les attributions pour cette cible
-    const updatedAssignments = currentFlight.value!.assignments.filter(
-      (a) => a.targetNumber !== targetNum
-    );
-    
-    // Mettre à jour les attributions des cibles suivantes
-    updatedAssignments.forEach(assignment => {
-      if (assignment.targetNumber > targetNum) {
-        assignment.targetNumber -= 1;
-      }
-    });
-    
-    // Mettre à jour les cibles
-    const updatedTargets = currentFlight.value!.targets.filter(
-      (t) => t.number !== targetNum
-    );
-    
-    // Mettre à jour les numéros des cibles suivantes
-    updatedTargets.forEach(target => {
-      if (target.number > targetNum) {
-        target.number -= 1;
-      }
-    });
-    
-    // Mettre à jour le départ
-    const updatedFlights = competition.value.flights.map((flight: Flight) => {
-      if (flight.id === selectedFlightId.value) {
-        return {
-          ...flight,
-          targets: updatedTargets,
-          assignments: updatedAssignments
-        };
-      }
-      return flight;
-    });
-
-    competitionStore.updateCompetition(competition.value.id, {
-      flights: updatedFlights,
-    });
-  } else {
-    // Si la cible n'est pas occupée, la supprimer directement
-    const updatedTargets = currentFlight.value?.targets.filter(
-      (t) => t.number !== targetNum
-    );
-    
-    // Mettre à jour les numéros des cibles suivantes
-    updatedTargets.forEach(target => {
-      if (target.number > targetNum) {
-        target.number -= 1;
-      }
-    });
-    
-    const updatedFlights = competition.value.flights.map((flight: Flight) => {
-      if (flight.id === selectedFlightId.value) {
-        return {
-          ...flight,
-          targets: updatedTargets
-        };
-      }
-      return flight;
-    });
-
-    competitionStore.updateCompetition(competition.value.id, {
-      flights: updatedFlights,
-    });
+    targetToDelete.value = targetNum;
+    showDeleteTargetConfirmModal.value = true;
+    return;
   }
+
+  doRemoveTarget(targetNum);
+}
+
+function confirmDeleteTarget() {
+  showDeleteTargetConfirmModal.value = false;
+  if (targetToDelete.value !== null) {
+    doRemoveTarget(targetToDelete.value);
+    targetToDelete.value = null;
+  }
+}
+
+function doRemoveTarget(targetNum: number) {
+  if (!competition.value || !currentFlight.value) return;
+
+  const updatedAssignments = currentFlight.value.assignments.filter(
+    (a) => a.targetNumber !== targetNum
+  );
+  updatedAssignments.forEach(assignment => {
+    if (assignment.targetNumber > targetNum) {
+      assignment.targetNumber -= 1;
+    }
+  });
+
+  const updatedTargets = currentFlight.value.targets.filter(
+    (t) => t.number !== targetNum
+  );
+  updatedTargets.forEach(target => {
+    if (target.number > targetNum) {
+      target.number -= 1;
+    }
+  });
+
+  const updatedFlights = competition.value.flights.map((flight: Flight) => {
+    if (flight.id === selectedFlightId.value) {
+      return {
+        ...flight,
+        targets: updatedTargets,
+        assignments: updatedAssignments
+      };
+    }
+    return flight;
+  });
+
+  competitionStore.updateCompetition(competition.value.id, {
+    flights: updatedFlights,
+  });
 }
 
 function updateTargetConfig(updatedTarget: Target) {
@@ -483,25 +509,62 @@ function editTargetConfig(target: Target) {
   editingTarget.value = { ...target };
   showTargetConfigModal.value = true;}
 
+function swapTargets(sourceNum: number, destNum: number) {
+  if (!competition.value || !currentFlight.value) return;
+
+  const sourceTarget = currentFlight.value.targets.find(t => t.number === sourceNum);
+  const destTarget = currentFlight.value.targets.find(t => t.number === destNum);
+  if (!sourceTarget || !destTarget) return;
+
+  const updatedTargets = currentFlight.value.targets.map((t: Target) => {
+    if (t.number === sourceNum) {
+      return { ...destTarget, number: sourceNum };
+    }
+    if (t.number === destNum) {
+      return { ...sourceTarget, number: destNum };
+    }
+    return t;
+  });
+
+  const updatedAssignments = currentFlight.value.assignments.map(a => {
+    if (a.targetNumber === sourceNum) return { ...a, targetNumber: destNum };
+    if (a.targetNumber === destNum) return { ...a, targetNumber: sourceNum };
+    return a;
+  });
+
+  const updatedFlights = competition.value.flights.map((flight: Flight) =>
+    flight.id === currentFlight.value!.id
+      ? { ...flight, targets: updatedTargets, assignments: updatedAssignments }
+      : flight
+  );
+
+  competitionStore.updateCompetition(competition.value.id, {
+    flights: updatedFlights,
+  });
+}
+
 function autoConfigure() {
   const hasAssignedArchers =
     competition.value!.flights.flatMap((flight: Flight) => flight.assignments)
       .length > 0;
 
   if (hasAssignedArchers) {
-    if (
-      confirm(
-        "Des archers sont déjà assignés aux cibles. Voulez-vous réinitialiser toutes les assignations avant de reconfigurer les cibles ?"
-      )
-    ) {
-      resetAllAssignments(false);
-    } else {
-      return;
-    }
+    showAutoConfigConfirmModal.value = true;
+    return;
   }
 
+  doAutoConfigure();
+}
+
+function doAutoConfigure() {
   const flightsConfig = configureTargets(competition.value!);
   competitionStore.replaceFlight(competition.value!.id, flightsConfig);
+}
+
+function confirmAutoConfigure() {
+  showAutoConfigConfirmModal.value = false;
+  resetAllAssignments(false);
+  doAutoConfigure();
 }
 
 function autoAssign(keepAssignments: boolean = true) {
@@ -525,25 +588,33 @@ function autoAssign(keepAssignments: boolean = true) {
 }
 
 function resetAllAssignments(askConfirmation: boolean = true) {
-  if (!competition.value) return;
+  if (!competition.value || !currentFlight.value) return;
 
-  if (
-    !askConfirmation ||
-    confirm(
-      "Êtes-vous sûr de vouloir réinitialiser toutes les assignations ? Cette action ne peut pas être annulée."
-    )
-  ) {
-    // Réinitialiser les assignations de toutes les départs
-    const updatedFlights = competition.value.flights.map((flight: Flight) => ({
-      ...flight,
-      assignments: []
-    }));
-
-    // Mettre à jour la compétition avec les départs réinitialisées
-    competitionStore.updateCompetition(competition.value.id, {
-      flights: updatedFlights
-    });
+  if (askConfirmation) {
+    showResetConfirmModal.value = true;
+    return;
   }
+
+  doResetAssignments();
+}
+
+function doResetAssignments() {
+  if (!competition.value || !currentFlight.value) return;
+
+  const updatedFlights = competition.value.flights.map((flight: Flight) =>
+    flight.id === currentFlight.value!.id
+      ? { ...flight, assignments: [] }
+      : flight
+  );
+
+  competitionStore.updateCompetition(competition.value.id, {
+    flights: updatedFlights
+  });
+}
+
+function confirmResetAssignments() {
+  showResetConfirmModal.value = false;
+  doResetAssignments();
 }
 
 const isGeneratingPDF = ref(false);

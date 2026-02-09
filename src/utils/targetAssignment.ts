@@ -19,6 +19,7 @@ type ArcherGroup = {
 };
 
 export function configureTargets(competition: Competition): Flight[] {
+  const existingFlights = competition.flights;
 
   return Object.values(Object.groupBy(competition.archers, (archer) => archer.flightId || 1 ))
   .filter(archers => !!archers)
@@ -72,20 +73,24 @@ export function configureTargets(competition: Competition): Flight[] {
     })
   })
   .map(
-      (targetConfigs: Partial<Target>[], index: number): Flight => ({
-        id: index + 1,
-        name: `Départ ${index + 1}`,
-        startTime: undefined,
-        assignments: [],
-        targets: targetConfigs.map(
-          (targetConfig: Partial<Target>, i: number): Target => ({
-            number: i + 1,
-            distance: targetConfig.distance || 0,
-            faceSize: targetConfig.faceSize || 0,
-            maxArchers: targetConfig.maxArchers || 0,
-          })
-        ),
-      })
+      (targetConfigs: Partial<Target>[], index: number): Flight => {
+        const flightId = index + 1;
+        const existing = existingFlights.find(f => f.id === flightId);
+        return {
+          id: flightId,
+          name: existing?.name ?? `Départ ${flightId}`,
+          startTime: existing?.startTime,
+          assignments: existing?.assignments ?? [],
+          targets: targetConfigs.map(
+            (targetConfig: Partial<Target>, i: number): Target => ({
+              number: i + 1,
+              distance: targetConfig.distance || 0,
+              faceSize: targetConfig.faceSize || 0,
+              maxArchers: targetConfig.maxArchers || 0,
+            })
+          ),
+        };
+      }
     );
 }
 

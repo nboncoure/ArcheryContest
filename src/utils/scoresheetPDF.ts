@@ -29,7 +29,7 @@ export async function generateScoreSheets(
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
    
-    assignments.forEach(async (assignment)  => {
+    for (const assignment of assignments) {
       const archer = archers.find(archer => archer.id === assignment.archerId);
       const [page] = await pdfDoc.copyPages(pdfSrc, [0])
       page.setRotation(degrees(90));
@@ -99,8 +99,8 @@ export async function generateScoreSheets(
           color: colorText,
         });
       }
-    });
-    
+    }
+
     const pdfBytes = await pdfDoc.save()
 
     return pdfBytes

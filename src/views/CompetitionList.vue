@@ -15,6 +15,7 @@ import {
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
 } from "@heroicons/vue/24/outline";
+import ImportConfirmModal from "@/components/ImportConfirmModal.vue";
 
 const competitionsStore = useCompetitionStore();
 const { competitions } = storeToRefs(competitionsStore);
@@ -292,27 +293,12 @@ function cancelImport() {
       </div>
     </div>
     
-    <!-- Import confirmation modal -->
-    <div v-if="showImportModal" class="modal-overlay">
-      <div class="modal-content">
-        <h3 class="text-xl font-semibold mb-4">Conflit d'importation</h3>
-        <p class="mb-6">
-          Une compétition avec le même identifiant existe déjà. 
-          Que souhaitez-vous faire ?
-        </p>
-        <div class="flex justify-end gap-3">
-          <button @click="cancelImport" class="btn btn-secondary">
-            Annuler
-          </button>
-          <button @click="importWithNewId" class="btn btn-primary">
-            Créer une nouvelle compétition
-          </button>
-          <button @click="replaceExistingCompetition" class="btn btn-danger">
-            Remplacer l'existante
-          </button>
-        </div>
-      </div>
-    </div>
+    <ImportConfirmModal
+      :is-open="showImportModal"
+      @cancel="cancelImport"
+      @import-new="importWithNewId"
+      @replace="replaceExistingCompetition"
+    />
   </div>
 </template>
 
@@ -335,14 +321,6 @@ function cancelImport() {
 
 .drop-zone {
   @apply bg-white rounded-lg p-12 flex flex-col items-center justify-center border-2 border-dashed border-primary;
-}
-
-.modal-overlay {
-  @apply fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50;
-}
-
-.modal-content {
-  @apply bg-white rounded-lg p-6 max-w-md w-full shadow-xl;
 }
 
 .btn-danger {

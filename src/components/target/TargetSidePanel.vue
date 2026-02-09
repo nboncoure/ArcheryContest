@@ -8,6 +8,7 @@ defineProps<{
     category: string;
     bowType: string;
   };
+  showAllFlights: boolean;
   categories: string[] | undefined;
   unassignedArchers: Archer[];
 }>();
@@ -18,6 +19,7 @@ defineEmits<{
   "update:modelValue": [
     value: { category: string; bowType: string }
   ];
+  "update:showAllFlights": [value: boolean];
   "auto-assign": [keepAssignments: boolean];
   "archer-drag-start": [event: DragEvent, archer: Archer];
   "archer-drag-end": [];
@@ -106,6 +108,18 @@ defineEmits<{
       <h2 class="mb-3 text-sm font-medium text-gray-700">
         Archers non assignés ({{ unassignedArchers.length }})
       </h2>
+      <div class="flex items-center mb-3">
+        <input
+          type="checkbox"
+          id="showAllFlights"
+          :checked="showAllFlights"
+          @change="$emit('update:showAllFlights', ($event.target as HTMLInputElement).checked)"
+          class="w-4 h-4 border-gray-300 rounded text-primary focus:ring-primary"
+        />
+        <label for="showAllFlights" class="ml-2 text-sm text-gray-600">
+          Afficher tous les départs
+        </label>
+      </div>
       <div class="space-y-2">
         <div
           v-for="archer in unassignedArchers"
@@ -121,12 +135,14 @@ defineEmits<{
           <div class="flex items-center gap-2 text-sm text-gray-500">
             <span>{{ archer.category }}</span>
             <span>•</span>
-            <span class="flex items-center gap-1">
-              {{ archer.bowType.label }}
-            </span>
+            <span>{{ archer.bowType.label }}</span>
+            <span v-if="archer.isBeginner" class="w-2 h-2 rounded-full bg-blue-400" title="Débutant"></span>
+            <span v-if="archer.isDisabled" class="w-2 h-2 rounded-full bg-orange-400" title="Handicapé"></span>
+            <span v-if="archer.isVisuallyImpaired" class="w-2 h-2 rounded-full bg-purple-400" title="Malvoyant"></span>
           </div>
         </div>
       </div>
     </div>
   </div>
 </template>
+

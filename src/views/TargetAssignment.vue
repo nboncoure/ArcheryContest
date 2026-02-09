@@ -142,6 +142,7 @@
       <div class="w-80">
         <TargetSidePanel
           v-model="filters"
+          v-model:show-all-flights="showAllFlights"
           :categories="categories"
           :unassigned-archers="unassignedArchers"
           @auto-assign="autoAssign"
@@ -221,6 +222,7 @@ const showTargetConfigModal = ref(false);
 const showAutoConfigModal = ref(false);
 const showFlightTimeModal = ref(false);
 const selectedFlightId = ref<number>();
+const showAllFlights = ref(false);
 const filters = ref({
   category: "",
   bowType: "",
@@ -285,6 +287,9 @@ const unassignedArchers = computed(() => {
       flight.assignments?.some((a) => a.archerId === archer.id)
     );
     if (isAssignedInAnyFlights) return false;
+
+    if (!showAllFlights.value && archer.flightId !== selectedFlightId.value)
+      return false;
 
     if (filters.value.category && archer.category !== filters.value.category)
       return false;

@@ -61,6 +61,7 @@ export interface Target {
   distance: number;
   faceSize: number;
   maxArchers: number;
+  bowTypeCode?: BowTypeCode;
 }
 
 export interface TargetAssignment {

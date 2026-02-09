@@ -32,7 +32,7 @@ export const useCompetitionStore = defineStore("competition", () => {
     { deep: true }
   );
 
-  function createCompetition(competition: Competition) {
+  function createCompetition(competition: Competition, flightStartTimes?: string[]) {
     const newCompetition = {
       ...competition,
       id: uuidv4(),
@@ -46,7 +46,7 @@ export const useCompetitionStore = defineStore("competition", () => {
         (_, i) => ({
           id: i,
           name: `Départ ${i + 1}`,
-          date: competition.date,
+          startTime: flightStartTimes?.[i] || undefined,
           assignments: [],
           targets: Array.from(
             { length: competition.numberOfTargets },
@@ -139,7 +139,7 @@ export const useCompetitionStore = defineStore("competition", () => {
     const flight: Flight = {
       id: competition.flights.length,
       name: `Départ ${competition.flights.length + 1}`,
-      startTime: new Date(`${competition.date} 15:00:00 `),
+      startTime: undefined,
       assignments: [],
       targets: Array.from(
         { length: competition.numberOfTargets },

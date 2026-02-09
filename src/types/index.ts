@@ -73,7 +73,7 @@ export interface TargetAssignment {
 export interface Flight {
   id: number;
   name: string;
-  startTime?: Date;
+  startTime?: string;
   targets: Target[];
   assignments: TargetAssignment[];
 }

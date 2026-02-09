@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useCompetitionStore } from "../stores/competitionsStore";
 import type { Competition } from "../types";
@@ -14,11 +14,27 @@ const form = ref({
   date: "",
   location: "",
   organizingClub: "",
+  arbitratorName: "",
   type: "indoor" as const,
   numberOfSessions: 1,
   numberOfTargets: 10,
   status: "draft" as const,
 });
+
+const flightStartTimes = ref<string[]>([""]);
+
+watch(
+  () => form.value.numberOfSessions,
+  (newCount) => {
+    const count = Number(newCount) || 1;
+    while (flightStartTimes.value.length < count) {
+      flightStartTimes.value.push("");
+    }
+    while (flightStartTimes.value.length > count) {
+      flightStartTimes.value.pop();
+    }
+  }
+);
 
 function handleSubmit() {
   const competition: Partial<Competition> = {
@@ -28,7 +44,10 @@ function handleSubmit() {
   if (isEdit) {
     competitionsStore.updateCompetition(route.params.id as string, competition);
   } else {
-    competitionsStore.createCompetition(competition as Competition);
+    competitionsStore.createCompetition(
+      competition as Competition,
+      flightStartTimes.value
+    );
   }
 
   router.push("/");
@@ -63,6 +82,15 @@ function handleSubmit() {
       </div>
 
       <div class="form-group">
+        <label for="arbitratorName">Nom de l'arbitre</label>
+        <input
+          type="text"
+          id="arbitratorName"
+          v-model="form.arbitratorName"
+        />
+      </div>
+
+      <div class="form-group">
         <label for="numberOfSessions">Nombre de départs</label>
         <input
           type="number"
@@ -71,6 +99,23 @@ function handleSubmit() {
           min="1"
           required
         />
+      </div>
+
+      <div class="flight-times" v-if="form.numberOfSessions > 0">
+        <div
+          v-for="(_, index) in flightStartTimes"
+          :key="index"
+          class="form-group"
+        >
+          <label :for="'flight-' + index"
+            >Date et heure - Départ {{ index + 1 }}</label
+          >
+          <input
+            type="datetime-local"
+            :id="'flight-' + index"
+            v-model="flightStartTimes[index]"
+          />
+        </div>
       </div>
 
       <div class="form-group">
@@ -120,6 +165,7 @@ label {
 
 input[type="text"],
 input[type="date"],
+input[type="datetime-local"],
 input[type="number"],
 select {
   width: 100%;

@@ -75,7 +75,7 @@ export function configureTargets(competition: Competition): Flight[] {
       (targetConfigs: Partial<Target>[], index: number): Flight => ({
         id: index + 1,
         name: `Départ ${index + 1}`,
-        startTime: new Date(`${competition.date} 15:00:00 `),
+        startTime: undefined,
         assignments: [],
         targets: targetConfigs.map(
           (targetConfig: Partial<Target>, i: number): Target => ({

@@ -86,7 +86,10 @@ function endCompetition() {
 
 function openEditModal() {
   if (competition.value) {
-    form.value = { ...competition.value };
+    form.value = {
+      ...competition.value,
+      flights: competition.value.flights.map((f) => ({ ...f })),
+    };
     showEditModal.value = true;
   }
 }
@@ -350,7 +353,27 @@ function saveCompetition() {
                     />
                   </div>
 
-                    <div class="form-group">
+                  <div
+                    v-if="form.flights && form.flights.length > 0"
+                    class="space-y-3"
+                  >
+                    <div
+                      v-for="(flight, index) in form.flights"
+                      :key="flight.id"
+                      class="form-group"
+                    >
+                      <label :for="'edit-flight-' + index"
+                        >Date et heure - {{ flight.name }}</label
+                      >
+                      <input
+                        type="datetime-local"
+                        :id="'edit-flight-' + index"
+                        v-model="flight.startTime"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="form-group">
                     <label for="organizingClub">Club organisateur</label>
                     <input
                       type="text"

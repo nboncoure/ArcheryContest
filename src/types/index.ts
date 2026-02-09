@@ -110,6 +110,12 @@ export interface ArcherScore {
   birthYear?: number;
 }
 
+export interface TargetLimitRule {
+  bowTypeCode: BowTypeCode;
+  distance: number;
+  maxArchers: number;
+}
+
 export interface Competition {
   id: string;
   name: string;
@@ -126,6 +132,6 @@ export interface Competition {
   scores: ArcherScore[];
   organizingClub: string;
   arbitratorName: string;
-  autoConfigBowType: BowTypeCode;
-  autoConfigMaxNumber: number;
+  targetLimitRules: TargetLimitRule[];
+  defaultMaxArchers: number;
 }

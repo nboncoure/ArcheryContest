@@ -41,6 +41,8 @@ export const useCompetitionStore = defineStore("competition", () => {
       status: "draft" as CompetitionStatus,
       archers: [],
       scores: [],
+      targetLimitRules: [],
+      defaultMaxArchers: 4,
       flights: Array.from(
         { length: competition.numberOfSessions || 1 },
         (_, i) => ({

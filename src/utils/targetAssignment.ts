@@ -18,6 +18,13 @@ type ArcherGroup = {
   targetConfig: Partial<Target>;
 };
 
+function getMaxArchers(competition: Competition, bowTypeCode: string, distance: number): number {
+  const rule = (competition.targetLimitRules || []).find(
+    r => r.bowTypeCode === bowTypeCode && r.distance === distance
+  );
+  return rule?.maxArchers ?? competition.defaultMaxArchers ?? 4;
+}
+
 export function configureTargets(competition: Competition): Flight[] {
   const existingFlights = competition.flights;
 
@@ -30,7 +37,7 @@ export function configureTargets(competition: Competition): Flight[] {
         archer.bowType.code,
         archer.ageCategory.code,
       )
-      target.maxArchers = archer.bowType.code === competition.autoConfigBowType ? competition.autoConfigMaxNumber : 4
+      target.maxArchers = getMaxArchers(competition, archer.bowType.code, target.distance ?? 0)
       return target
     })
     .reduce(
@@ -170,10 +177,9 @@ export function assignArchers(
   archerGroups.forEach(group => {
     // Find compatible targets in this flight
     const compatibleTargets = flight.targets
-      .filter(target => 
+      .filter(target =>
         target.distance === group.targetConfig.distance &&
-        target.faceSize === group.targetConfig.faceSize &&
-        target.maxArchers === group.targetConfig.maxArchers
+        target.faceSize === group.targetConfig.faceSize
       )
       .sort((a, b) => a.number - b.number);
     

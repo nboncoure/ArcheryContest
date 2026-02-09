@@ -12,8 +12,10 @@ const props = withDefaults(defineProps<{
   selectedRoundId: number;
   selectedTargetNumber?: number;
   showDetailedScores?: boolean;
+  readonly?: boolean;
 }>(), {
   showDetailedScores: false,
+  readonly: false,
 });
 
 const emit = defineEmits(['update:showDetailedScores', 'update-arrow', 'update-total', 'update-tens', 'update-nines', 'update-eights']);
@@ -232,6 +234,7 @@ function updateArrowScore(
             :is-score-valid="isScoreValid(assignment.archerId)"
             :get-arrow-score="(endIndex, arrowIndex) => getArrowScore(assignment.archerId, endIndex, arrowIndex)"
             :get-end-total="(endIndex) => getEndTotal(assignment.archerId, endIndex)"
+            :readonly="readonly"
             @update-arrow="updateArrowScore"
             @update-total="updateArcherTotal"
             @update-tens="updateArcherTens"

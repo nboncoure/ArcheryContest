@@ -14,10 +14,19 @@ import {
   CheckCircleIcon
 } from "@heroicons/vue/24/outline";
 
+import { storeToRefs } from "pinia";
+import { useCompetitionStatus } from "@/composables/useCompetitionStatus";
+
 const route = useRoute();
 const router = useRouter();
 const competitionsStore = useCompetitionStore();
+const { competitions } = storeToRefs(competitionsStore);
 const { showToast } = useToast();
+
+const competition = computed(() =>
+  competitions.value.find((c) => c.id === route.params.id)
+);
+const { canImportArchers } = useCompetitionStatus(competition);
 
 const importData = ref<ArcherWithStatus[]>([]);
 const dragOver = ref(false);
@@ -123,13 +132,17 @@ function cancelImport() {
   <div class="import-archers">
     <h1 class="mb-8 text-2xl font-bold text-gray-900">Import des Archers</h1>
 
+    <div v-if="!canImportArchers" class="p-3 mb-4 text-sm text-blue-800 border border-blue-200 rounded-lg bg-blue-50">
+      L'import d'archers est disponible uniquement en mode brouillon.
+    </div>
+
     <div class="card">
       <div
         class="upload-zone"
         @dragover.prevent="dragOver = true"
         @dragleave.prevent="dragOver = false"
         @drop.prevent="handleFileDrop"
-        :class="{ 'drag-over': dragOver }"
+        :class="{ 'drag-over': dragOver, 'opacity-50 pointer-events-none': !canImportArchers }"
       >
         <div class="text-center">
           <ArrowUpTrayIcon class="w-12 h-12 mx-auto text-gray-400" />
@@ -162,7 +175,7 @@ function cancelImport() {
               <XMarkIcon class="w-5 h-5" />
               Annuler
             </button>
-            <button @click="confirmImport" class="btn btn-primary">
+            <button @click="confirmImport" class="btn btn-primary" :disabled="!canImportArchers">
               <CheckIcon class="w-5 h-5" />
               Confirmer l'import
             </button>

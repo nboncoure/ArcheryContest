@@ -8,6 +8,7 @@ const props = defineProps<{
   archers: Archer[];
   assignments: TargetAssignment[];
   dragOverPosition?: TargetPosition;
+  readonly?: boolean;
 }>();
 
 defineEmits<{
@@ -87,6 +88,7 @@ function getAssignmentsForTarget(targetNum: number): TargetAssignment[] {
           :drag-over-position="dragOverPosition"
           :is-target-drag-over="targetDragOverNum === target.number"
           :is-being-dragged="draggedTargetNum === target.number"
+          :readonly="readonly"
           @position-drag-start="
             (e, pos) => $emit('position-drag-start', e, target.number, pos)
           "

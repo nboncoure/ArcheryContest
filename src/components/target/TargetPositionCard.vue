@@ -6,6 +6,7 @@ defineProps<{
   position: TargetPosition;
   archer?: Archer;
   isDragOver?: boolean;
+  readonly?: boolean;
 }>();
 
 defineEmits<{
@@ -20,7 +21,7 @@ defineEmits<{
       occupied: archer,
       'drag-over': isDragOver,
     }"
-    draggable="true"
+    :draggable="!readonly"
     v-bind="$attrs"
   >
     <template v-if="archer">
@@ -39,7 +40,7 @@ defineEmits<{
           <span v-if="archer.isVisuallyImpaired" class="w-2 h-2 rounded-full bg-purple-400" title="Malvoyant"></span>
         </div>
       </div>
-      <button @click="$emit('remove')" class="remove-button">
+      <button v-if="!readonly" @click="$emit('remove')" class="remove-button">
         <XMarkIcon class="w-4 h-4" />
       </button>
     </template>

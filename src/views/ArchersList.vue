@@ -3,10 +3,14 @@
     <div class="mb-8">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-gray-900">Liste des Archers</h1>
-        <button @click="showAddForm = true" class="btn btn-primary">
+        <button v-if="canEditArchers" @click="showAddForm = true" class="btn btn-primary">
           <PlusIcon class="w-5 h-5" />
           Ajouter un archer
         </button>
+      </div>
+
+      <div v-if="!canEditArchers" class="p-3 mb-4 text-sm text-blue-800 border border-blue-200 rounded-lg bg-blue-50">
+        La liste des archers est en lecture seule. Pour modifier les archers, la compétition doit être en mode brouillon.
       </div>
 
       <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -77,7 +81,8 @@
                 </div>
               </th>
               <th
-                class="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase"
+                v-if="canEditArchers"
+                class="sticky right-0 bg-gray-50 px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase"
               >
                 Actions
               </th>
@@ -87,21 +92,19 @@
             <tr
               v-for="archer in sortedArchers"
               :key="archer.id"
-              class="hover:bg-gray-50"
+              class="hover:bg-gray-50 group/row"
             >
               <td class="px-6 py-4 whitespace-nowrap">{{ archer.lastName }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
                 {{ archer.firstName }}
               </td>          
               <td class="px-6 py-4 whitespace-nowrap">
-                {{ archer.isBeginner? "Oui" : "" }}
-              </td>     
-              <td class="px-6 py-4 whitespace-nowrap">
-                {{ archer.isDisabled? "Oui" : "" }}
-              </td> 
-               <td class="px-6 py-4 whitespace-nowrap">
-                {{ archer.isVisuallyImpaired? "Oui" : "" }}
-              </td> 
+                <div class="flex items-center gap-1">
+                  <span v-if="archer.isBeginner" class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">Déb.</span>
+                  <span v-if="archer.isDisabled" class="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">Hand.</span>
+                  <span v-if="archer.isVisuallyImpaired" class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">Malv.</span>
+                </div>
+              </td>
               <td class="px-6 py-4">
                 <div class="truncate max-w-[150px] md:max-w-[180px] lg:max-w-[220px]" :title="archer.club">
                   {{ archer.club }}
@@ -120,22 +123,24 @@
                   {{ archer.bowType?.label }}
                 </div>
               </td>
-              <td class="px-6 py-4 text-right whitespace-nowrap">
+              <td v-if="canEditArchers" class="sticky right-0 bg-white px-6 py-4 text-right whitespace-nowrap group-hover/row:bg-gray-50">
                 <Menu as="div" class="relative inline-block text-left">
-                  <MenuButton class="p-2 btn btn-secondary">
+                  <MenuButton class="p-2 btn btn-secondary" @click="captureMenuPosition">
                     <EllipsisVerticalIcon class="w-5 h-5" />
                   </MenuButton>
-                  <transition
-                    enter-active-class="transition duration-100 ease-out"
-                    enter-from-class="transform scale-95 opacity-0"
-                    enter-to-class="transform scale-100 opacity-100"
-                    leave-active-class="transition duration-75 ease-in"
-                    leave-from-class="transform scale-100 opacity-100"
-                    leave-to-class="transform scale-95 opacity-0"
-                  >
-                    <MenuItems
-                      class="absolute right-0 w-48 mt-2 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+                  <Teleport to="body">
+                    <transition
+                      enter-active-class="transition duration-100 ease-out"
+                      enter-from-class="transform scale-95 opacity-0"
+                      enter-to-class="transform scale-100 opacity-100"
+                      leave-active-class="transition duration-75 ease-in"
+                      leave-from-class="transform scale-100 opacity-100"
+                      leave-to-class="transform scale-95 opacity-0"
                     >
+                      <MenuItems
+                        class="fixed w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+                        :style="menuStyle"
+                      >
                       <div class="py-1">
                         <MenuItem v-slot="{ active }">
                           <button
@@ -164,8 +169,9 @@
                           </button>
                         </MenuItem>
                       </div>
-                    </MenuItems>
-                  </transition>
+                      </MenuItems>
+                    </transition>
+                  </Teleport>
                 </Menu>
               </td>
             </tr>
@@ -223,12 +229,28 @@ import { BOW_TYPES } from "../constants/staticData";
 import ArcherFormModal from "@/components/ArcherFormModal.vue";
 import ConfirmModal from "@/components/ConfirmModal.vue";
 import type { Archer } from "../types";
+import { useCompetitionStatus } from "@/composables/useCompetitionStatus";
 
 const route = useRoute();
 const competitionsStore = useCompetitionStore();
 const { competitions } = storeToRefs(competitionsStore);
 
 const competitionId = route.params.id as string;
+
+const competition = computed(() =>
+  competitions.value.find((c) => c.id === competitionId)
+);
+const { canEditArchers } = useCompetitionStatus(competition);
+
+const menuStyle = ref<Record<string, string>>({});
+
+function captureMenuPosition(e: MouseEvent) {
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+  menuStyle.value = {
+    top: `${rect.bottom + 4}px`,
+    right: `${window.innerWidth - rect.right}px`,
+  };
+}
 
 const showAddForm = ref(false);
 const editingArcher = ref<Archer | null>(null);
@@ -247,9 +269,7 @@ const sortDirection = ref<"asc" | "desc">("asc");
 const columns = [
   { key: "lastName", label: "Nom", sortable: true },
   { key: "firstName", label: "Prénom", sortable: true },
-  { key: "isBeginner", label: "Débutant", sortable: true },
-  { key: "isDisabled", label: "Situation de handicape", sortable: true },
-  { key: "isVisuallyImpaired", label: "Malvoyant", sortable: true },
+  { key: "tags", label: "", sortable: false },
   { key: "club", label: "Club", sortable: true },
   { key: "departmentNumber", label: "Numéro de département", sortable: true },
   { key: "category", label: "Catégorie", sortable: true },

@@ -11,6 +11,7 @@ defineProps<{
   showAllFlights: boolean;
   categories: string[] | undefined;
   unassignedArchers: Archer[];
+  readonly?: boolean;
 }>();
 
 const keepAssignments = ref(true);
@@ -74,34 +75,36 @@ defineEmits<{
         </select>
       </div>
 
-      <div class="flex items-center">
-        <input
-          type="checkbox"
-          id="keepAssignments"
-          v-model="keepAssignments"
-          class="w-4 h-4 border-gray-300 rounded text-primary focus:ring-primary"
-        />
-        <label for="keepAssignments" class="ml-2 text-sm text-gray-600">
-          Conserver les assignations existantes
-        </label>
-      </div>
+      <template v-if="!readonly">
+        <div class="flex items-center">
+          <input
+            type="checkbox"
+            id="keepAssignments"
+            v-model="keepAssignments"
+            class="w-4 h-4 border-gray-300 rounded text-primary focus:ring-primary"
+          />
+          <label for="keepAssignments" class="ml-2 text-sm text-gray-600">
+            Conserver les assignations existantes
+          </label>
+        </div>
 
-      <button
-        @click="$emit('auto-assign', keepAssignments)"
-        class="w-full btn btn-primary"
-      >
-        <SparklesIcon class="w-5 h-5" />
-        Attribution automatique
-      </button>
+        <button
+          @click="$emit('auto-assign', keepAssignments)"
+          class="w-full btn btn-primary"
+        >
+          <SparklesIcon class="w-5 h-5" />
+          Attribution automatique
+        </button>
 
-      <button
-        @click="$emit('reset-all-assignments')"
-        class="w-full btn btn-danger"
-        title="Réinitialiser toutes les assignations"
-      >
-        <ArrowPathIcon class="w-5 h-5" />
-        Réinitialiser les archers
-      </button>
+        <button
+          @click="$emit('reset-all-assignments')"
+          class="w-full btn btn-danger"
+          title="Réinitialiser toutes les assignations"
+        >
+          <ArrowPathIcon class="w-5 h-5" />
+          Réinitialiser les archers
+        </button>
+      </template>
     </div>
 
     <div class="flex-1 p-4 overflow-y-auto">
@@ -124,8 +127,9 @@ defineEmits<{
         <div
           v-for="archer in unassignedArchers"
           :key="archer.id"
-          class="p-3 transition-colors rounded-lg cursor-move bg-gray-50 hover:bg-gray-100"
-          draggable="true"
+          class="p-3 transition-colors rounded-lg bg-gray-50 hover:bg-gray-100"
+          :class="{ 'cursor-move': !readonly }"
+          :draggable="!readonly"
           @dragstart="$emit('archer-drag-start', $event, archer)"
           @dragend="$emit('archer-drag-end')"
         >

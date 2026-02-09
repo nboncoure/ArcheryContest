@@ -7,6 +7,10 @@
           Attribution des Cibles
         </h1>
 
+        <div v-if="!canEditTargets" class="p-3 mb-6 text-sm text-blue-800 border border-blue-200 rounded-lg bg-blue-50">
+          Les cibles et affectations sont en lecture seule. Pour les modifier, la compétition doit être en mode brouillon.
+        </div>
+
         <!-- Gestion des départs -->
         <div
           class="flex items-center justify-between pb-6 mb-6 border-b border-gray-200"
@@ -76,16 +80,16 @@
               </Listbox>
             </div>
             <div class="flex items-end gap-2">
-              <button @click="addFlight" class="btn btn-secondary">
+              <button v-if="canEditTargets" @click="addFlight" class="btn btn-secondary">
                 <PlusIcon class="w-5 h-5" />
                 Ajouter un départ
               </button>
-              <button @click="openFlightTimeModal" class="btn btn-primary">
+              <button v-if="canEditTargets" @click="openFlightTimeModal" class="btn btn-primary">
                 {{ currentFlight?.startTime ? format(currentFlight?.startTime, 'dd/MM/yyyy H:mm') : '' }}
                 <PencilIcon class="w-5 h-5" />
               </button>
               <button
-                v-if="currentFlight && competition!.flights.length > 1"
+                v-if="canEditTargets && currentFlight && competition!.flights.length > 1"
                 @click="deleteFlight"
                 class="btn btn-danger"
               >
@@ -104,7 +108,7 @@
               {{ currentFlight?.targets.length || 0 }} cibles
             </span>
           </div>
-          <button @click="addTarget" class="btn btn-primary">
+          <button v-if="canEditTargets" @click="addTarget" class="btn btn-primary">
             <PlusIcon class="w-5 h-5" />
             Ajouter une cible
           </button>
@@ -112,7 +116,7 @@
             <DocumentArrowDownIcon class="w-5 h-5" />
             Feuilles de marque
           </button>
-          <button @click="openAutoConfig" class="btn btn-primary">
+          <button v-if="canEditTargets" @click="openAutoConfig" class="btn btn-primary">
             <PlusIcon class="w-5 h-5" />
             Configuration Automatique
           </button>
@@ -128,6 +132,7 @@
           :targets="currentFlight?.targets || []"
           :assignments="currentFlight?.assignments || []"
           :archers="assignedArchers"
+          :readonly="!canEditTargets"
           @position-drag-start="handlePositionDragStart"
           @position-drag-over="handleDragOver"
           @position-drag-leave="handleDragLeave"
@@ -146,6 +151,7 @@
           v-model:show-all-flights="showAllFlights"
           :categories="categories"
           :unassigned-archers="unassignedArchers"
+          :readonly="!canEditTargets"
           @auto-assign="autoAssign"
           @archer-drag-start="dragStart"
           @archer-drag-end="dragEnd"
@@ -248,6 +254,7 @@ import {
   ChevronUpDownIcon,
   PencilIcon,
 } from "@heroicons/vue/24/outline";
+import { useCompetitionStatus } from "@/composables/useCompetitionStatus";
 import {
   Listbox,
   ListboxButton,
@@ -290,6 +297,8 @@ function closeFlightTimeModal() {
 const competition = computed(() =>
   competitions.value.find((c: Competition) => c.id === route.params.id)
 );
+
+const { canEditTargets } = useCompetitionStatus(competition);
 
 const currentFlight = computed(() =>
   competition.value?.flights.find((f: Flight) => f.id === selectedFlightId.value)

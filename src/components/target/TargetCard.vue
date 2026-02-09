@@ -14,6 +14,7 @@ const props = defineProps<{
   dragOverPosition?: TargetPosition;
   isTargetDragOver?: boolean;
   isBeingDragged?: boolean;
+  readonly?: boolean;
 }>();
 
 const positionBymaxArchers = computed (() => {
@@ -94,6 +95,7 @@ function onTargetDragOver(event: DragEvent) {
   >
     <div class="target-header">
       <div
+        v-if="!readonly"
         class="drag-handle"
         draggable="true"
         @dragstart="onTargetDragStart"
@@ -106,6 +108,7 @@ function onTargetDragOver(event: DragEvent) {
         <div class="target-number">Cible {{ target.number }}</div>
         <div class="flex items-center gap-4 mt-1 text-sm text-gray-600">
           <button
+            v-if="!readonly"
             @click="$emit('edit-config')"
             class="flex items-center gap-1 transition-colors hover:text-primary"
             title="Configurer la cible"
@@ -116,7 +119,15 @@ function onTargetDragOver(event: DragEvent) {
             />
             {{ target.distance }}m
           </button>
+          <span v-else class="flex items-center gap-1">
+            <Icon
+              icon="material-symbols-light:fit-width-rounded"
+              class="w-4 h-4"
+            />
+            {{ target.distance }}m
+          </span>
           <button
+            v-if="!readonly"
             @click="$emit('edit-config')"
             class="flex items-center gap-1 transition-colors hover:text-primary"
             title="Configurer la cible"
@@ -124,9 +135,14 @@ function onTargetDragOver(event: DragEvent) {
             <Icon icon="material-symbols-light:target" class="w-4 h-4" />
             Blason {{ target.faceSize }}cm
           </button>
+          <span v-else class="flex items-center gap-1">
+            <Icon icon="material-symbols-light:target" class="w-4 h-4" />
+            Blason {{ target.faceSize }}cm
+          </span>
         </div>
       </div>
       <button
+        v-if="!readonly"
         @click="$emit('remove-target', target.number)"
         class="remove-target-btn"
         title="Supprimer cette cible"
@@ -140,6 +156,7 @@ function onTargetDragOver(event: DragEvent) {
           :position="position"
           :archer="getArcherAtPosition(position)"
           :is-drag-over="isDragOver(position)"
+          :readonly="readonly"
           @dragover.prevent="(e: DragEvent) => $emit('position-drag-over', e, position)"
           @dragleave.prevent="(e: DragEvent) => $emit('position-drag-leave', e, position)"
           @drop.prevent="(e: DragEvent) => $emit('position-drop', e, position)"

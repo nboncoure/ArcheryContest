@@ -8,6 +8,7 @@ import { generateAttendancesheetPDF } from '@/utils/attendancesheetPDF';
 import { generatePlacementByClubPDF } from '@/utils/placementByClubPDF';
 import type { Archer } from '../types';
 import { DocumentArrowDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
+import { useCompetitionStatus } from '@/composables/useCompetitionStatus';
 
 
 const route = useRoute();
@@ -21,6 +22,8 @@ const showExportModal = ref(false);
 const competition = computed(() =>
   competitions.value.find((c) => c.id === route.params.id)
 );
+
+const { canEditAttendance, isDraft } = useCompetitionStatus(competition);
 
 const filters = ref({
   search: "",
@@ -152,6 +155,18 @@ async function generateClubPDF() {
       <div class="p-6">
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-2xl font-bold text-gray-900">Archers présents</h1>
+        </div>
+
+        <div v-if="!canEditAttendance" class="p-3 mb-6 text-sm text-blue-800 border border-blue-200 rounded-lg bg-blue-50">
+          <template v-if="isDraft">
+            La gestion des présences est disponible uniquement lorsque la compétition est en cours.
+          </template>
+          <template v-else>
+            La gestion des présences est en lecture seule. La compétition est terminée.
+          </template>
+        </div>
+
+        <div class="flex items-center justify-between mb-6">
           <!-- Removed the button from here -->
             <button 
             class="btn btn-primary flex items-center gap-2"
@@ -229,7 +244,11 @@ async function generateClubPDF() {
               <td class="px-6 py-4 whitespace-nowrap">
     <Switch
     v-model="archer.isPresent"
-    :class="archer.isPresent ? 'bg-blue-600' : 'bg-gray-200'"
+    :disabled="!canEditAttendance"
+    :class="[
+      archer.isPresent ? 'bg-blue-600' : 'bg-gray-200',
+      !canEditAttendance ? 'opacity-50 cursor-not-allowed' : ''
+    ]"
     class="relative inline-flex h-6 w-11 items-center rounded-full"
   >
     <span class="sr-only">Enable notifications</span>

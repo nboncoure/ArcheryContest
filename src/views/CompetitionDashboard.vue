@@ -24,8 +24,11 @@ import {
   ExclamationTriangleIcon,
   PencilIcon,
   CheckBadgeIcon,
+  ArrowUturnLeftIcon,
 } from "@heroicons/vue/24/outline";
 import type { Competition } from "@/types";
+import ConfirmModal from "@/components/ConfirmModal.vue";
+import { useCompetitionStatus } from "@/composables/useCompetitionStatus";
 
 const route = useRoute();
 const competitionsStore = useCompetitionStore();
@@ -43,6 +46,12 @@ const form = ref<Partial<Competition>>({
 const competition = computed(() =>
   competitions.value.find((c) => c.id === route.params.id)
 );
+
+const { canEditCompetitionInfo, isDraft, isActive, isCompleted } =
+  useCompetitionStatus(competition);
+
+const showReopenConfirm = ref(false);
+const showRevertConfirm = ref(false);
 
 function translateStatus(status: string): string {
   const statusMap: Record<string, string> = {
@@ -84,7 +93,26 @@ function endCompetition() {
   }
 }
 
+function reopenCompetition() {
+  showReopenConfirm.value = false;
+  if (competition.value) {
+    competitionsStore.updateCompetition(competition.value.id, {
+      status: "active",
+    });
+  }
+}
+
+function revertToDraft() {
+  showRevertConfirm.value = false;
+  if (competition.value) {
+    competitionsStore.updateCompetition(competition.value.id, {
+      status: "draft",
+    });
+  }
+}
+
 function openEditModal() {
+  if (!canEditCompetitionInfo.value) return;
   if (competition.value) {
     form.value = {
       ...competition.value,
@@ -117,6 +145,7 @@ function saveCompetition() {
                 {{ competition.name }}
               </h1>
               <button
+                v-if="canEditCompetitionInfo"
                 @click="openEditModal"
                 class="text-gray-400 hover:text-gray-600"
               >
@@ -144,20 +173,36 @@ function saveCompetition() {
 
           <div class="flex gap-3">
             <button
-              v-if="competition.status === 'draft'"
+              v-if="isDraft"
               @click="startCompetition"
               class="btn btn-success"
             >
               <PlayIcon class="w-5 h-5" />
               Démarrer la compétition
             </button>
+            <template v-else-if="isActive">
+              <button
+                @click="showRevertConfirm = true"
+                class="btn btn-secondary"
+              >
+                <ArrowUturnLeftIcon class="w-5 h-5" />
+                Revenir en préparation
+              </button>
+              <button
+                @click="endCompetition"
+                class="btn btn-danger"
+              >
+                <FlagIcon class="w-5 h-5" />
+                Terminer la compétition
+              </button>
+            </template>
             <button
-              v-else-if="competition.status === 'active'"
-              @click="endCompetition"
-              class="btn btn-danger"
+              v-else-if="isCompleted"
+              @click="showReopenConfirm = true"
+              class="btn btn-secondary"
             >
-              <FlagIcon class="w-5 h-5" />
-              Terminer la compétition
+              <ArrowUturnLeftIcon class="w-5 h-5" />
+              Réouvrir la compétition
             </button>
           </div>
         </div>
@@ -401,6 +446,26 @@ function saveCompetition() {
         </div>
       </Dialog>
     </TransitionRoot>
+
+    <ConfirmModal
+      :is-open="showReopenConfirm"
+      title="Réouvrir la compétition"
+      message="La compétition repassera en mode actif. Vous pourrez à nouveau modifier les présences et saisir des scores."
+      confirm-label="Réouvrir"
+      variant="warning"
+      @close="showReopenConfirm = false"
+      @confirm="reopenCompetition"
+    />
+
+    <ConfirmModal
+      :is-open="showRevertConfirm"
+      title="Revenir en préparation"
+      message="La compétition repassera en mode brouillon. Vous pourrez à nouveau modifier les archers, cibles et affectations. Les présences et scores ne seront plus accessibles en saisie."
+      confirm-label="Revenir en préparation"
+      variant="warning"
+      @close="showRevertConfirm = false"
+      @confirm="revertToDraft"
+    />
   </div>
 
   <div v-else class="flex items-center justify-center min-h-screen bg-gray-50">

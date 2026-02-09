@@ -4,9 +4,6 @@ import {
   Dialog,
   DialogPanel,
   DialogTitle,
-  RadioGroup,
-  RadioGroupLabel,
-  RadioGroupOption,
   TransitionRoot,
   TransitionChild,
 } from "@headlessui/vue";
@@ -19,12 +16,6 @@ import {
 } from "@/constants/staticData";
 import type { Archer, AgeCategoryCode } from "@/types";
 
-const SPECIAL_CATEGORIES = {
-  BEGINNER: "Débutant",
-  DISABLED: "Handicapé",
-  VISUALLY_IMPAIRED: "Malvoyant",
-} as const;
-
 const props = defineProps<{
   isOpen: boolean;
   archer: Archer | null;
@@ -36,7 +27,6 @@ const emit = defineEmits<{
 }>();
 
 const selectedAgeGroup = ref<AgeCategoryCode>("S");
-const selectedSpecialCategory = ref("");
 
 const archerForm = ref<Partial<Archer>>({
   lastName: "",
@@ -59,15 +49,6 @@ watch(
     if (newArcher) {
       archerForm.value = { ...newArcher };
       selectedAgeGroup.value = newArcher.ageCategory.code;
-      if (newArcher.isBeginner) {
-        selectedSpecialCategory.value = SPECIAL_CATEGORIES.BEGINNER;
-      } else if (newArcher.isDisabled) {
-        selectedSpecialCategory.value = SPECIAL_CATEGORIES.DISABLED;
-      } else if (newArcher.isVisuallyImpaired) {
-        selectedSpecialCategory.value = SPECIAL_CATEGORIES.VISUALLY_IMPAIRED;
-      } else {
-        selectedSpecialCategory.value = "";
-      }
     } else {
       resetForm();
     }
@@ -101,7 +82,6 @@ function resetForm() {
     isVisuallyImpaired: false,
   };
   selectedAgeGroup.value = "S";
-  selectedSpecialCategory.value = "";
 }
 
 function close() {
@@ -110,9 +90,6 @@ function close() {
 }
 
 function save() {
-  archerForm.value.isBeginner = selectedSpecialCategory.value === SPECIAL_CATEGORIES.BEGINNER;
-  archerForm.value.isDisabled = selectedSpecialCategory.value === SPECIAL_CATEGORIES.DISABLED;
-  archerForm.value.isVisuallyImpaired = selectedSpecialCategory.value === SPECIAL_CATEGORIES.VISUALLY_IMPAIRED;
   emit("save", archerForm.value);
   resetForm();
 }
@@ -242,64 +219,27 @@ function save() {
                 </div>
 
                 <div class="form-group">
-                  <label class="mb-2">Catégorie spéciale</label>
-                  <RadioGroup v-model="selectedSpecialCategory" class="mt-2">
-                    <RadioGroupOption
-                      v-for="(label, key) in SPECIAL_CATEGORIES"
-                      :key="key"
-                      :value="label"
-                      v-slot="{ checked }"
+                  <label class="mb-2">Particularités</label>
+                  <div class="flex gap-3 mt-2">
+                    <label
+                      :class="[
+                        archerForm.isBeginner ? 'bg-blue-50 border-blue-400' : 'border-gray-200',
+                        'relative border rounded-lg px-4 py-2 flex items-center gap-2 cursor-pointer',
+                      ]"
                     >
-                      <div
-                        :class="[
-                          checked
-                            ? 'bg-primary-50 border-primary'
-                            : 'border-gray-200',
-                          'relative border rounded-lg px-4 py-2 flex cursor-pointer focus:outline-none',
-                        ]"
-                      >
-                        <div class="flex items-center">
-                          <div class="text-sm">
-                            <RadioGroupLabel
-                              :class="[
-                                checked
-                                  ? 'text-primary-900'
-                                  : 'text-gray-900',
-                                'font-medium',
-                              ]"
-                            >
-                              {{ label }}
-                            </RadioGroupLabel>
-                          </div>
-                        </div>
-                      </div>
-                    </RadioGroupOption>
-                    <RadioGroupOption value="" v-slot="{ checked }">
-                      <div
-                        :class="[
-                          checked
-                            ? 'bg-primary-50 border-primary'
-                            : 'border-gray-200',
-                          'relative border rounded-lg px-4 py-2 flex cursor-pointer focus:outline-none',
-                        ]"
-                      >
-                        <div class="flex items-center">
-                          <div class="text-sm">
-                            <RadioGroupLabel
-                              :class="[
-                                checked
-                                  ? 'text-primary-900'
-                                  : 'text-gray-900',
-                                'font-medium',
-                              ]"
-                            >
-                              Aucune
-                            </RadioGroupLabel>
-                          </div>
-                        </div>
-                      </div>
-                    </RadioGroupOption>
-                  </RadioGroup>
+                      <input type="checkbox" v-model="archerForm.isBeginner" class="sr-only" />
+                      <span :class="archerForm.isBeginner ? 'text-blue-700 font-medium' : 'text-gray-900'">Débutant</span>
+                    </label>
+                    <label
+                      :class="[
+                        archerForm.isVisuallyImpaired ? 'bg-purple-50 border-purple-400' : 'border-gray-200',
+                        'relative border rounded-lg px-4 py-2 flex items-center gap-2 cursor-pointer',
+                      ]"
+                    >
+                      <input type="checkbox" v-model="archerForm.isVisuallyImpaired" class="sr-only" />
+                      <span :class="archerForm.isVisuallyImpaired ? 'text-purple-700 font-medium' : 'text-gray-900'">Malvoyant</span>
+                    </label>
+                  </div>
                 </div>
 
                 <div class="flex justify-end gap-3 mt-6">

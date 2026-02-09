@@ -252,7 +252,7 @@
                   </div>
 
                   <div class="form-group">
-                    <label for="club">Numéro de département</label>
+                    <label for="departmentNumber">Numéro de département</label>
                     <input
                       type="number"
                       id="departmentNumber"
@@ -262,7 +262,7 @@
                   </div>
 
                   <div class="form-group">
-                    <label for="club">N° Licence</label>
+                    <label for="license">N° Licence</label>
                     <input
                       type="text"
                       id="license"
@@ -474,7 +474,7 @@ const columns = [
   { key: "isDisabled", label: "Situation de handicape", sortable: true },
   { key: "isVisuallyImpaired", label: "Malvoyant", sortable: true },
   { key: "club", label: "Club", sortable: true },
-  { key: "departmentNumbert", label: "Numéro de département", sortable: true },
+  { key: "departmentNumber", label: "Numéro de département", sortable: true },
   { key: "category", label: "Catégorie", sortable: true },
   { key: "gender", label: "Genre", sortable: true },
   { key: "bowType", label: "Arc", sortable: true },

@@ -1,4 +1,4 @@
-import {
+import type {
   AgeCategory,
   AgeCategoryCode,
   ArcherGender,
@@ -7,6 +7,13 @@ import {
   CompetitionType,
   Target,
 } from "../types";
+
+type TargetConfig = Pick<Target, "distance" | "faceSize">;
+
+type CompetitionTargetConfig = Record<
+  CompetitionType,
+  Partial<Record<BowTypeCode, Partial<Record<AgeCategoryCode, TargetConfig>>>>
+>;
 
 export const AGE_CATEGORIES: AgeCategory[] = [
   { code: "P", label: "Poussin", minAge: 8, maxAge: 10 },
@@ -19,8 +26,8 @@ export const AGE_CATEGORIES: AgeCategory[] = [
   { code: "SV", label: "Super Vétéran", minAge: 65, maxAge: 99 },
 ];
 
-export function getAgeCategoryByCode(code: string): AgeCategory {
-  return AGE_CATEGORIES.find((cat) => cat.code === code)!;
+export function getAgeCategoryByCode(code: string): AgeCategory | undefined {
+  return AGE_CATEGORIES.find((cat) => cat.code === code);
 }
 
 export const BOW_TYPES: BowType[] = [
@@ -31,8 +38,8 @@ export const BOW_TYPES: BowType[] = [
   { code: "AH", label: "Autre handicape", isCompound: false },
 ];
 
-export function getBowTypeByCode(code: string): BowType {
-  return BOW_TYPES.find((bow) => bow.code === code)!;
+export function getBowTypeByCode(code: string): BowType | undefined {
+  return BOW_TYPES.find((bow) => bow.code === code);
 }
 
 export const COMPETITION_TARGET_CONFIG: CompetitionTargetConfig = {
@@ -181,7 +188,7 @@ export function findCompetitionTargetConfig(
   bowType: BowTypeCode,
   ageCategory: AgeCategoryCode
 ): Partial<Target> {
-  return COMPETITION_TARGET_CONFIG[competitionType][bowType][ageCategory];
+  return COMPETITION_TARGET_CONFIG[competitionType]?.[bowType]?.[ageCategory] ?? {};
 }
 
 // Structure complète des catégories

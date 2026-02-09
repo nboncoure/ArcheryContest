@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
-import { ref, computed, watch } from "vue";
+import { ref, watch } from "vue";
 import { v4 as uuidv4 } from "uuid";
-import { getBowTypeByCode } from "@/constants/staticData";
 import type {
   Competition,
   CompetitionStatus,
@@ -10,6 +9,7 @@ import type {
   Target,
   TargetAssignment,
   ArcherScore,
+  Round,
 } from "../types";
 
 const loadCompetitions = (): Competition[] => {
@@ -20,10 +20,14 @@ const loadCompetitions = (): Competition[] => {
 export const useCompetitionStore = defineStore("competition", () => {
   const competitions = ref<Competition[]>(loadCompetitions());
 
+  let saveTimeout: ReturnType<typeof setTimeout>;
   watch(
     competitions,
     (newCompetitions) => {
-      localStorage.setItem("competitions", JSON.stringify(newCompetitions));
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        localStorage.setItem("competitions", JSON.stringify(newCompetitions));
+      }, 500);
     },
     { deep: true }
   );
@@ -50,6 +54,7 @@ export const useCompetitionStore = defineStore("competition", () => {
               number: j + 1,
               distance: 18,
               faceSize: 40,
+              maxArchers: 4,
             })
           ),
         })
@@ -142,6 +147,7 @@ export const useCompetitionStore = defineStore("competition", () => {
           number: i + 1,
           distance: 18,
           faceSize: 40,
+          maxArchers: 4,
         })
       ),
     };
@@ -322,106 +328,47 @@ export const useCompetitionStore = defineStore("competition", () => {
     score.eights = score.rounds.reduce((sum, r) => sum + r.eights, 0);
   }
 
-  function updateArcherTotal(competitionId: string, archerId: string, flightId: number, roundId: number, value: number) {
-    if (isNaN(value) || value < 0 || value > 300) return;
+  type ScoreField = 'total' | 'tens' | 'nines' | 'eights';
+
+  function updateArcherScoreField(
+    competitionId: string, archerId: string, flightId: number,
+    roundId: number, field: ScoreField, value: number, maxValue: number
+  ) {
+    if (isNaN(value) || value < 0 || value > maxValue) return;
 
     const competition = competitions.value.find((c) => c.id === competitionId);
     if (!competition) return;
 
     const score = competition.scores.find(
-      (s) => s.archerId === archerId && 
-             s.flightId === flightId 
+      (s) => s.archerId === archerId && s.flightId === flightId
     );
-    
-    if (score) {
-      if (roundId !== undefined) {
-        const round = score.rounds.find(r => r.id === roundId);
-        if (round) {
-          round.total = value;
-          
-          // Recalculate the overall score total after updating a round
-          score.total = score.rounds.reduce((sum, r) => sum + r.total, 0);
-        }
-      } else {
-        score.total = value;
+    if (!score) return;
+
+    if (roundId !== undefined) {
+      const round = score.rounds.find(r => r.id === roundId);
+      if (round) {
+        round[field] = value;
+        score[field] = score.rounds.reduce((sum, r) => sum + r[field], 0);
       }
+    } else {
+      score[field] = value;
     }
+  }
+
+  function updateArcherTotal(competitionId: string, archerId: string, flightId: number, roundId: number, value: number) {
+    updateArcherScoreField(competitionId, archerId, flightId, roundId, 'total', value, 300);
   }
 
   function updateArcherTens(competitionId: string, archerId: string, flightId: number, roundId: number, value: number) {
-    if (isNaN(value) || value < 0 || value > 30) return;
-
-    const competition = competitions.value.find((c) => c.id === competitionId);
-    if (!competition) return;
-
-    const score = competition.scores.find(
-      (s) => s.archerId === archerId && 
-             s.flightId === flightId 
-    );
-    
-    if (score) {
-      if (roundId !== undefined) {
-        const round = score.rounds.find(r => r.id === roundId);
-        if (round) {
-          round.tens = value;
-
-          // Recalculate the overall score tens after updating a round
-          score.tens = score.rounds.reduce((sum, r) => sum + r.tens, 0);
-        }
-      } else {
-        score.tens = value;
-      }
-    }
+    updateArcherScoreField(competitionId, archerId, flightId, roundId, 'tens', value, 30);
   }
 
   function updateArcherNines(competitionId: string, archerId: string, flightId: number, roundId: number, value: number) {
-    if (isNaN(value) || value < 0 || value > 30) return;
-
-    const competition = competitions.value.find((c) => c.id === competitionId);
-    if (!competition) return;
-
-    const score = competition.scores.find(
-      (s) => s.archerId === archerId && 
-             s.flightId === flightId 
-    );
-    
-    if (score) {
-      if (roundId !== undefined) {
-        const round = score.rounds.find(r => r.id === roundId);
-        if (round) {
-          round.nines = value;
-          // Recalculate the overall score nines after updating a round
-          score.nines = score.rounds.reduce((sum, r) => sum + r.nines, 0);
-        }
-      } else {
-        score.nines = value;
-      }
-    }
+    updateArcherScoreField(competitionId, archerId, flightId, roundId, 'nines', value, 30);
   }
 
-  function updateArcherEights(competitionId: string, archerId: string, flightId: number, roundId: number,  value: number) {
-    if (isNaN(value) || value < 0 || value > 30) return;
-
-    const competition = competitions.value.find((c) => c.id === competitionId);
-    if (!competition) return;
-
-    const score = competition.scores.find(
-      (s) => s.archerId === archerId && 
-             s.flightId === flightId 
-    );
-    
-    if (score) {
-      if (roundId !== undefined) {
-        const round = score.rounds.find(r => r.id === roundId);
-        if (round) {
-          round.eights = value;
-          // Recalculate the overall score eights after updating a round
-          score.eights = score.rounds.reduce((sum, r) => sum + r.eights, 0);
-        }
-      } else {
-        score.eights = value;
-      }
-    }
+  function updateArcherEights(competitionId: string, archerId: string, flightId: number, roundId: number, value: number) {
+    updateArcherScoreField(competitionId, archerId, flightId, roundId, 'eights', value, 30);
   }
 
   function findCompetitionTargetConfig(competitionId: string, flightId: number | undefined, targetNumber: number | undefined) {

@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import type {
   AgeCategory,
   Archer,
@@ -18,44 +17,6 @@ type ArcherGroup = {
   archers: Archer[];
   targetConfig: Partial<Target>;
 };
-
-function createBalancedGroups<T>(items: T[], maxGroupSize: number = 10): T[][] {
-  if (items.length <= maxGroupSize) {
-    return [items];
-  }
-
-  const numberOfGroups = Math.ceil(items.length / maxGroupSize);
-  const baseGroupSize = Math.floor(items.length / numberOfGroups);
-  const remainingItems = items.length % numberOfGroups;
-
-  const groups: T[][] = [];
-  let currentIndex = 0;
-
-  for (let i = 0; i < numberOfGroups; i++) {
-    // Add one extra item to the first 'remainingItems' groups
-    const currentGroupSize =
-      i < remainingItems ? baseGroupSize + 1 : baseGroupSize;
-    groups.push(items.slice(currentIndex, currentIndex + currentGroupSize));
-    currentIndex += currentGroupSize;
-  }
-
-  return groups;
-}
-
-declare global {
-  interface Array<T> {
-    toBalancedGroups(maxGroupSize?: number): T[][];
-  }
-}
-
-if (!Array.prototype.toBalancedGroups) {
-  Array.prototype.toBalancedGroups = function <T>(
-    this: T[],
-    maxGroupSize: number = 10
-  ): T[][] {
-    return createBalancedGroups(this, maxGroupSize);
-  };
-}
 
 export function configureTargets(competition: Competition): Flight[] {
 

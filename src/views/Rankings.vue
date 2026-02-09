@@ -14,7 +14,7 @@ import {
   TransitionChild 
 } from '@headlessui/vue';
 import { DocumentArrowDownIcon } from '@heroicons/vue/24/outline';
-import { CATEGORIES, getAgeCategoryByCode, getBowTypeByCode } from '@/constants/staticData';
+import { BOW_TYPES, CATEGORIES, getAgeCategoryByCode, getBowTypeByCode } from '@/constants/staticData';
 
 const route = useRoute();
 const competitionStore = useCompetitionStore();
@@ -39,9 +39,16 @@ const competition = computed(() =>
   competitions.value.find((c) => c.id === route.params.id)
 );
 
-const archers = computed(
-  () => competitions.value.find((c) => c.id === competitionId)?.archers || []
-);
+const scoresByArcherId = computed(() => {
+  const map = new Map<string, ArcherScore>();
+  if (!competition.value) return map;
+  for (const score of competition.value.scores) {
+    if (!map.has(score.archerId)) {
+      map.set(score.archerId, score);
+    }
+  }
+  return map;
+});
 
 // Initiate the PDF title with the competition name
 onMounted(() => {
@@ -100,9 +107,10 @@ const groupedRankings = computed((): RankingCategory[] => {
         const gender = categoryData.gender === 'M' ? 'Masculin' : 'Féminine';
         const ageCategory = getAgeCategoryByCode(categoryData.ageCategory);
         const bowType = getBowTypeByCode(categoryData.bowType);
-        
-        // Building the description
-        description = `${ageCategory.minAge}/${ageCategory.maxAge} ans ${gender} ${bowType.label}`;
+
+        if (ageCategory && bowType) {
+          description = `${ageCategory.minAge}/${ageCategory.maxAge} ans ${gender} ${bowType.label}`;
+        }
       }
       
       return {
@@ -161,9 +169,7 @@ const groupedRankings = computed((): RankingCategory[] => {
 });
 
 function getArcherScore(archer: Archer): ArcherScore | undefined {
-  return competition.value?.scores.find(
-    (s) => s.archerId === archer.id
-  );
+  return scoresByArcherId.value.get(archer.id);
 }
 
 /**
@@ -248,11 +254,13 @@ async function generatePDF() {
             <label for="bowType">Type d'arc</label>
             <select id="bowType" v-model="selectedBowType">
               <option value="">Tous</option>
-              <option value="SV">Classique sans viseur</option> 
-              <option value="AV">Classique avec viseur</option>
-              <option value="COSV">Poulie sans viseur</option>
-              <option value="COAV">Poulie avec viseur</option>
-              <option value="AH">Autre handicape</option>
+              <option
+                v-for="bowType in BOW_TYPES"
+                :key="bowType.code"
+                :value="bowType.code"
+              >
+                {{ bowType.label }}
+              </option>
             </select>
           </div>
           <div class="form-group">

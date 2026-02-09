@@ -337,20 +337,16 @@ const filters = ref({
 });
 
 function closeAutoConfigModal() {
-  showAutoConfigModal.value = false; // Add this line to hide the modal
-}
+  showAutoConfigModal.value = false;}
 
 function openAutoConfig() {
-  showAutoConfigModal.value = true; // Add this line to show the modal
-}
+  showAutoConfigModal.value = true;}
 
 function openFlightTimeModal() {
-  showFlightTimeModal.value = true; // Add this line to show the modal
-}
+  showFlightTimeModal.value = true;}
 
 function closeFlightTimeModal() {
-  showFlightTimeModal.value = false; // Add this line to show the modal
-}
+  showFlightTimeModal.value = false;}
 
 const competition = computed(() =>
   competitions.value.find((c: Competition) => c.id === route.params.id)
@@ -373,40 +369,29 @@ const categories = computed(() =>
   [...new Set(archers.value.map((a) => a.category).filter((c) => c !== undefined))].sort()
 );
 
-const filteredArchers = computed(() =>
-  archers.value.filter((archer: Archer) => {
-    if (archer.flightId !== selectedFlightId.value) return false;
-    if (filters.value.category && archer.category !== filters.value.category)
-      return false;
-    if (filters.value.bowType && archer.bowType.code !== filters.value.bowType)
-      return false;
-    return true;
-  })
-);
+const assignedArchers = computed(() => {
+  if (!competition.value) return [];
+  return competition.value.archers.filter(
+    (archer) => currentFlight.value?.assignments?.some((a) => a.archerId === archer.id)
+  );
+});
 
-const assignedArchers = computed(() =>
-  competition.value!.archers.filter(
-    (archer: Archer) => currentFlight.value?.assignments?.some((a: TargetAssignment) => a.archerId === archer.id)
-  )
-);
-
-const unassignedArchers = computed(() =>
-  competition.value!.archers.filter((archer: Archer) => {
-    // Vérifier si l'archer est déjà assigné dans n'importe quel départ
-    const isAssignedInAnyFlights = competition.value!.flights.some((flight: Flight) =>
-      flight.assignments?.some((a: TargetAssignment) => a.archerId === archer.id)
+const unassignedArchers = computed(() => {
+  if (!competition.value) return [];
+  return competition.value.archers.filter((archer) => {
+    const isAssignedInAnyFlights = competition.value!.flights.some((flight) =>
+      flight.assignments?.some((a) => a.archerId === archer.id)
     );
     if (isAssignedInAnyFlights) return false;
 
-    // Appliquer les filtres
     if (filters.value.category && archer.category !== filters.value.category)
       return false;
     if (filters.value.bowType && archer.bowType.code !== filters.value.bowType)
       return false;
 
     return true;
-  })
-);
+  });
+});
 
 function addFlight() {
   if (!competition.value) return;
@@ -585,14 +570,12 @@ function updateTargetConfig() {
 }
 
 function closeTargetConfigModal() {
-  showTargetConfigModal.value = false; // Add this line to hide the modal
-  editingTarget.value = undefined;
+  showTargetConfigModal.value = false;  editingTarget.value = undefined;
 }
 
 function editTargetConfig(target: Target) {
   editingTarget.value = { ...target };
-  showTargetConfigModal.value = true; // Add this line to show the modal
-}
+  showTargetConfigModal.value = true;}
 
 function handlePositionDragStart(
   event: DragEvent,
@@ -796,7 +779,6 @@ function autoConfigure() {
 function autoAssign(keepAssignments: boolean = true) {
   if (!competition.value || !currentFlight.value) return;
 
-  console.log("Auto-assigning...");
   const newAssignments = assignArchers(
     competition.value,
     currentFlight.value,

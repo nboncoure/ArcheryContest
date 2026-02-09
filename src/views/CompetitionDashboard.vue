@@ -131,7 +131,7 @@ function saveCompetition() {
               </div>
               <div class="flex items-center text-gray-600">
                 <ArrowsPointingOutIcon class="w-5 h-5 mr-2" />
-                {{ competition.type === "indoor" ? "Salle" : "Extérieur" }}
+                {{ competition.type === "indoor" ? "Salle" : competition.type === "18m" ? "18m" : "Extérieur" }}
               </div>
               <div :class="statusClass(competition.status)">
                 {{ translateStatus(competition.status) }}

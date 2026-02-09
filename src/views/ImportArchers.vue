@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useCompetitionStore } from "../stores/competitionsStore";
 import { archerImportService, type ArcherWithStatus } from "../services/archerImportService";
+import { useToast } from "../composables/useToast";
 import {
   ArrowUpTrayIcon,
   DocumentArrowUpIcon,
@@ -14,7 +15,9 @@ import {
 } from "@heroicons/vue/24/outline";
 
 const route = useRoute();
+const router = useRouter();
 const competitionsStore = useCompetitionStore();
+const { showToast } = useToast();
 
 const importData = ref<ArcherWithStatus[]>([]);
 const dragOver = ref(false);
@@ -95,17 +98,18 @@ function confirmImport() {
     );
     
     importData.value = [];
-    alert(`Import réussi ! ${validArchers.length} archers importés.`);
-    
+    showToast(`Import réussi ! ${validArchers.length} archers importés.`, "success");
+
     if (importStats.value.warnings > 0) {
-      alert(`Attention: ${importStats.value.warnings} archers ont été importés avec des avertissements.`);
+      showToast(`Attention: ${importStats.value.warnings} archers importés avec des avertissements.`, "warning");
     }
-    
+
     if (importStats.value.errors > 0) {
-      alert(`Note: ${importStats.value.errors} archers n'ont pas pu être importés en raison d'erreurs.`);
+      showToast(`${importStats.value.errors} archers n'ont pas pu être importés en raison d'erreurs.`, "error");
     }
-    
+
     (document.getElementById("file-upload") as HTMLInputElement).value = "";
+    router.push(`/competition/${route.params.id}/archers`);
   }
 }
 

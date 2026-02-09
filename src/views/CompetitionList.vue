@@ -47,9 +47,14 @@ function statusClass(status: string): string {
   }`;
 }
 
+const EXPORT_VERSION = 1;
+
 function exportCompetition(competition: any) {
-  // Create a JSON string from the competition object
-  const competitionJson = JSON.stringify(competition, null, 2);
+  const exportData = {
+    version: EXPORT_VERSION,
+    competition,
+  };
+  const competitionJson = JSON.stringify(exportData, null, 2);
   
   // Create a blob with the JSON data
   const blob = new Blob([competitionJson], { type: 'application/json' });
@@ -104,10 +109,12 @@ function handleDrop(event: DragEvent) {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const competition = JSON.parse(e.target?.result as string);
-          
-          // Check if competition has required fields
-          if (!competition.id || !competition.name) {
+          const data = JSON.parse(e.target?.result as string);
+
+          // Handle versioned format (v1+) and legacy format (no version)
+          const competition = data.version ? data.competition : data;
+
+          if (!competition?.id || !competition?.name) {
             alert("Le fichier ne contient pas une compétition valide.");
             return;
           }

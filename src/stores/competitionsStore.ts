@@ -46,7 +46,7 @@ export const useCompetitionStore = defineStore("competition", () => {
       flights: Array.from(
         { length: competition.numberOfSessions || 1 },
         (_, i) => ({
-          id: i,
+          id: i + 1,
           name: `Départ ${i + 1}`,
           startTime: flightStartTimes?.[i] || undefined,
           assignments: [],
@@ -138,9 +138,10 @@ export const useCompetitionStore = defineStore("competition", () => {
     const competition = competitions.value.find((c) => c.id === competitionId);
     if (!competition) return;
 
+    const nextId = Math.max(0, ...competition.flights.map(f => f.id)) + 1;
     const flight: Flight = {
-      id: competition.flights.length,
-      name: `Départ ${competition.flights.length + 1}`,
+      id: nextId,
+      name: `Départ ${nextId}`,
       startTime: undefined,
       assignments: [],
       targets: Array.from(

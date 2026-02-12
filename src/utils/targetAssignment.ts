@@ -28,7 +28,7 @@ function getMaxArchers(competition: Competition, bowTypeCode: string, distance: 
 export function configureTargets(competition: Competition): Flight[] {
   const existingFlights = competition.flights;
 
-  return Object.values(Object.groupBy(competition.archers, (archer) => archer.flightId || 1 ))
+  return Object.values(Object.groupBy(competition.archers, (archer) => archer.flightId ?? 1 ))
   .filter(archers => !!archers)
   .map((flight : Archer[]) => {
     return flight?.map(archer  => {

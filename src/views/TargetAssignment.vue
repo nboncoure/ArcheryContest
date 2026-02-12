@@ -116,6 +116,10 @@
             <DocumentArrowDownIcon class="w-5 h-5" />
             Feuilles de marque
           </button>
+          <button @click="generateTargetSetupPDFAction" class="btn btn-primary">
+            <DocumentArrowDownIcon class="w-5 h-5" />
+            Installation cibles
+          </button>
           <button v-if="canEditTargets" @click="openAutoConfig" class="btn btn-primary">
             <PlusIcon class="w-5 h-5" />
             Configuration Automatique
@@ -230,6 +234,7 @@ import { useCompetitionStore } from "../stores/competitionsStore";
 import { storeToRefs } from "pinia";
 import { format } from "date-fns";
 import { generateScoreSheets } from "@/utils/scoresheetPDF";
+import { generateTargetSetupPDF } from "@/utils/targetSetupPDF";
 import type {
   Competition,
   Flight,
@@ -628,6 +633,25 @@ function confirmResetAssignments() {
 
 const isGeneratingPDF = ref(false);
 const showExportModal = ref(false);
+
+async function generateTargetSetupPDFAction() {
+  if (!competition.value) return;
+  try {
+    const pdfBytes = await generateTargetSetupPDF(competition.value);
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'Installation des cibles.pdf';
+    document.body.appendChild(link);
+    link.click();
+    URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF:', error);
+    alert('Une erreur est survenue lors de la génération du PDF.');
+  }
+}
 
 async function generatePDF() {
   if (!competition.value || isGeneratingPDF.value) return; 

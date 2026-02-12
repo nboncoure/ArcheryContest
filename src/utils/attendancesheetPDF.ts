@@ -1,5 +1,5 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import type { Competition, Archer } from '@/types';
+import type { Competition, Archer, Flight } from '@/types';
 import { stat } from 'original-fs';
 import { BowType } from '../types/index';
 
@@ -8,6 +8,7 @@ import { BowType } from '../types/index';
 export async function generateAttendancesheetPDF(
   competition: Competition,
   archers: Archer[],
+  flight: Flight,
 ) {
 
  const url = 'Rapport_d_arbitrage_vierge.pdf'
@@ -52,7 +53,7 @@ if (showDate) {
     color: colorText,
   });
 
-  firstPage.drawText(`${competition.arbitratorName}`, {
+  firstPage.drawText(`${flight.arbitratorName || ''}`, {
     x: width - 556,
     y: 545,
     size: 10,
@@ -123,7 +124,8 @@ if (showDate) {
     return total;
   }
 
-  const isPresent = archers.filter(archer => archer.isPresent);
+  const flightArcherIds = new Set(flight.assignments.map(a => a.archerId));
+  const isPresent = archers.filter(archer => archer.isPresent && flightArcherIds.has(archer.id));
 
   const statMale = isPresent.filter(archer => archer.gender === "M").reduce(reducer, {sv: 0, av: 0, cosv: 0, coav: 0, ah: 0, p: 0, b: 0, m: 0, c: 0, j: 0, s: 0, v: 0, svAge: 0, disabled: 0, beginner: 0, visuallyImpaired: 0}) ;
 
@@ -131,7 +133,7 @@ if (showDate) {
 
  
 
-  const totalArchers = archers.filter(archer => archer.isPresent).reduce((total, archer) => {
+  const totalArchers = isPresent.reduce((total, archer) => {
     total.total = total.total + 1;
     if (archer.gender === "M") {
       total.homme = total.homme + 1;

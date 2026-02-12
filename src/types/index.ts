@@ -75,6 +75,7 @@ export interface Flight {
   id: number;
   name: string;
   startTime?: string;
+  arbitratorName?: string;
   targets: Target[];
   assignments: TargetAssignment[];
 }
@@ -132,7 +133,7 @@ export interface Competition {
   updatedAt: string;
   scores: ArcherScore[];
   organizingClub: string;
-  arbitratorName: string;
+  arbitratorName?: string;
   targetLimitRules: TargetLimitRule[];
   defaultMaxArchers: number;
 }

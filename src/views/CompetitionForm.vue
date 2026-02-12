@@ -14,7 +14,6 @@ const form = ref({
   date: "",
   location: "",
   organizingClub: "",
-  arbitratorName: "",
   type: "indoor" as const,
   numberOfSessions: 1,
   numberOfTargets: 10,
@@ -22,6 +21,7 @@ const form = ref({
 });
 
 const flightStartTimes = ref<string[]>([""]);
+const flightArbitratorNames = ref<string[]>([""]);
 
 watch(
   () => form.value.numberOfSessions,
@@ -32,6 +32,12 @@ watch(
     }
     while (flightStartTimes.value.length > count) {
       flightStartTimes.value.pop();
+    }
+    while (flightArbitratorNames.value.length < count) {
+      flightArbitratorNames.value.push("");
+    }
+    while (flightArbitratorNames.value.length > count) {
+      flightArbitratorNames.value.pop();
     }
   }
 );
@@ -46,7 +52,8 @@ function handleSubmit() {
   } else {
     competitionsStore.createCompetition(
       competition as Competition,
-      flightStartTimes.value
+      flightStartTimes.value,
+      flightArbitratorNames.value
     );
   }
 
@@ -82,15 +89,6 @@ function handleSubmit() {
       </div>
 
       <div class="form-group">
-        <label for="arbitratorName">Nom de l'arbitre</label>
-        <input
-          type="text"
-          id="arbitratorName"
-          v-model="form.arbitratorName"
-        />
-      </div>
-
-      <div class="form-group">
         <label for="numberOfSessions">Nombre de départs</label>
         <input
           type="number"
@@ -114,6 +112,15 @@ function handleSubmit() {
             type="datetime-local"
             :id="'flight-' + index"
             v-model="flightStartTimes[index]"
+          />
+          <label :for="'arbitrator-' + index" class="mt-2"
+            >Arbitre - Départ {{ index + 1 }}</label
+          >
+          <input
+            type="text"
+            :id="'arbitrator-' + index"
+            v-model="flightArbitratorNames[index]"
+            placeholder="Nom de l'arbitre"
           />
         </div>
       </div>

@@ -14,7 +14,22 @@ import type {
 
 const loadCompetitions = (): Competition[] => {
   const stored = localStorage.getItem("competitions");
-  return stored ? JSON.parse(stored) : [];
+  if (!stored) return [];
+  const competitions: Competition[] = JSON.parse(stored);
+
+  // Migration: move arbitratorName from competition to flights
+  competitions.forEach((competition) => {
+    if (competition.arbitratorName && competition.flights) {
+      competition.flights.forEach((flight) => {
+        if (!flight.arbitratorName) {
+          flight.arbitratorName = competition.arbitratorName;
+        }
+      });
+      delete competition.arbitratorName;
+    }
+  });
+
+  return competitions;
 };
 
 export const useCompetitionStore = defineStore("competition", () => {
@@ -32,7 +47,7 @@ export const useCompetitionStore = defineStore("competition", () => {
     { deep: true }
   );
 
-  function createCompetition(competition: Competition, flightStartTimes?: string[]) {
+  function createCompetition(competition: Competition, flightStartTimes?: string[], flightArbitratorNames?: string[]) {
     const newCompetition = {
       ...competition,
       id: uuidv4(),
@@ -43,12 +58,14 @@ export const useCompetitionStore = defineStore("competition", () => {
       scores: [],
       targetLimitRules: [],
       defaultMaxArchers: 4,
+      arbitratorName: undefined,
       flights: Array.from(
         { length: competition.numberOfSessions || 1 },
         (_, i) => ({
           id: i + 1,
           name: `Départ ${i + 1}`,
           startTime: flightStartTimes?.[i] || undefined,
+          arbitratorName: flightArbitratorNames?.[i] || undefined,
           assignments: [],
           targets: Array.from(
             { length: competition.numberOfTargets },
@@ -143,6 +160,7 @@ export const useCompetitionStore = defineStore("competition", () => {
       id: nextId,
       name: `Départ ${nextId}`,
       startTime: undefined,
+      arbitratorName: undefined,
       assignments: [],
       targets: Array.from(
         { length: competition.numberOfTargets },

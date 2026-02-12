@@ -389,15 +389,6 @@ function saveCompetition() {
                     />
                   </div>
 
-                  <div class="form-group">
-                    <label for="arbitratorName">Nom de l'arbitre</label>
-                    <input
-                      type="text"
-                      id="arbitratorName"
-                      v-model="form.arbitratorName"
-                    />
-                  </div>
-
                   <div
                     v-if="form.flights && form.flights.length > 0"
                     class="space-y-3"
@@ -414,6 +405,15 @@ function saveCompetition() {
                         type="datetime-local"
                         :id="'edit-flight-' + index"
                         v-model="flight.startTime"
+                      />
+                      <label :for="'edit-arbitrator-' + index" class="mt-2"
+                        >Arbitre - {{ flight.name }}</label
+                      >
+                      <input
+                        type="text"
+                        :id="'edit-arbitrator-' + index"
+                        v-model="flight.arbitratorName"
+                        placeholder="Nom de l'arbitre"
                       />
                     </div>
                   </div>

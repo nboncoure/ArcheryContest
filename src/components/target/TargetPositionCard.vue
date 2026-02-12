@@ -6,6 +6,7 @@ defineProps<{
   position: TargetPosition;
   archer?: Archer;
   isDragOver?: boolean;
+  readonly?: boolean;
 }>();
 
 defineEmits<{
@@ -20,7 +21,7 @@ defineEmits<{
       occupied: archer,
       'drag-over': isDragOver,
     }"
-    draggable="true"
+    :draggable="!readonly"
     v-bind="$attrs"
   >
     <template v-if="archer">
@@ -34,9 +35,12 @@ defineEmits<{
             <ViewfinderCircleIcon class="w-4 h-4" />
             {{ archer.bowType.label }}
           </span>
+          <span v-if="archer.isBeginner" class="w-2 h-2 rounded-full bg-blue-400" title="Débutant"></span>
+          <span v-if="archer.isDisabled || archer.bowType?.code === 'AH'" class="w-2 h-2 rounded-full bg-orange-400" title="Handicapé"></span>
+          <span v-if="archer.isVisuallyImpaired" class="w-2 h-2 rounded-full bg-purple-400" title="Malvoyant"></span>
         </div>
       </div>
-      <button @click="$emit('remove')" class="remove-button">
+      <button v-if="!readonly" @click="$emit('remove')" class="remove-button">
         <XMarkIcon class="w-4 h-4" />
       </button>
     </template>

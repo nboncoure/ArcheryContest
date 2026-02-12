@@ -51,6 +51,10 @@ const props = defineProps({
   getEndTotal: {
     type: Function,
     required: true
+  },
+  readonly: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -120,6 +124,8 @@ function updateEights(value: number) { //Mise à jour de la fonction pour les 8 
             min="0"
             max="10"
             class="w-12 text-center"
+            :class="{ 'bg-gray-100 cursor-not-allowed': readonly }"
+            :disabled="readonly"
             :value="getArrowValue(endIndex - 1, arrowIndex - 1)"
             @input="(e) => updateArrowScore(endIndex - 1, arrowIndex - 1, parseInt((e.target as HTMLInputElement).value))"
           />
@@ -138,8 +144,9 @@ function updateEights(value: number) { //Mise à jour de la fonction pour les 8 
           max="300"
           class="w-20 text-center"
           :value="archerTotal || ''"
+          :disabled="readonly"
           @input="(e) => updateTotal(parseInt((e.target as HTMLInputElement).value))"
-          :class="{ 'border-yellow-500': !isScoreValid }"
+          :class="{ 'border-yellow-500': !isScoreValid, 'bg-gray-100 cursor-not-allowed': readonly }"
         />
         <ExclamationTriangleIcon
           v-if="!isScoreValid"
@@ -156,12 +163,14 @@ function updateEights(value: number) { //Mise à jour de la fonction pour les 8 
           min="0"
           max="30"
           class="w-16 text-center"
+          :class="{ 'bg-gray-100 cursor-not-allowed': readonly }"
+          :disabled="readonly"
           :value="archerTens || ''"
           @input="(e) => updateTens(parseInt((e.target as HTMLInputElement).value))"
         />
       </div>
     </div>
-    
+
     <div class="data-cell">
       <div class="flex justify-center">
         <input
@@ -169,18 +178,22 @@ function updateEights(value: number) { //Mise à jour de la fonction pour les 8 
           min="0"
           max="30"
           class="w-16 text-center"
+          :class="{ 'bg-gray-100 cursor-not-allowed': readonly }"
+          :disabled="readonly"
           :value="archerNines || ''"
           @input="(e) => updateNines(parseInt((e.target as HTMLInputElement).value))"
         />
       </div>
   </div>
       <div class="data-cell">
-      <div class="flex justify-center"> <!--Case pour insérer le nombre de ce même chiffre -->
+      <div class="flex justify-center">
         <input
           type="number"
           min="0"
           max="30"
           class="w-16 text-center"
+          :class="{ 'bg-gray-100 cursor-not-allowed': readonly }"
+          :disabled="readonly"
           :value="archerEights || ''"
           @input="(e) => updateEights(parseInt((e.target as HTMLInputElement).value))"
         />

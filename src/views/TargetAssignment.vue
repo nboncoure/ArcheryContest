@@ -7,6 +7,10 @@
           Attribution des Cibles
         </h1>
 
+        <div v-if="!canEditTargets" class="p-3 mb-6 text-sm text-blue-800 border border-blue-200 rounded-lg bg-blue-50">
+          Les cibles et affectations sont en lecture seule. Pour les modifier, la compétition doit être en mode brouillon.
+        </div>
+
         <!-- Gestion des départs -->
         <div
           class="flex items-center justify-between pb-6 mb-6 border-b border-gray-200"
@@ -76,16 +80,16 @@
               </Listbox>
             </div>
             <div class="flex items-end gap-2">
-              <button @click="addFlight" class="btn btn-secondary">
+              <button v-if="canEditTargets" @click="addFlight" class="btn btn-secondary">
                 <PlusIcon class="w-5 h-5" />
                 Ajouter un départ
               </button>
-              <button @click="openFlightTimeModal" class="btn btn-primary">
+              <button v-if="canEditTargets" @click="openFlightTimeModal" class="btn btn-primary">
                 {{ currentFlight?.startTime ? format(currentFlight?.startTime, 'dd/MM/yyyy H:mm') : '' }}
                 <PencilIcon class="w-5 h-5" />
               </button>
               <button
-                v-if="currentFlight && competition!.flights.length > 1"
+                v-if="canEditTargets && currentFlight && competition!.flights.length > 1"
                 @click="deleteFlight"
                 class="btn btn-danger"
               >
@@ -104,7 +108,7 @@
               {{ currentFlight?.targets.length || 0 }} cibles
             </span>
           </div>
-          <button @click="addTarget" class="btn btn-primary">
+          <button v-if="canEditTargets" @click="addTarget" class="btn btn-primary">
             <PlusIcon class="w-5 h-5" />
             Ajouter une cible
           </button>
@@ -112,7 +116,11 @@
             <DocumentArrowDownIcon class="w-5 h-5" />
             Feuilles de marque
           </button>
-          <button @click="openAutoConfig" class="btn btn-primary">
+          <button @click="generateTargetSetupPDFAction" class="btn btn-primary">
+            <DocumentArrowDownIcon class="w-5 h-5" />
+            Installation cibles
+          </button>
+          <button v-if="canEditTargets" @click="openAutoConfig" class="btn btn-primary">
             <PlusIcon class="w-5 h-5" />
             Configuration Automatique
           </button>
@@ -128,6 +136,7 @@
           :targets="currentFlight?.targets || []"
           :assignments="currentFlight?.assignments || []"
           :archers="assignedArchers"
+          :readonly="!canEditTargets"
           @position-drag-start="handlePositionDragStart"
           @position-drag-over="handleDragOver"
           @position-drag-leave="handleDragLeave"
@@ -135,6 +144,7 @@
           @remove-archer="removeFromTarget"
           @edit-config="editTargetConfig"
           @remove-target="removeTarget"
+          @swap-targets="swapTargets"
         />
       </div>
 
@@ -142,8 +152,10 @@
       <div class="w-80">
         <TargetSidePanel
           v-model="filters"
+          v-model:show-all-flights="showAllFlights"
           :categories="categories"
           :unassigned-archers="unassignedArchers"
+          :readonly="!canEditTargets"
           @auto-assign="autoAssign"
           @archer-drag-start="dragStart"
           @archer-drag-end="dragEnd"
@@ -152,108 +164,12 @@
       </div>
     </div>
 
-    <!-- Modal de configuration des cibles -->
-    <TransitionRoot appear :show="showTargetConfigModal" as="template">
-      <Dialog as="div" @close="closeTargetConfigModal" class="relative z-10">
-        <TransitionChild
-          as="template"
-          enter="duration-300 ease-out"
-          enter-from="opacity-0"
-          enter-to="opacity-100"
-          leave="duration-200 ease-in"
-          leave-from="opacity-100"
-          leave-to="opacity-0"
-        >
-          <div class="fixed inset-0 bg-black bg-opacity-25" />
-        </TransitionChild>
-
-        <div class="fixed inset-0 overflow-y-auto">
-          <div
-            class="flex items-center justify-center min-h-full p-4 text-center"
-          >
-            <TransitionChild
-              as="template"
-              enter="duration-300 ease-out"
-              enter-from="opacity-0 scale-95"
-              enter-to="opacity-100 scale-100"
-              leave="duration-200 ease-in"
-              leave-from="opacity-100 scale-100"
-              leave-to="opacity-0 scale-95"
-            >
-              <DialogPanel
-                class="w-full max-w-md p-6 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl"
-              >
-                <DialogTitle
-                  as="h3"
-                  class="mb-4 text-lg font-medium leading-6 text-gray-900"
-                >
-                  Configuration des cibles
-                </DialogTitle>
-
-                <div
-                  v-if="editingTarget"
-                  class="grid grid-cols-1"
-                >
-                    <div class="p-4 rounded-lg bg-gray-50">
-                      <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-medium text-gray-900">
-                          Cible {{ editingTarget.number }}
-                        </h3>
-                      </div>
-                      <div class="space-y-3">
-                        <div class="mb-0 form-group">
-                          <label class="text-sm">Distance (m)</label>
-                          <input
-                            type="number"
-                            v-model.number="editingTarget.distance"
-                            min="0"
-                          />
-                        </div>
-                        <div class="mb-0 form-group">
-                          <label class="text-sm">Blason (cm)</label>
-                          <select
-                            v-model.number="editingTarget.faceSize"
-                          >
-                            <option :value="80">80cm</option>
-                            <option :value="60">60cm</option>
-                            <option :value="40">40cm</option>
-                            <option :value="20">20cm</option>
-                          </select>
-                        </div>
-                        <div class="mb-0 form-group">
-                          <label class="text-sm">Nombre d'archers maximum</label>
-                          <input
-                            type="number"
-                            v-model.number="editingTarget.maxArchers"
-                            min="1"
-                            max="6"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                </div>
-
-                <div class="flex justify-end mt-6">
-                  <button
-                    @click="closeTargetConfigModal"
-                    class="btn btn-secondary"
-                  >
-                    Fermer
-                  </button>
-                  <button
-                    @click="updateTargetConfig"
-                    type="submit"
-                    class="btn btn-primary"
-                  >
-                    Valider
-                  </button>
-                </div>
-              </DialogPanel>
-            </TransitionChild>
-          </div>
-        </div>
-      </Dialog>
-    </TransitionRoot>
+    <TargetConfigModal
+      :is-open="showTargetConfigModal"
+      :target="editingTarget"
+      @close="closeTargetConfigModal"
+      @submit="updateTargetConfig"
+    />
 
    <AutoConfigModal
      :is-open="showAutoConfigModal"
@@ -268,6 +184,46 @@
     @close="closeFlightTimeModal"
   />
 
+  <ConfirmModal
+    :is-open="showResetConfirmModal"
+    title="Réinitialiser les assignations"
+    message="Êtes-vous sûr de vouloir réinitialiser les assignations de ce départ ? Cette action ne peut pas être annulée."
+    confirm-label="Réinitialiser"
+    variant="danger"
+    @close="showResetConfirmModal = false"
+    @confirm="confirmResetAssignments"
+  />
+
+  <ConfirmModal
+    :is-open="showAutoConfigConfirmModal"
+    title="Archers déjà assignés"
+    message="Des archers sont déjà assignés aux cibles. Voulez-vous réinitialiser toutes les assignations avant de reconfigurer les cibles ?"
+    confirm-label="Réinitialiser et reconfigurer"
+    variant="warning"
+    @close="showAutoConfigConfirmModal = false"
+    @confirm="confirmAutoConfigure"
+  />
+
+  <ConfirmModal
+    :is-open="showDeleteFlightConfirmModal"
+    title="Supprimer ce départ"
+    message="Êtes-vous sûr de vouloir supprimer ce départ ? Les cibles et assignations associées seront perdues."
+    confirm-label="Supprimer"
+    variant="danger"
+    @close="showDeleteFlightConfirmModal = false"
+    @confirm="confirmDeleteFlight"
+  />
+
+  <ConfirmModal
+    :is-open="showDeleteTargetConfirmModal"
+    title="Cible occupée"
+    message="Cette cible contient des archers. Voulez-vous vraiment la supprimer ?"
+    confirm-label="Supprimer"
+    variant="danger"
+    @close="showDeleteTargetConfirmModal = false; targetToDelete = null"
+    @confirm="confirmDeleteTarget"
+  />
+
   </div>
 </template>
 
@@ -278,8 +234,8 @@ import { useCompetitionStore } from "../stores/competitionsStore";
 import { storeToRefs } from "pinia";
 import { format } from "date-fns";
 import { generateScoreSheets } from "@/utils/scoresheetPDF";
+import { generateTargetSetupPDF } from "@/utils/targetSetupPDF";
 import type {
-  Archer,
   Competition,
   Flight,
   Target,
@@ -287,8 +243,11 @@ import type {
   TargetAssignment,
 } from "../types";
 import { assignArchers, configureTargets } from "@/utils/targetAssignment";
+import { useTargetDragDrop } from "@/composables/useTargetDragDrop";
 import AutoConfigModal from "@/components/AutoConfigModal.vue";
+import ConfirmModal from "@/components/ConfirmModal.vue";
 import FlightTimeModal from "@/components/FlightTimeModal.vue";
+import TargetConfigModal from "@/components/target/TargetConfigModal.vue";
 import TargetGrid from "@/components/target/TargetGrid.vue";
 import TargetSidePanel from "@/components/target/TargetSidePanel.vue";
 import {
@@ -300,61 +259,51 @@ import {
   ChevronUpDownIcon,
   PencilIcon,
 } from "@heroicons/vue/24/outline";
+import { useCompetitionStatus } from "@/composables/useCompetitionStatus";
 import {
-  Dialog,
-  DialogPanel,
-  DialogTitle,
   Listbox,
   ListboxButton,
   ListboxOptions,
   ListboxOption,
-  TransitionRoot,
-  TransitionChild,
 } from "@headlessui/vue";
 
 const route = useRoute();
 const competitionStore = useCompetitionStore();
 const { competitions } = storeToRefs(competitionStore);
 
-const dragOverTarget = ref<{
-  number: number;
-  position: TargetPosition;
-} | null>(null);
-
-const draggedArcher = ref<{
-  id: string;
-  assignment?: TargetAssignment;
-} | null>(null);
-
 const editingTarget = ref<Target | undefined>();
 const showTargetConfigModal = ref(false);
 const showAutoConfigModal = ref(false);
 const showFlightTimeModal = ref(false);
+const showResetConfirmModal = ref(false);
+const showAutoConfigConfirmModal = ref(false);
+const showDeleteFlightConfirmModal = ref(false);
+const showDeleteTargetConfirmModal = ref(false);
+const targetToDelete = ref<number | null>(null);
 const selectedFlightId = ref<number>();
+const showAllFlights = ref(false);
 const filters = ref({
   category: "",
   bowType: "",
 });
 
 function closeAutoConfigModal() {
-  showAutoConfigModal.value = false; // Add this line to hide the modal
-}
+  showAutoConfigModal.value = false;}
 
 function openAutoConfig() {
-  showAutoConfigModal.value = true; // Add this line to show the modal
-}
+  showAutoConfigModal.value = true;}
 
 function openFlightTimeModal() {
-  showFlightTimeModal.value = true; // Add this line to show the modal
-}
+  showFlightTimeModal.value = true;}
 
 function closeFlightTimeModal() {
-  showFlightTimeModal.value = false; // Add this line to show the modal
-}
+  showFlightTimeModal.value = false;}
 
 const competition = computed(() =>
   competitions.value.find((c: Competition) => c.id === route.params.id)
 );
+
+const { canEditTargets } = useCompetitionStatus(competition);
 
 const currentFlight = computed(() =>
   competition.value?.flights.find((f: Flight) => f.id === selectedFlightId.value)
@@ -363,6 +312,18 @@ const currentFlight = computed(() =>
 const archers = computed(() => competition.value?.archers || []);
 
 const assignments = computed(() => currentFlight.value?.assignments || []);
+
+const {
+  dragOverTarget,
+  draggedArcher,
+  handlePositionDragStart,
+  dragStart,
+  dragEnd,
+  handleDragOver,
+  handleDragLeave,
+  handleDrop,
+  removeFromTarget,
+} = useTargetDragDrop(competition, currentFlight, selectedFlightId);
 
 // Initialiser le départ sélectionné avec le premier départ
 if (competition.value && competition.value.flights.length > 0) {
@@ -373,40 +334,32 @@ const categories = computed(() =>
   [...new Set(archers.value.map((a) => a.category).filter((c) => c !== undefined))].sort()
 );
 
-const filteredArchers = computed(() =>
-  archers.value.filter((archer: Archer) => {
-    if (archer.flightId !== selectedFlightId.value) return false;
-    if (filters.value.category && archer.category !== filters.value.category)
-      return false;
-    if (filters.value.bowType && archer.bowType.code !== filters.value.bowType)
-      return false;
-    return true;
-  })
-);
+const assignedArchers = computed(() => {
+  if (!competition.value) return [];
+  return competition.value.archers.filter(
+    (archer) => currentFlight.value?.assignments?.some((a) => a.archerId === archer.id)
+  );
+});
 
-const assignedArchers = computed(() =>
-  competition.value!.archers.filter(
-    (archer: Archer) => currentFlight.value?.assignments?.some((a: TargetAssignment) => a.archerId === archer.id)
-  )
-);
-
-const unassignedArchers = computed(() =>
-  competition.value!.archers.filter((archer: Archer) => {
-    // Vérifier si l'archer est déjà assigné dans n'importe quel départ
-    const isAssignedInAnyFlights = competition.value!.flights.some((flight: Flight) =>
-      flight.assignments?.some((a: TargetAssignment) => a.archerId === archer.id)
+const unassignedArchers = computed(() => {
+  if (!competition.value) return [];
+  return competition.value.archers.filter((archer) => {
+    const isAssignedInAnyFlights = competition.value!.flights.some((flight) =>
+      flight.assignments?.some((a) => a.archerId === archer.id)
     );
     if (isAssignedInAnyFlights) return false;
 
-    // Appliquer les filtres
+    if (!showAllFlights.value && archer.flightId !== selectedFlightId.value)
+      return false;
+
     if (filters.value.category && archer.category !== filters.value.category)
       return false;
     if (filters.value.bowType && archer.bowType.code !== filters.value.bowType)
       return false;
 
     return true;
-  })
-);
+  });
+});
 
 function addFlight() {
   if (!competition.value) return;
@@ -416,19 +369,22 @@ function addFlight() {
 
 function deleteFlight() {
   if (!competition.value || !currentFlight) return;
+  showDeleteFlightConfirmModal.value = true;
+}
 
-  if (confirm("Êtes-vous sûr de vouloir supprimer ce départ ?")) {
-    const updatedFlights = competition.value.flights.filter(
-      (f: Flight) => f.id !== selectedFlightId.value
-    );
-    competitionStore.updateCompetition(competition.value.id, {
-      flights: updatedFlights,
-    });
+function confirmDeleteFlight() {
+  showDeleteFlightConfirmModal.value = false;
+  if (!competition.value) return;
 
-    // Sélectionner le premier départ restant
-    if (updatedFlights.length > 0) {
-      selectedFlightId.value = updatedFlights[0].id;
-    }
+  const updatedFlights = competition.value.flights.filter(
+    (f: Flight) => f.id !== selectedFlightId.value
+  );
+  competitionStore.updateCompetition(competition.value.id, {
+    flights: updatedFlights,
+  });
+
+  if (updatedFlights.length > 0) {
+    selectedFlightId.value = updatedFlights[0].id;
   }
 }
 
@@ -463,113 +419,88 @@ function addTarget() {
 }
 
 function removeTarget(targetNum: number) {
-  if (!competition.value || !currentFlight) return;
+  if (!competition.value || !currentFlight.value) return;
 
-  // Vérifier si la cible est occupée
-  const assignmentsOnTarget = currentFlight.value!.assignments.filter(
+  const assignmentsOnTarget = currentFlight.value.assignments.filter(
     (a) => a.targetNumber === targetNum
   );
 
   if (assignmentsOnTarget.length > 0) {
-    if (
-      !confirm(
-        "Cette cible contient des archers. Voulez-vous vraiment la supprimer ?"
-      )
-    ) {
-      return;
-    }
-    
-    // Supprimer les attributions pour cette cible
-    const updatedAssignments = currentFlight.value!.assignments.filter(
-      (a) => a.targetNumber !== targetNum
-    );
-    
-    // Mettre à jour les attributions des cibles suivantes
-    updatedAssignments.forEach(assignment => {
-      if (assignment.targetNumber > targetNum) {
-        assignment.targetNumber -= 1;
-      }
-    });
-    
-    // Mettre à jour les cibles
-    const updatedTargets = currentFlight.value!.targets.filter(
-      (t) => t.number !== targetNum
-    );
-    
-    // Mettre à jour les numéros des cibles suivantes
-    updatedTargets.forEach(target => {
-      if (target.number > targetNum) {
-        target.number -= 1;
-      }
-    });
-    
-    // Mettre à jour le départ
-    const updatedFlights = competition.value.flights.map((flight: Flight) => {
-      if (flight.id === selectedFlightId.value) {
-        return {
-          ...flight,
-          targets: updatedTargets,
-          assignments: updatedAssignments
-        };
-      }
-      return flight;
-    });
+    targetToDelete.value = targetNum;
+    showDeleteTargetConfirmModal.value = true;
+    return;
+  }
 
-    competitionStore.updateCompetition(competition.value.id, {
-      flights: updatedFlights,
-    });
-  } else {
-    // Si la cible n'est pas occupée, la supprimer directement
-    const updatedTargets = currentFlight.value?.targets.filter(
-      (t) => t.number !== targetNum
-    );
-    
-    // Mettre à jour les numéros des cibles suivantes
-    updatedTargets.forEach(target => {
-      if (target.number > targetNum) {
-        target.number -= 1;
-      }
-    });
-    
-    const updatedFlights = competition.value.flights.map((flight: Flight) => {
-      if (flight.id === selectedFlightId.value) {
-        return {
-          ...flight,
-          targets: updatedTargets
-        };
-      }
-      return flight;
-    });
+  doRemoveTarget(targetNum);
+}
 
-    competitionStore.updateCompetition(competition.value.id, {
-      flights: updatedFlights,
-    });
+function confirmDeleteTarget() {
+  showDeleteTargetConfirmModal.value = false;
+  if (targetToDelete.value !== null) {
+    doRemoveTarget(targetToDelete.value);
+    targetToDelete.value = null;
   }
 }
 
-function updateTargetConfig() {
-  if (!competition.value || !currentFlight || !editingTarget.value)
-    return;
+function doRemoveTarget(targetNum: number) {
+  if (!competition.value || !currentFlight.value) return;
 
-  const targetConfig = competitionStore.findCompetitionTargetConfig(competition.value.id, currentFlight.value?.id, editingTarget.value?.number)
+  const updatedAssignments = currentFlight.value.assignments.filter(
+    (a) => a.targetNumber !== targetNum
+  );
+  updatedAssignments.forEach(assignment => {
+    if (assignment.targetNumber > targetNum) {
+      assignment.targetNumber -= 1;
+    }
+  });
+
+  const updatedTargets = currentFlight.value.targets.filter(
+    (t) => t.number !== targetNum
+  );
+  updatedTargets.forEach(target => {
+    if (target.number > targetNum) {
+      target.number -= 1;
+    }
+  });
 
   const updatedFlights = competition.value.flights.map((flight: Flight) => {
     if (flight.id === selectedFlightId.value) {
-      const isEmpty = targetConfig?.maxArchers >= editingTarget.value?.maxArchers;
+      return {
+        ...flight,
+        targets: updatedTargets,
+        assignments: updatedAssignments
+      };
+    }
+    return flight;
+  });
+
+  competitionStore.updateCompetition(competition.value.id, {
+    flights: updatedFlights,
+  });
+}
+
+function updateTargetConfig(updatedTarget: Target) {
+  if (!competition.value || !currentFlight) return;
+
+  const targetConfig = competitionStore.findCompetitionTargetConfig(competition.value.id, currentFlight.value?.id, updatedTarget.number)
+
+  const updatedFlights = competition.value.flights.map((flight: Flight) => {
+    if (flight.id === selectedFlightId.value) {
+      const isEmpty = targetConfig?.maxArchers >= updatedTarget.maxArchers;
       const arcToKeep = flight.assignments.filter((a: TargetAssignment) =>
         a.targetNumber === targetConfig?.number)
       .filter((ta) =>
-        (<TargetPosition[]> ["A", "B", "C", "D", "E", "F"]).slice(0, editingTarget.value?.maxArchers).includes(ta.position)
+        (<TargetPosition[]> ["A", "B", "C", "D", "E", "F"]).slice(0, updatedTarget.maxArchers).includes(ta.position)
       )
       .map(a => a.archerId)
       return {
         ...flight,
         targets: flight.targets.map((t: Target) =>
-          t.number === editingTarget.value?.number ? editingTarget.value : t
+          t.number === updatedTarget.number ? updatedTarget : t
         ),
         assignments: isEmpty
         ? flight.assignments.filter((a: TargetAssignment) =>
-          a.targetNumber !== editingTarget.value?.number || arcToKeep.includes(a.archerId)
+          a.targetNumber !== updatedTarget.number || arcToKeep.includes(a.archerId)
         )
         : flight.assignments
       };
@@ -585,191 +516,45 @@ function updateTargetConfig() {
 }
 
 function closeTargetConfigModal() {
-  showTargetConfigModal.value = false; // Add this line to hide the modal
-  editingTarget.value = undefined;
+  showTargetConfigModal.value = false;  editingTarget.value = undefined;
 }
 
 function editTargetConfig(target: Target) {
   editingTarget.value = { ...target };
-  showTargetConfigModal.value = true; // Add this line to show the modal
-}
+  showTargetConfigModal.value = true;}
 
-function handlePositionDragStart(
-  event: DragEvent,
-  targetNum: number,
-  position: TargetPosition
-) {
-  const assignment = currentFlight.value?.assignments.find(
-    (a: TargetAssignment) => a.targetNumber === targetNum && a.position === position
-  );
-  if (assignment) {
-    draggedArcher.value = {
-      id: assignment.archerId,
-      assignment,
-    };
-    event.dataTransfer!.setData("archer-id", assignment.archerId);
-    event.dataTransfer!.effectAllowed = "move";
-  }
-}
+function swapTargets(sourceNum: number, destNum: number) {
+  if (!competition.value || !currentFlight.value) return;
 
-function dragStart(event: DragEvent, archer: Archer) {
-  if (event.dataTransfer) {
-    draggedArcher.value = { id: archer.id };
-    event.dataTransfer.setData("archer-id", archer.id);
-    event.dataTransfer.effectAllowed = "move";
-  }
-}
+  const sourceTarget = currentFlight.value.targets.find(t => t.number === sourceNum);
+  const destTarget = currentFlight.value.targets.find(t => t.number === destNum);
+  if (!sourceTarget || !destTarget) return;
 
-function dragEnd() {
-  dragOverTarget.value = null;
-  draggedArcher.value = null;
-}
-
-function handleDragOver(
-  event: DragEvent,
-  targetNum: number,
-  position: TargetPosition
-) {
-  event.preventDefault();
-  dragOverTarget.value = { number: targetNum, position };
-  event.dataTransfer!.dropEffect = "move";
-}
-
-function handleDragLeave(
-  event: DragEvent,
-  targetNum: number,
-  position: TargetPosition
-) {
-  event.preventDefault();
-  if (
-    dragOverTarget.value?.number === targetNum &&
-    dragOverTarget.value?.position === position
-  ) {
-    dragOverTarget.value = null;
-  }
-}
-
-function handleDrop(
-  event: DragEvent,
-  targetNum: number,
-  position: TargetPosition
-) {
-  event.preventDefault();
-  dragOverTarget.value = null;
-
-  if (!draggedArcher.value) return;
-  const archerId = draggedArcher.value.id;
-
-  // Vérifier si l'archer est déjà assigné dans une autre départ
-  const isAssignedInOtherFlight = competition.value!.flights.some(
-    (flight: Flight) => flight.id !== currentFlight.value!.id && 
-    flight.assignments?.some((a: TargetAssignment) => a.archerId === archerId)
-  );
-
-  if (isAssignedInOtherFlight) {
-    alert("Cet archer est déjà assigné à un autre départ.");
-    draggedArcher.value = null;
-    return;
-  }
-
-  // Trouver l'attribution à la position cible (s'il y en a une)
-  const targetAssignment = currentFlight.value?.assignments.find(
-    (a: TargetAssignment) => a.targetNumber === targetNum && a.position === position
-  );
-
-  if (!currentFlight.value) return;
-
-  const updatedAssignments = [...currentFlight.value.assignments];
-
-  // Si l'archer qu'on déplace a déjà une attribution
-  if (draggedArcher.value.assignment) {
-    const draggedAssignmentIndex = updatedAssignments.findIndex(
-      a => a.archerId === archerId
-    );
-
-    if (draggedAssignmentIndex !== -1) {
-      // Mettre à jour l'attribution existante
-      updatedAssignments[draggedAssignmentIndex] = {
-        ...updatedAssignments[draggedAssignmentIndex],
-        targetNumber: targetNum,
-        position,
-      };
-
-      // Si la position cible est occupée, échanger les positions
-      if (targetAssignment) {
-        const targetAssignmentIndex = updatedAssignments.findIndex(
-          a => a.archerId === targetAssignment.archerId
-        );
-
-        if (targetAssignmentIndex !== -1) {
-          updatedAssignments[targetAssignmentIndex] = {
-            ...updatedAssignments[targetAssignmentIndex],
-            targetNumber: draggedArcher.value.assignment.targetNumber,
-            position: draggedArcher.value.assignment.position,
-          };
-        }
-      }
+  const updatedTargets = currentFlight.value.targets.map((t: Target) => {
+    if (t.number === sourceNum) {
+      return { ...destTarget, number: sourceNum };
     }
-  } else {
-    // Créer une nouvelle attribution
-    if (targetAssignment) {
-      // Remplacer l'attribution existante
-      const targetAssignmentIndex = updatedAssignments.findIndex(
-        a => a.archerId === targetAssignment.archerId
-      );
-      if (targetAssignmentIndex !== -1) {
-        updatedAssignments[targetAssignmentIndex] = {
-          ...targetAssignment,
-          archerId,
-        };
-      }
-    } else {
-      // Ajouter une nouvelle attribution
-      updatedAssignments.push({
-        archerId,
-        targetNumber: targetNum,
-        position,
-        flightId: currentFlight.value.id,
-      });
+    if (t.number === destNum) {
+      return { ...sourceTarget, number: destNum };
     }
-  }
+    return t;
+  });
 
-  // Mettre à jour les attributions au départ
-  const updatedFlights = competition.value!.flights.map((flight: Flight) =>
+  const updatedAssignments = currentFlight.value.assignments.map(a => {
+    if (a.targetNumber === sourceNum) return { ...a, targetNumber: destNum };
+    if (a.targetNumber === destNum) return { ...a, targetNumber: sourceNum };
+    return a;
+  });
+
+  const updatedFlights = competition.value.flights.map((flight: Flight) =>
     flight.id === currentFlight.value!.id
-      ? { ...flight, assignments: updatedAssignments }
+      ? { ...flight, targets: updatedTargets, assignments: updatedAssignments }
       : flight
   );
 
-  competitionStore.updateCompetition(competition.value!.id, {
+  competitionStore.updateCompetition(competition.value.id, {
     flights: updatedFlights,
   });
-
-  draggedArcher.value = null;
-}
-
-function removeFromTarget(targetNum: number, position: TargetPosition) {
-  if (!currentFlight.value) return;
-
-  const assignmentToRemove = currentFlight.value.assignments.find(
-    a => a.targetNumber === targetNum && a.position === position
-  );
-
-  if (assignmentToRemove) {
-    const updatedAssignments = currentFlight.value.assignments.filter(
-      (a: TargetAssignment) => a !== assignmentToRemove
-    );
-
-    const updatedFlights = competition.value!.flights.map((flight: Flight) =>
-      flight.id === currentFlight.value!.id
-        ? { ...flight, assignments: updatedAssignments }
-        : flight
-    );
-
-    competitionStore.updateCompetition(competition.value!.id, {
-      flights: updatedFlights,
-    });
-  }
 }
 
 function autoConfigure() {
@@ -778,25 +563,27 @@ function autoConfigure() {
       .length > 0;
 
   if (hasAssignedArchers) {
-    if (
-      confirm(
-        "Des archers sont déjà assignés aux cibles. Voulez-vous réinitialiser toutes les assignations avant de reconfigurer les cibles ?"
-      )
-    ) {
-      resetAllAssignments(false);
-    } else {
-      return;
-    }
+    showAutoConfigConfirmModal.value = true;
+    return;
   }
 
+  doAutoConfigure();
+}
+
+function doAutoConfigure() {
   const flightsConfig = configureTargets(competition.value!);
   competitionStore.replaceFlight(competition.value!.id, flightsConfig);
+}
+
+function confirmAutoConfigure() {
+  showAutoConfigConfirmModal.value = false;
+  resetAllAssignments(false);
+  doAutoConfigure();
 }
 
 function autoAssign(keepAssignments: boolean = true) {
   if (!competition.value || !currentFlight.value) return;
 
-  console.log("Auto-assigning...");
   const newAssignments = assignArchers(
     competition.value,
     currentFlight.value,
@@ -815,29 +602,56 @@ function autoAssign(keepAssignments: boolean = true) {
 }
 
 function resetAllAssignments(askConfirmation: boolean = true) {
-  if (!competition.value) return;
+  if (!competition.value || !currentFlight.value) return;
 
-  if (
-    !askConfirmation ||
-    confirm(
-      "Êtes-vous sûr de vouloir réinitialiser toutes les assignations ? Cette action ne peut pas être annulée."
-    )
-  ) {
-    // Réinitialiser les assignations de toutes les départs
-    const updatedFlights = competition.value.flights.map((flight: Flight) => ({
-      ...flight,
-      assignments: []
-    }));
-
-    // Mettre à jour la compétition avec les départs réinitialisées
-    competitionStore.updateCompetition(competition.value.id, {
-      flights: updatedFlights
-    });
+  if (askConfirmation) {
+    showResetConfirmModal.value = true;
+    return;
   }
+
+  doResetAssignments();
+}
+
+function doResetAssignments() {
+  if (!competition.value || !currentFlight.value) return;
+
+  const updatedFlights = competition.value.flights.map((flight: Flight) =>
+    flight.id === currentFlight.value!.id
+      ? { ...flight, assignments: [] }
+      : flight
+  );
+
+  competitionStore.updateCompetition(competition.value.id, {
+    flights: updatedFlights
+  });
+}
+
+function confirmResetAssignments() {
+  showResetConfirmModal.value = false;
+  doResetAssignments();
 }
 
 const isGeneratingPDF = ref(false);
 const showExportModal = ref(false);
+
+async function generateTargetSetupPDFAction() {
+  if (!competition.value) return;
+  try {
+    const pdfBytes = await generateTargetSetupPDF(competition.value);
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'Installation des cibles.pdf';
+    document.body.appendChild(link);
+    link.click();
+    URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF:', error);
+    alert('Une erreur est survenue lors de la génération du PDF.');
+  }
+}
 
 async function generatePDF() {
   if (!competition.value || isGeneratingPDF.value) return; 

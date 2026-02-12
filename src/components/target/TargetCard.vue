@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { XMarkIcon } from "@heroicons/vue/24/outline";
+import { ref } from "vue";
+import { XMarkIcon, Bars3Icon } from "@heroicons/vue/24/outline";
 import { Icon } from "@iconify/vue";
 import type { Archer, TargetPosition, Target, TargetAssignment } from "@/types";
 import TargetPositionCard from "./TargetPositionCard.vue";
@@ -11,13 +12,29 @@ const props = defineProps<{
   assignments: TargetAssignment[];
   target: Target;
   dragOverPosition?: TargetPosition;
+  isTargetDragOver?: boolean;
+  isBeingDragged?: boolean;
+  readonly?: boolean;
 }>();
 
 const positionBymaxArchers = computed (() => {
   return props.positions.slice(0, props.target.maxArchers)
 })
 
-defineEmits<{
+const distanceColorClass = computed(() => {
+  const colors: Record<number, string> = {
+    10: 'border-l-emerald-400',
+    15: 'border-l-sky-400',
+    18: 'border-l-indigo-500',
+    25: 'border-l-amber-400',
+    40: 'border-l-rose-400',
+  }
+  return colors[props.target.distance] ?? 'border-l-gray-300'
+})
+
+const isTrispot = computed(() => props.target.faceType === 'trispot')
+
+const emit = defineEmits<{
   "position-drag-start": [event: DragEvent, position: TargetPosition];
   "position-drag-over": [event: DragEvent, position: TargetPosition];
   "position-drag-leave": [event: DragEvent, position: TargetPosition];
@@ -25,7 +42,14 @@ defineEmits<{
   "remove-archer": [position: TargetPosition];
   "remove-target": [number: number];
   "edit-config": [];
+  "target-drag-start": [event: DragEvent];
+  "target-drag-end": [];
+  "target-drag-over": [event: DragEvent];
+  "target-drag-leave": [event: DragEvent];
+  "target-drop": [event: DragEvent];
 }>();
+
+const cardRef = ref<HTMLElement>();
 
 function getArcherAtPosition(position: TargetPosition): Archer | undefined {
   const assignment = props.assignments.find(
@@ -37,15 +61,70 @@ function getArcherAtPosition(position: TargetPosition): Archer | undefined {
 function isDragOver(position: TargetPosition) {
   return props.dragOverPosition === position;
 }
+
+function onTargetDragStart(event: DragEvent) {
+  event.dataTransfer!.setData("target-number", String(props.target.number));
+  event.dataTransfer!.effectAllowed = "move";
+
+  // Use the whole card as drag image
+  if (cardRef.value) {
+    const rect = cardRef.value.getBoundingClientRect();
+    event.dataTransfer!.setDragImage(
+      cardRef.value,
+      event.clientX - rect.left,
+      event.clientY - rect.top
+    );
+  }
+
+  emit("target-drag-start", event);
+}
+
+function onTargetDragEnd() {
+  emit("target-drag-end");
+}
+
+function isTargetDrag(event: DragEvent): boolean {
+  return event.dataTransfer?.types.includes("target-number") ?? false;
+}
+
+function onTargetDragOver(event: DragEvent) {
+  if (!isTargetDrag(event)) return;
+  event.preventDefault();
+  event.dataTransfer!.dropEffect = "move";
+}
 </script>
 
 <template>
-  <div class="target-card">
-    <div class="target-header">
+  <div
+    ref="cardRef"
+    class="target-card border-l-4"
+    :class="[
+      distanceColorClass,
+      {
+        'target-drag-over': isTargetDragOver,
+        'is-being-dragged': isBeingDragged,
+      },
+    ]"
+    @dragover="onTargetDragOver"
+    @dragleave.self="(e: DragEvent) => $emit('target-drag-leave', e)"
+    @drop.prevent="(e: DragEvent) => $emit('target-drop', e)"
+  >
+    <div class="target-header" :class="{ 'bg-amber-50': isTrispot }">
+      <div
+        v-if="!readonly"
+        class="drag-handle"
+        draggable="true"
+        @dragstart="onTargetDragStart"
+        @dragend="onTargetDragEnd"
+        title="Glisser pour reordonner"
+      >
+        <Bars3Icon class="w-5 h-5" />
+      </div>
       <div style="width: -webkit-fill-available">
         <div class="target-number">Cible {{ target.number }}</div>
         <div class="flex items-center gap-4 mt-1 text-sm text-gray-600">
           <button
+            v-if="!readonly"
             @click="$emit('edit-config')"
             class="flex items-center gap-1 transition-colors hover:text-primary"
             title="Configurer la cible"
@@ -56,17 +135,32 @@ function isDragOver(position: TargetPosition) {
             />
             {{ target.distance }}m
           </button>
+          <span v-else class="flex items-center gap-1">
+            <Icon
+              icon="material-symbols-light:fit-width-rounded"
+              class="w-4 h-4"
+            />
+            {{ target.distance }}m
+          </span>
           <button
+            v-if="!readonly"
             @click="$emit('edit-config')"
             class="flex items-center gap-1 transition-colors hover:text-primary"
             title="Configurer la cible"
           >
             <Icon icon="material-symbols-light:target" class="w-4 h-4" />
-            Blason {{ target.faceSize }}cm
+            <span v-if="isTrispot" class="font-semibold text-amber-700">Trispot</span>
+            <template v-else>Blason</template> {{ target.faceSize }}cm
           </button>
+          <span v-else class="flex items-center gap-1">
+            <Icon icon="material-symbols-light:target" class="w-4 h-4" />
+            <span v-if="isTrispot" class="font-semibold text-amber-700">Trispot</span>
+            <template v-else>Blason</template> {{ target.faceSize }}cm
+          </span>
         </div>
       </div>
       <button
+        v-if="!readonly"
         @click="$emit('remove-target', target.number)"
         class="remove-target-btn"
         title="Supprimer cette cible"
@@ -80,6 +174,7 @@ function isDragOver(position: TargetPosition) {
           :position="position"
           :archer="getArcherAtPosition(position)"
           :is-drag-over="isDragOver(position)"
+          :readonly="readonly"
           @dragover.prevent="(e: DragEvent) => $emit('position-drag-over', e, position)"
           @dragleave.prevent="(e: DragEvent) => $emit('position-drag-leave', e, position)"
           @drop.prevent="(e: DragEvent) => $emit('position-drop', e, position)"
@@ -93,11 +188,23 @@ function isDragOver(position: TargetPosition) {
 
 <style scoped>
 .target-card {
-  @apply bg-gray-50 rounded-lg overflow-hidden;
+  @apply bg-gray-50 rounded-lg overflow-hidden transition-all duration-200;
+}
+
+.target-card.is-being-dragged {
+  @apply opacity-40 border-2 border-dashed border-gray-400;
+}
+
+.target-card.target-drag-over {
+  @apply ring-2 ring-primary bg-blue-50 scale-[1.02];
 }
 
 .target-header {
-  @apply bg-gray-100 px-3 py-2 flex justify-between items-start;
+  @apply bg-gray-100 px-3 py-2 flex justify-between items-start gap-2;
+}
+
+.drag-handle {
+  @apply text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing p-1 -ml-1 mt-0.5;
 }
 
 .target-number {

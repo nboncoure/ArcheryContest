@@ -2,31 +2,20 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useCompetitionStore } from "@/stores/competitionsStore";
-import type { Arrow, ArcherScore, Round, Flight } from "@/types";
-import { ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
+import type { Arrow, ArcherScore, Round, Flight, Competition } from "@/types";
 import ArcherScoreColumn from "./ArcherScoreColumn.vue";
 import { ClipboardDocumentListIcon } from "@heroicons/vue/24/outline";
 
-const props = defineProps({
-  competition: {
-    type: Object,
-    required: true
-  },
-  selectedFlightId: {
-    type: Number,
-    required: true
-  },
-  selectedRoundId: {
-    type: Number,
-    required: true
-  },
-  selectedTargetNumber: {
-    type: Number
-  },
-  showDetailedScores: {
-    type: Boolean,
-    default: false
-  }
+const props = withDefaults(defineProps<{
+  competition: Competition;
+  selectedFlightId: number;
+  selectedRoundId: number;
+  selectedTargetNumber?: number;
+  showDetailedScores?: boolean;
+  readonly?: boolean;
+}>(), {
+  showDetailedScores: false,
+  readonly: false,
 });
 
 const emit = defineEmits(['update:showDetailedScores', 'update-arrow', 'update-total', 'update-tens', 'update-nines', 'update-eights']);
@@ -38,7 +27,7 @@ function toggleDetailedScores() {
 const competitionStore = useCompetitionStore();
 
 const currentFlight = computed(() =>
-  props.competition?.flights.find((f: Flight) => f.id === props.selectedFlightId)
+  props.competition.flights.find((f) => f.id === props.selectedFlightId)
 );
 
 const targets = computed(() => currentFlight.value?.targets || []);
@@ -47,11 +36,15 @@ const selectedTarget = computed(() =>
   targets.value.find((t) => t.number === props.selectedTargetNumber)
 );
 
+const presentArcherIds = computed(() => {
+  return new Set(props.competition.archers.filter(a => a.isPresent).map(a => a.id));
+});
+
 const targetAssignments = computed(() => {
   const assignments = currentFlight.value?.assignments.filter(
-    (a) => a.targetNumber === props.selectedTargetNumber
+    (a) => a.targetNumber === props.selectedTargetNumber && presentArcherIds.value.has(a.archerId)
   ) || [];
-  
+
   // Sort assignments by position alphabetically
   return assignments.sort((a, b) => a.position.localeCompare(b.position));
 });
@@ -70,7 +63,6 @@ function getArcherCategory(archerId: string): string {
 function getOrCreateScore(archerId: string): ArcherScore {
   if (!props.competition) throw new Error("Competition not found");
   
-  const position = targetAssignments.value.find((a) => a.archerId === archerId)?.position!;
   return competitionStore.getOrCreateArcherScore(
     props.competition.id,
     archerId,
@@ -95,28 +87,26 @@ function getEndTotal(archerId: string, endIndex: number): number | null {
   return round?.ends[endIndex]?.total || null;
 }
 
-function getArcherTotal(archerId: string): number | null {
+function getArcherRoundField(archerId: string, field: 'total' | 'tens' | 'nines' | 'eights'): number | null {
   const score = getOrCreateScore(archerId);
   const round = findRoundById(score, props.selectedRoundId);
-  return round?.total || null;
+  return round?.[field] ?? null;
+}
+
+function getArcherTotal(archerId: string): number | null {
+  return getArcherRoundField(archerId, 'total');
 }
 
 function getArcherTens(archerId: string): number | null {
-  const score = getOrCreateScore(archerId);
-  const round = findRoundById(score, props.selectedRoundId);
-  return round?.tens || null;
+  return getArcherRoundField(archerId, 'tens');
 }
 
 function getArcherNines(archerId: string): number | null {
-  const score = getOrCreateScore(archerId);
-  const round = findRoundById(score, props.selectedRoundId);
-  return round?.nines || null;
+  return getArcherRoundField(archerId, 'nines');
 }
 
 function getArcherEights(archerId: string): number | null {
-  const score = getOrCreateScore(archerId);
-  const round = findRoundById(score, props.selectedRoundId);
-  return round?.eights || null;
+  return getArcherRoundField(archerId, 'eights');
 }
 
 function isScoreValid(archerId: string): boolean {
@@ -127,55 +117,32 @@ function isScoreValid(archerId: string): boolean {
   return calculatedTotal === score.total || !props.showDetailedScores;
 }
 
-// Use the store's updateArcherTotal method
+function updateScoreField(archerId: string, field: 'Total' | 'Tens' | 'Nines' | 'Eights', value: number) {
+  if (!props.competition) return;
+  const method = `updateArcher${field}` as const;
+  competitionStore[method](
+    props.competition.id,
+    archerId,
+    props.selectedFlightId,
+    props.selectedRoundId,
+    value,
+  );
+}
+
 function updateArcherTotal(archerId: string, value: number) {
-  if (!props.competition) return;
-  
-  competitionStore.updateArcherTotal(
-    props.competition.id,
-    archerId,
-    props.selectedFlightId,
-    props.selectedRoundId,
-    value,
-  );
+  updateScoreField(archerId, 'Total', value);
 }
 
-// Use the store's updateArcherTens method
 function updateArcherTens(archerId: string, value: number) {
-  if (!props.competition) return;
-  
-  competitionStore.updateArcherTens(
-    props.competition.id,
-    archerId,
-    props.selectedFlightId,
-    props.selectedRoundId,
-    value,
-  );
+  updateScoreField(archerId, 'Tens', value);
 }
 
-// Use the store's updateArcherNines method
 function updateArcherNines(archerId: string, value: number) {
-  if (!props.competition) return;
-  
-  competitionStore.updateArcherNines(
-    props.competition.id,
-    archerId,
-    props.selectedFlightId,
-    props.selectedRoundId,
-    value,
-  );
+  updateScoreField(archerId, 'Nines', value);
 }
 
 function updateArcherEights(archerId: string, value: number) {
-  if (!props.competition) return;
-  
-  competitionStore.updateArcherEights(
-    props.competition.id,
-    archerId,
-    props.selectedFlightId,
-    props.selectedRoundId,
-    value,
-  );
+  updateScoreField(archerId, 'Eights', value);
 }
 
 // Use the store's updateArrowScore method
@@ -206,6 +173,9 @@ function updateArrowScore(
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-semibold text-gray-900">
           Feuille de marque - Cible {{ selectedTargetNumber }}
+          <span class="ml-2 text-sm font-normal text-gray-500">
+            {{ showDetailedScores ? "(Saisie détaillée)" : "(Saisie rapide)" }}
+          </span>
         </h2>
         <button
           @click="toggleDetailedScores"
@@ -216,13 +186,6 @@ function updateArrowScore(
           {{ showDetailedScores ? "Mode simplifié" : "Mode détaillé" }}
         </button>
       </div>
-
-      <h2 class="mb-6 text-xl font-semibold text-gray-900">
-        Feuille de marque - Cible {{ selectedTargetNumber }}
-        <span class="ml-2 text-sm font-normal text-gray-500">
-          {{ showDetailedScores ? "(Saisie détaillée)" : "(Saisie rapide)" }}
-        </span>
-      </h2>
 
       <div class="score-container">
         <div class="score-grid">
@@ -275,6 +238,7 @@ function updateArrowScore(
             :is-score-valid="isScoreValid(assignment.archerId)"
             :get-arrow-score="(endIndex, arrowIndex) => getArrowScore(assignment.archerId, endIndex, arrowIndex)"
             :get-end-total="(endIndex) => getEndTotal(assignment.archerId, endIndex)"
+            :readonly="readonly"
             @update-arrow="updateArrowScore"
             @update-total="updateArcherTotal"
             @update-tens="updateArcherTens"

@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import type {
   AgeCategory,
   Archer,
@@ -19,47 +18,17 @@ type ArcherGroup = {
   targetConfig: Partial<Target>;
 };
 
-function createBalancedGroups<T>(items: T[], maxGroupSize: number = 10): T[][] {
-  if (items.length <= maxGroupSize) {
-    return [items];
-  }
-
-  const numberOfGroups = Math.ceil(items.length / maxGroupSize);
-  const baseGroupSize = Math.floor(items.length / numberOfGroups);
-  const remainingItems = items.length % numberOfGroups;
-
-  const groups: T[][] = [];
-  let currentIndex = 0;
-
-  for (let i = 0; i < numberOfGroups; i++) {
-    // Add one extra item to the first 'remainingItems' groups
-    const currentGroupSize =
-      i < remainingItems ? baseGroupSize + 1 : baseGroupSize;
-    groups.push(items.slice(currentIndex, currentIndex + currentGroupSize));
-    currentIndex += currentGroupSize;
-  }
-
-  return groups;
-}
-
-declare global {
-  interface Array<T> {
-    toBalancedGroups(maxGroupSize?: number): T[][];
-  }
-}
-
-if (!Array.prototype.toBalancedGroups) {
-  Array.prototype.toBalancedGroups = function <T>(
-    this: T[],
-    maxGroupSize: number = 10
-  ): T[][] {
-    return createBalancedGroups(this, maxGroupSize);
-  };
+function getMaxArchers(competition: Competition, bowTypeCode: string, distance: number): number {
+  const rule = (competition.targetLimitRules || []).find(
+    r => r.bowTypeCode === bowTypeCode && r.distance === distance
+  );
+  return rule?.maxArchers ?? competition.defaultMaxArchers ?? 4;
 }
 
 export function configureTargets(competition: Competition): Flight[] {
+  const existingFlights = competition.flights;
 
-  return Object.values(Object.groupBy(competition.archers, (archer) => archer.flightId || 1 ))
+  return Object.values(Object.groupBy(competition.archers, (archer) => archer.flightId ?? 1 ))
   .filter(archers => !!archers)
   .map((flight : Archer[]) => {
     return flight?.map(archer  => {
@@ -68,7 +37,8 @@ export function configureTargets(competition: Competition): Flight[] {
         archer.bowType.code,
         archer.ageCategory.code,
       )
-      target.maxArchers = archer.bowType.code === competition.autoConfigBowType ? competition.autoConfigMaxNumber : 4
+      target.maxArchers = getMaxArchers(competition, archer.bowType.code, target.distance ?? 0)
+      target.bowTypeCode = archer.bowType.code
       return target
     })
     .reduce(
@@ -80,7 +50,9 @@ export function configureTargets(competition: Competition): Flight[] {
           (t) =>
             t.targetConfig.distance === targetConfig.distance &&
             t.targetConfig.faceSize === targetConfig.faceSize &&
-            t.targetConfig.maxArchers === targetConfig.maxArchers
+            t.targetConfig.faceType === targetConfig.faceType &&
+            t.targetConfig.maxArchers === targetConfig.maxArchers &&
+            t.targetConfig.bowTypeCode === targetConfig.bowTypeCode
         );
         if (target) {
           target.count++;
@@ -111,20 +83,26 @@ export function configureTargets(competition: Competition): Flight[] {
     })
   })
   .map(
-      (targetConfigs: Partial<Target>[], index: number): Flight => ({
-        id: index + 1,
-        name: `Départ ${index + 1}`,
-        startTime: new Date(`${competition.date} 15:00:00 `),
-        assignments: [],
-        targets: targetConfigs.map(
-          (targetConfig: Partial<Target>, i: number): Target => ({
-            number: i + 1,
-            distance: targetConfig.distance || 0,
-            faceSize: targetConfig.faceSize || 0,
-            maxArchers: targetConfig.maxArchers || 0,
-          })
-        ),
-      })
+      (targetConfigs: Partial<Target>[], index: number): Flight => {
+        const flightId = index + 1;
+        const existing = existingFlights.find(f => f.id === flightId);
+        return {
+          id: flightId,
+          name: existing?.name ?? `Départ ${flightId}`,
+          startTime: existing?.startTime,
+          assignments: existing?.assignments ?? [],
+          targets: targetConfigs.map(
+            (targetConfig: Partial<Target>, i: number): Target => ({
+              number: i + 1,
+              distance: targetConfig.distance || 0,
+              faceSize: targetConfig.faceSize || 0,
+              faceType: targetConfig.faceType,
+              maxArchers: targetConfig.maxArchers || 0,
+              bowTypeCode: targetConfig.bowTypeCode,
+            })
+          ),
+        };
+      }
     );
 }
 
@@ -204,10 +182,11 @@ export function assignArchers(
   archerGroups.forEach(group => {
     // Find compatible targets in this flight
     const compatibleTargets = flight.targets
-      .filter(target => 
+      .filter(target =>
         target.distance === group.targetConfig.distance &&
         target.faceSize === group.targetConfig.faceSize &&
-        target.maxArchers === group.targetConfig.maxArchers
+        target.faceType === group.targetConfig.faceType &&
+        (!target.bowTypeCode || target.bowTypeCode === group.bowType.code)
       )
       .sort((a, b) => a.number - b.number);
     

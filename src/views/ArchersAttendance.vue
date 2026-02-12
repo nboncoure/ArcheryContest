@@ -7,7 +7,8 @@ import { Switch } from '@headlessui/vue'
 import { generateAttendancesheetPDF } from '@/utils/attendancesheetPDF';
 import { generatePlacementByClubPDF } from '@/utils/placementByClubPDF';
 import type { Archer } from '../types';
-import { DocumentArrowDownIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
+import { DocumentArrowDownIcon, MagnifyingGlassIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/vue/24/outline';
+import { useCompetitionStatus } from '@/composables/useCompetitionStatus';
 
 
 const route = useRoute();
@@ -21,6 +22,8 @@ const showExportModal = ref(false);
 const competition = computed(() =>
   competitions.value.find((c) => c.id === route.params.id)
 );
+
+const { canEditAttendance, isDraft } = useCompetitionStatus(competition);
 
 const filters = ref({
   search: "",
@@ -76,34 +79,40 @@ const sortedArchers = computed(() => {
 })
 
 
-const pdfOptions = ref({
-  title: '',
-});
+function sort(field: string) {
+  if (sortField.value === field) {
+    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
+  } else {
+    sortField.value = field;
+    sortDirection.value = "asc";
+  }
+}
 
 async function generatePDF() {
-  if (!competition.value || isGeneratingPDF.value) return; 
-  
+  if (!competition.value || isGeneratingPDF.value) return;
+
   try {
     isGeneratingPDF.value = true;
     showExportModal.value = false;
-    
-    // Generate the PDF
-    const pdfBytes = await generateAttendancesheetPDF(
-       competition.value,
-       archers.value,
-    );
 
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Rapport arbitre.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    
+    for (const flight of competition.value.flights) {
+      const pdfBytes = await generateAttendancesheetPDF(
+        competition.value,
+        archers.value,
+        flight,
+      );
 
-   URL.revokeObjectURL(url);
-    document.body.removeChild(link);
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Rapport arbitre - ${flight.name}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+
+      URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+    }
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
     alert('Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.');
@@ -152,6 +161,18 @@ async function generateClubPDF() {
       <div class="p-6">
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-2xl font-bold text-gray-900">Archers présents</h1>
+        </div>
+
+        <div v-if="!canEditAttendance" class="p-3 mb-6 text-sm text-blue-800 border border-blue-200 rounded-lg bg-blue-50">
+          <template v-if="isDraft">
+            La gestion des présences est disponible uniquement lorsque la compétition est en cours.
+          </template>
+          <template v-else>
+            La gestion des présences est en lecture seule. La compétition est terminée.
+          </template>
+        </div>
+
+        <div class="flex items-center justify-between mb-6">
           <!-- Removed the button from here -->
             <button 
             class="btn btn-primary flex items-center gap-2"
@@ -187,7 +208,18 @@ async function generateClubPDF() {
         </div>
    </div>
 
-          <tr>
+    <div class="overflow-hidden bg-white rounded-lg shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full table-fixed divide-y divide-gray-200">
+          <colgroup>
+            <col class="w-[20%]" />
+            <col class="w-[20%]" />
+            <col class="w-[30%]" />
+            <col class="w-[15%]" />
+            <col class="w-[15%]" />
+          </colgroup>
+          <thead class="bg-gray-50">
+            <tr>
               <th
                 v-for="column in columns"
                 :key="column.key"
@@ -195,7 +227,6 @@ async function generateClubPDF() {
                 :class="[
                   'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider',
                   column.sortable && 'cursor-pointer hover:text-gray-700',
-                  column.key === 'club' && 'w-40 md:w-48 lg:w-56',
                 ]"
               >
                 <div class="flex items-center gap-1">
@@ -210,36 +241,43 @@ async function generateClubPDF() {
                 </div>
               </th>
             </tr>
-           <tbody class="bg-white divide-y divide-gray-200">
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
             <tr
               v-for="archer in sortedArchers"
               :key="archer.id"
               class="hover:bg-gray-50"
             >
-              <td class="px-6 py-4 whitespace-nowrap">{{ archer.lastName }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                {{ archer.firstName }}
-              </td>
+              <td class="px-6 py-4 truncate">{{ archer.lastName }}</td>
+              <td class="px-6 py-4 truncate">{{ archer.firstName }}</td>
               <td class="px-6 py-4">
-                <div class="truncate max-w-[150px] md:max-w-[180px] lg:max-w-[220px]" :title="archer.club">
+                <div class="truncate" :title="archer.club">
                   {{ archer.club }}
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">{{ archer.category }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
-    <Switch
-    v-model="archer.isPresent"
-    :class="archer.isPresent ? 'bg-blue-600' : 'bg-gray-200'"
-    class="relative inline-flex h-6 w-11 items-center rounded-full"
-  >
-    <span class="sr-only">Enable notifications</span>
-    <span
-      :class="archer.isPresent ? 'translate-x-6' : 'translate-x-1'"
-      class="inline-block h-4 w-4 transform rounded-full bg-white transition" />
-  </Switch>
+                <Switch
+                  v-model="archer.isPresent"
+                  :disabled="!canEditAttendance"
+                  :class="[
+                    archer.isPresent ? 'bg-blue-600' : 'bg-gray-200',
+                    !canEditAttendance ? 'opacity-50 cursor-not-allowed' : ''
+                  ]"
+                  class="relative inline-flex h-6 w-11 items-center rounded-full"
+                >
+                  <span class="sr-only">Présent</span>
+                  <span
+                    :class="archer.isPresent ? 'translate-x-6' : 'translate-x-1'"
+                    class="inline-block h-4 w-4 transform rounded-full bg-white transition"
+                  />
+                </Switch>
               </td>
             </tr>
           </tbody>
+        </table>
+      </div>
+    </div>
       </div>
     </div>
   </div>

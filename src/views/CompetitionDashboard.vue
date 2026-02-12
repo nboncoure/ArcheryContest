@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useCompetitionStore } from "../stores/competitionsStore";
 import { storeToRefs } from "pinia";
@@ -24,8 +24,11 @@ import {
   ExclamationTriangleIcon,
   PencilIcon,
   CheckBadgeIcon,
+  ArrowUturnLeftIcon,
 } from "@heroicons/vue/24/outline";
 import type { Competition } from "@/types";
+import ConfirmModal from "@/components/ConfirmModal.vue";
+import { useCompetitionStatus } from "@/composables/useCompetitionStatus";
 
 const route = useRoute();
 const competitionsStore = useCompetitionStore();
@@ -43,6 +46,12 @@ const form = ref<Partial<Competition>>({
 const competition = computed(() =>
   competitions.value.find((c) => c.id === route.params.id)
 );
+
+const { canEditCompetitionInfo, isDraft, isActive, isCompleted } =
+  useCompetitionStatus(competition);
+
+const showReopenConfirm = ref(false);
+const showRevertConfirm = ref(false);
 
 function translateStatus(status: string): string {
   const statusMap: Record<string, string> = {
@@ -84,9 +93,32 @@ function endCompetition() {
   }
 }
 
-function openEditModal() {
+function reopenCompetition() {
+  showReopenConfirm.value = false;
   if (competition.value) {
-    form.value = { ...competition.value };
+    competitionsStore.updateCompetition(competition.value.id, {
+      status: "active",
+    });
+  }
+}
+
+function revertToDraft() {
+  showRevertConfirm.value = false;
+  if (competition.value) {
+    competitionsStore.updateCompetition(competition.value.id, {
+      status: "draft",
+    });
+  }
+}
+
+function openEditModal() {
+  if (!canEditCompetitionInfo.value) return;
+  if (competition.value) {
+    allFlights.value = competition.value.flights.map((f) => ({ ...f }));
+    form.value = {
+      ...competition.value,
+      flights: allFlights.value.slice(),
+    };
     showEditModal.value = true;
   }
 }
@@ -94,6 +126,27 @@ function openEditModal() {
 function closeEditModal() {
   showEditModal.value = false;
 }
+
+const allFlights = ref<Competition["flights"]>([]);
+
+watch(
+  () => form.value.numberOfSessions,
+  (newCount) => {
+    const count = Number(newCount) || 1;
+    while (allFlights.value.length < count) {
+      const idx = allFlights.value.length + 1;
+      allFlights.value.push({
+        id: idx,
+        name: `Départ ${idx}`,
+        startTime: "",
+        arbitratorName: "",
+        targets: [],
+        assignments: [],
+      });
+    }
+    form.value.flights = allFlights.value.slice(0, count);
+  }
+);
 
 function saveCompetition() {
   if (competition.value) {
@@ -114,6 +167,7 @@ function saveCompetition() {
                 {{ competition.name }}
               </h1>
               <button
+                v-if="canEditCompetitionInfo"
                 @click="openEditModal"
                 class="text-gray-400 hover:text-gray-600"
               >
@@ -131,7 +185,7 @@ function saveCompetition() {
               </div>
               <div class="flex items-center text-gray-600">
                 <ArrowsPointingOutIcon class="w-5 h-5 mr-2" />
-                {{ competition.type === "indoor" ? "Salle" : "Extérieur" }}
+                {{ competition.type === "indoor" ? "Salle" : competition.type === "18m" ? "18m" : "Extérieur" }}
               </div>
               <div :class="statusClass(competition.status)">
                 {{ translateStatus(competition.status) }}
@@ -141,20 +195,36 @@ function saveCompetition() {
 
           <div class="flex gap-3">
             <button
-              v-if="competition.status === 'draft'"
+              v-if="isDraft"
               @click="startCompetition"
               class="btn btn-success"
             >
               <PlayIcon class="w-5 h-5" />
               Démarrer la compétition
             </button>
+            <template v-else-if="isActive">
+              <button
+                @click="showRevertConfirm = true"
+                class="btn btn-secondary"
+              >
+                <ArrowUturnLeftIcon class="w-5 h-5" />
+                Revenir en préparation
+              </button>
+              <button
+                @click="endCompetition"
+                class="btn btn-danger"
+              >
+                <FlagIcon class="w-5 h-5" />
+                Terminer la compétition
+              </button>
+            </template>
             <button
-              v-else-if="competition.status === 'active'"
-              @click="endCompetition"
-              class="btn btn-danger"
+              v-else-if="isCompleted"
+              @click="showReopenConfirm = true"
+              class="btn btn-secondary"
             >
-              <FlagIcon class="w-5 h-5" />
-              Terminer la compétition
+              <ArrowUturnLeftIcon class="w-5 h-5" />
+              Réouvrir la compétition
             </button>
           </div>
         </div>
@@ -281,7 +351,7 @@ function saveCompetition() {
               leave-to="opacity-0 scale-95"
             >
               <DialogPanel
-                class="w-full max-w-md p-6 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl"
+                class="w-full max-w-2xl p-6 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl"
               >
                 <DialogTitle
                   as="h3"
@@ -290,73 +360,107 @@ function saveCompetition() {
                   Modifier la compétition
                 </DialogTitle>
 
-                <form @submit.prevent="saveCompetition" class="space-y-4">
-                  <div class="form-group">
-                    <label for="name">Nom de la compétition</label>
-                    <input type="text" id="name" v-model="form.name" required />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="date">Date</label>
-                    <input type="date" id="date" v-model="form.date" required />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="location">Lieu</label>
-                    <input
-                      type="text"
-                      id="location"
-                      v-model="form.location"
-                      required
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="type">Type</label>
-                    <select id="type" v-model="form.type" required>
-                      <option value="indoor">Salle</option>
-                      <option value="outdoor">Extérieur</option>
-                    </select>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="numberOfSessions">Nombre de départs</label>
-                    <input
-                      type="number"
-                      id="numberOfSessions"
-                      v-model="form.numberOfSessions"
-                      min="1"
-                      required
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="numberOfTargets">Nombre de cibles</label>
-                    <input
-                      type="number"
-                      id="numberOfTargets"
-                      v-model="form.numberOfTargets"
-                      min="1"
-                      required
-                    />
-                  </div>
-
-                  <div class="form-group">
-                    <label for="arbitratorName">Nom de l'arbitre</label>
-                    <input
-                      type="text"
-                      id="arbitratorName"
-                      v-model="form.arbitratorName"
-                    />
-                  </div>
+                <form
+                  @submit.prevent="saveCompetition"
+                  class="space-y-4 [&_.form-group]:mb-0"
+                >
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div class="form-group sm:col-span-2">
+                      <label for="name">Nom de la compétition</label>
+                      <input type="text" id="name" v-model="form.name" required />
+                    </div>
 
                     <div class="form-group">
-                    <label for="organizingClub">Club organisateur</label>
-                    <input
-                      type="text"
-                      id="organizingClub"
-                      v-model="form.organizingClub"
-                    />
+                      <label for="date">Date</label>
+                      <input type="date" id="date" v-model="form.date" required />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="location">Lieu</label>
+                      <input
+                        type="text"
+                        id="location"
+                        v-model="form.location"
+                        required
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="type">Type</label>
+                      <select id="type" v-model="form.type" required>
+                        <option value="indoor">Salle</option>
+                        <option value="outdoor">Extérieur</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="organizingClub">Club organisateur</label>
+                      <input
+                        type="text"
+                        id="organizingClub"
+                        v-model="form.organizingClub"
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="numberOfSessions">Nombre de départs</label>
+                      <input
+                        type="number"
+                        id="numberOfSessions"
+                        v-model="form.numberOfSessions"
+                        min="1"
+                        required
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="numberOfTargets">Nombre de cibles</label>
+                      <input
+                        type="number"
+                        id="numberOfTargets"
+                        v-model="form.numberOfTargets"
+                        min="1"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div
+                    v-if="form.flights && form.flights.length > 0"
+                    class="space-y-3"
+                  >
+                    <div
+                      v-for="(flight, index) in form.flights"
+                      :key="flight.id"
+                      class="p-3 border border-gray-200 rounded-lg bg-gray-50"
+                    >
+                      <h4 class="mb-2 text-sm font-medium text-gray-700">
+                        {{ flight.name }}
+                      </h4>
+                      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div class="form-group">
+                          <label :for="'edit-flight-' + index"
+                            >Date et heure</label
+                          >
+                          <input
+                            type="datetime-local"
+                            :id="'edit-flight-' + index"
+                            v-model="flight.startTime"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label :for="'edit-arbitrator-' + index"
+                            >Arbitre</label
+                          >
+                          <input
+                            type="text"
+                            :id="'edit-arbitrator-' + index"
+                            v-model="flight.arbitratorName"
+                            placeholder="Nom de l'arbitre"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div class="flex justify-end gap-3 mt-6">
@@ -378,6 +482,26 @@ function saveCompetition() {
         </div>
       </Dialog>
     </TransitionRoot>
+
+    <ConfirmModal
+      :is-open="showReopenConfirm"
+      title="Réouvrir la compétition"
+      message="La compétition repassera en mode actif. Vous pourrez à nouveau modifier les présences et saisir des scores."
+      confirm-label="Réouvrir"
+      variant="warning"
+      @close="showReopenConfirm = false"
+      @confirm="reopenCompetition"
+    />
+
+    <ConfirmModal
+      :is-open="showRevertConfirm"
+      title="Revenir en préparation"
+      message="La compétition repassera en mode brouillon. Vous pourrez à nouveau modifier les archers, cibles et affectations. Les présences et scores ne seront plus accessibles en saisie."
+      confirm-label="Revenir en préparation"
+      variant="warning"
+      @close="showRevertConfirm = false"
+      @confirm="revertToDraft"
+    />
   </div>
 
   <div v-else class="flex items-center justify-center min-h-screen bg-gray-50">

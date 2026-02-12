@@ -322,8 +322,8 @@ function drawClubSection(
     { name: 'N°', x: 0, width: 40 },
     { name: 'Nom', x: 40, width: 110 },
     { name: 'Prénom', x: 150, width: 110 },
-    { name: 'Cible', x: 260, width: 40 },
-    { name: 'Licence', x: 300, width: 60 },
+    { name: 'Cible', x: 260, width: 35 },
+    { name: 'Licence', x: 295, width: 65 },
     { name: 'Catégorie', x: 360, width: 50 },
   ];
 

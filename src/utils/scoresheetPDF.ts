@@ -1,13 +1,6 @@
 import { degrees, PDFDocument, PDFPage, rgb, StandardFonts } from 'pdf-lib';
-import type { Competition, Target, TargetAssignment, Archer, Flight } from '../types';
+import type { Competition, Target, TargetAssignment, Archer, Flight, BowTypeCode } from '../types';
 import { format } from "date-fns";
-interface ScoreSheetData {
-  competition: Competition;
-  flight: Flight;
-  target: Target;
-  assignments: TargetAssignment[];
-  archers: Archer[];
-}
 
 export async function generateScoreSheets(
   assignments: TargetAssignment[],
@@ -29,7 +22,7 @@ export async function generateScoreSheets(
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
    
-    assignments.forEach(async (assignment)  => {
+    for (const assignment of assignments) {
       const archer = archers.find(archer => archer.id === assignment.archerId);
       const [page] = await pdfDoc.copyPages(pdfSrc, [0])
       page.setRotation(degrees(90));
@@ -71,6 +64,32 @@ export async function generateScoreSheets(
         color: colorText,
       });
 
+      // Catégorie de l'archer : genre, type d'arc, viseur
+      if (archer?.bowType && archer?.gender) {
+        const bowCode = archer.bowType.code as BowTypeCode;
+        const isCompound = bowCode === 'COSV' || bowCode === 'COAV';
+        const hasSight = bowCode === 'AV' || bowCode === 'COAV';
+
+        const categoryMark = { rotate: degrees(90), size: 10, font: fontBold, color: colorText };
+
+        // Genre : M ou F
+        const genderY = archer.gender === 'M' ? 40 : 275;
+        page.drawText('X', { ...categoryMark, x: 200, y: genderY });
+
+        // Type d'arc : ARC Classique ou ARC à Poulie
+        const bowTypeY = isCompound ? 202 : 40;
+        page.drawText('X', { ...categoryMark, x: 223, y: bowTypeY });
+
+        // Viseur : SV ou AV (dans la colonne classique ou poulie)
+        let sightY: number;
+        if (isCompound) {
+          sightY = hasSight ? 275 : 188;
+        } else {
+          sightY = hasSight ? 110 : 40;
+        }
+        page.drawText('X', { ...categoryMark, x: 250, y: sightY });
+      }
+
       if (flight?.startTime) {
         page.drawText(`${format(flight.startTime, 'dd/MM/yyyy')}`, {
           rotate: degrees(90),
@@ -99,8 +118,8 @@ export async function generateScoreSheets(
           color: colorText,
         });
       }
-    });
-    
+    }
+
     const pdfBytes = await pdfDoc.save()
 
     return pdfBytes

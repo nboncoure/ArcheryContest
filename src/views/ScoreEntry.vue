@@ -13,6 +13,7 @@ import {
   ListboxOption,
 } from "@headlessui/vue";
 import { ChevronUpDownIcon, CheckIcon } from "@heroicons/vue/24/outline";
+import { useCompetitionStatus } from "@/composables/useCompetitionStatus";
 
 const route = useRoute();
 const competitionStore = useCompetitionStore();
@@ -26,6 +27,8 @@ const showDetailedScores = ref(false);
 const competition = computed(() =>
   competitions.value.find((c) => c.id === route.params.id)
 );
+
+const { canEditScores, isDraft } = useCompetitionStatus(competition);
 
 // Initialiser les scores s'ils n'existent pas
 if (competition.value && !competition.value.scores) {
@@ -43,6 +46,16 @@ if (competition.value && competition.value.flights.length > 0) {
   selectedFlightId.value = competition.value.flights[0].id;
 }
 
+const presentArcherIds = computed(() => {
+  if (!competition.value) return new Set<string>();
+  return new Set(competition.value.archers.filter(a => a.isPresent).map(a => a.id));
+});
+
+const flightAssignments = computed(() => {
+  const assignments = currentFlight.value?.assignments || [];
+  return assignments.filter(a => presentArcherIds.value.has(a.archerId));
+});
+
 const targets = computed(() => currentFlight.value?.targets || []);
 
 const selectedTarget = computed(() =>
@@ -56,7 +69,15 @@ const selectedTarget = computed(() =>
       <div class="p-6">
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-2xl font-bold text-gray-900">Saisie des Scores</h1>
-          <!-- Removed the button from here -->
+        </div>
+
+        <div v-if="!canEditScores" class="p-3 mb-6 text-sm text-blue-800 border border-blue-200 rounded-lg bg-blue-50">
+          <template v-if="isDraft">
+            La saisie des scores est disponible uniquement lorsque la compétition est en cours.
+          </template>
+          <template v-else>
+            Les scores sont en lecture seule. La compétition est terminée.
+          </template>
         </div>
 
         <!-- Sélection du départ -->
@@ -189,7 +210,7 @@ const selectedTarget = computed(() =>
           <div class="w-80">
             <ArcherSelector
               :archers="competition?.archers || []"
-              :assignments="currentFlight?.assignments || []"
+              :assignments="flightAssignments"
               @select-target="selectedTargetNumber = $event"
             />
           </div>
@@ -198,7 +219,7 @@ const selectedTarget = computed(() =>
         <TargetSelector
           v-model="selectedTargetNumber"
           :targets="targets"
-          :assignments="currentFlight?.assignments || []"
+          :assignments="flightAssignments"
           :scores="competition?.scores || []"
           :selectedRoundId="selectedRoundId"
           @select="selectedTargetNumber = $event"
@@ -212,6 +233,7 @@ const selectedTarget = computed(() =>
       :selectedFlightId="selectedFlightId"
       :selectedRoundId="selectedRoundId"
       :selectedTargetNumber="selectedTargetNumber"
+      :readonly="!canEditScores"
       v-model:showDetailedScores="showDetailedScores"
     />
   </div>

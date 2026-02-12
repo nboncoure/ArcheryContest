@@ -15,6 +15,7 @@ import {
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
 } from "@heroicons/vue/24/outline";
+import ImportConfirmModal from "@/components/ImportConfirmModal.vue";
 
 const competitionsStore = useCompetitionStore();
 const { competitions } = storeToRefs(competitionsStore);
@@ -46,9 +47,14 @@ function statusClass(status: string): string {
   }`;
 }
 
+const EXPORT_VERSION = 1;
+
 function exportCompetition(competition: any) {
-  // Create a JSON string from the competition object
-  const competitionJson = JSON.stringify(competition, null, 2);
+  const exportData = {
+    version: EXPORT_VERSION,
+    competition,
+  };
+  const competitionJson = JSON.stringify(exportData, null, 2);
   
   // Create a blob with the JSON data
   const blob = new Blob([competitionJson], { type: 'application/json' });
@@ -103,10 +109,12 @@ function handleDrop(event: DragEvent) {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const competition = JSON.parse(e.target?.result as string);
-          
-          // Check if competition has required fields
-          if (!competition.id || !competition.name) {
+          const data = JSON.parse(e.target?.result as string);
+
+          // Handle versioned format (v1+) and legacy format (no version)
+          const competition = data.version ? data.competition : data;
+
+          if (!competition?.id || !competition?.name) {
             alert("Le fichier ne contient pas une compétition valide.");
             return;
           }
@@ -204,7 +212,7 @@ function cancelImport() {
           <div class="flex items-center text-gray-600">
             <ArrowsPointingOutIcon class="w-5 h-5 mr-2" />
             <span>{{
-              competition.type === "indoor" ? "Salle" : "Extérieur"
+              competition.type === "indoor" ? "Salle" : competition.type === "18m" ? "18m" : "Extérieur"
             }}</span>
           </div>
           <div class="flex items-center text-gray-600">
@@ -292,27 +300,12 @@ function cancelImport() {
       </div>
     </div>
     
-    <!-- Import confirmation modal -->
-    <div v-if="showImportModal" class="modal-overlay">
-      <div class="modal-content">
-        <h3 class="text-xl font-semibold mb-4">Conflit d'importation</h3>
-        <p class="mb-6">
-          Une compétition avec le même identifiant existe déjà. 
-          Que souhaitez-vous faire ?
-        </p>
-        <div class="flex justify-end gap-3">
-          <button @click="cancelImport" class="btn btn-secondary">
-            Annuler
-          </button>
-          <button @click="importWithNewId" class="btn btn-primary">
-            Créer une nouvelle compétition
-          </button>
-          <button @click="replaceExistingCompetition" class="btn btn-danger">
-            Remplacer l'existante
-          </button>
-        </div>
-      </div>
-    </div>
+    <ImportConfirmModal
+      :is-open="showImportModal"
+      @cancel="cancelImport"
+      @import-new="importWithNewId"
+      @replace="replaceExistingCompetition"
+    />
   </div>
 </template>
 
@@ -335,14 +328,6 @@ function cancelImport() {
 
 .drop-zone {
   @apply bg-white rounded-lg p-12 flex flex-col items-center justify-center border-2 border-dashed border-primary;
-}
-
-.modal-overlay {
-  @apply fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50;
-}
-
-.modal-content {
-  @apply bg-white rounded-lg p-6 max-w-md w-full shadow-xl;
 }
 
 .btn-danger {

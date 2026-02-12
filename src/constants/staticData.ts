@@ -1,12 +1,20 @@
-import {
+import type {
   AgeCategory,
   AgeCategoryCode,
   ArcherGender,
   BowType,
   BowTypeCode,
   CompetitionType,
+  FaceType,
   Target,
 } from "../types";
+
+type TargetConfig = Pick<Target, "distance" | "faceSize"> & { faceType?: FaceType };
+
+type CompetitionTargetConfig = Record<
+  CompetitionType,
+  Partial<Record<BowTypeCode, Partial<Record<AgeCategoryCode, TargetConfig>>>>
+>;
 
 export const AGE_CATEGORIES: AgeCategory[] = [
   { code: "P", label: "Poussin", minAge: 8, maxAge: 10 },
@@ -19,8 +27,8 @@ export const AGE_CATEGORIES: AgeCategory[] = [
   { code: "SV", label: "Super Vétéran", minAge: 65, maxAge: 99 },
 ];
 
-export function getAgeCategoryByCode(code: string): AgeCategory {
-  return AGE_CATEGORIES.find((cat) => cat.code === code)!;
+export function getAgeCategoryByCode(code: string): AgeCategory | undefined {
+  return AGE_CATEGORIES.find((cat) => cat.code === code);
 }
 
 export const BOW_TYPES: BowType[] = [
@@ -28,11 +36,11 @@ export const BOW_TYPES: BowType[] = [
   { code: "AV", label: "Classique avec viseur", isCompound: false },
   { code: "COSV", label: "Poulie sans viseur", isCompound: true },
   { code: "COAV", label: "Poulie avec viseur", isCompound: true },
-  { code: "AH", label: "Autre handicape", isCompound: false },
+  { code: "AH", label: "Autre Handicape", isCompound: false },
 ];
 
-export function getBowTypeByCode(code: string): BowType {
-  return BOW_TYPES.find((bow) => bow.code === code)!;
+export function getBowTypeByCode(code: string): BowType | undefined {
+  return BOW_TYPES.find((bow) => bow.code === code);
 }
 
 export const COMPETITION_TARGET_CONFIG: CompetitionTargetConfig = {
@@ -66,12 +74,12 @@ export const COMPETITION_TARGET_CONFIG: CompetitionTargetConfig = {
       SV: { distance: 25, faceSize: 60 },
     },
     COAV: {
-      M: { distance: 18, faceSize: 60 },
-      C: { distance: 18, faceSize: 60 },
-      J: { distance: 25, faceSize: 60 },
-      S: { distance: 25, faceSize: 60 },
-      V: { distance: 25, faceSize: 60 },
-      SV: { distance: 25, faceSize: 60 },
+      M: { distance: 18, faceSize: 60, faceType: "trispot" },
+      C: { distance: 18, faceSize: 60, faceType: "trispot" },
+      J: { distance: 25, faceSize: 60, faceType: "trispot" },
+      S: { distance: 25, faceSize: 60, faceType: "trispot" },
+      V: { distance: 25, faceSize: 60, faceType: "trispot" },
+      SV: { distance: 25, faceSize: 60, faceType: "trispot" },
     },
     AH: {
       M: { distance: 18, faceSize: 60 },
@@ -112,12 +120,12 @@ export const COMPETITION_TARGET_CONFIG: CompetitionTargetConfig = {
       SV: { distance: 25, faceSize: 60 },
     },
     COAV: {
-      M: { distance: 18, faceSize: 60 },
-      C: { distance: 18, faceSize: 60 },
-      J: { distance: 25, faceSize: 60 },
-      S: { distance: 25, faceSize: 60 },
-      V: { distance: 25, faceSize: 60 },
-      SV: { distance: 25, faceSize: 60 },
+      M: { distance: 18, faceSize: 60, faceType: "trispot" },
+      C: { distance: 18, faceSize: 60, faceType: "trispot" },
+      J: { distance: 25, faceSize: 60, faceType: "trispot" },
+      S: { distance: 25, faceSize: 60, faceType: "trispot" },
+      V: { distance: 25, faceSize: 60, faceType: "trispot" },
+      SV: { distance: 25, faceSize: 60, faceType: "trispot" },
     },
     AH: {
       M: { distance: 18, faceSize: 60 },
@@ -181,7 +189,7 @@ export function findCompetitionTargetConfig(
   bowType: BowTypeCode,
   ageCategory: AgeCategoryCode
 ): Partial<Target> {
-  return COMPETITION_TARGET_CONFIG[competitionType][bowType][ageCategory];
+  return COMPETITION_TARGET_CONFIG[competitionType]?.[bowType]?.[ageCategory] ?? {};
 }
 
 // Structure complète des catégories

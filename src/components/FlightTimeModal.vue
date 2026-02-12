@@ -83,6 +83,15 @@ function submitFlightTime() {
                           v-model="props.currentFlight.startTime"
                         />
                       </div>
+                      <div class="mb-0 form-group">
+                        <label for="arbitrator" class="text-sm">Nom de l'arbitre</label>
+                        <input
+                          type="text"
+                          id="arbitrator"
+                          v-model="props.currentFlight.arbitratorName"
+                          placeholder="Nom de l'arbitre"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

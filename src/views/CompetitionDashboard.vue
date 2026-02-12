@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useCompetitionStore } from "../stores/competitionsStore";
 import { storeToRefs } from "pinia";
@@ -114,9 +114,10 @@ function revertToDraft() {
 function openEditModal() {
   if (!canEditCompetitionInfo.value) return;
   if (competition.value) {
+    allFlights.value = competition.value.flights.map((f) => ({ ...f }));
     form.value = {
       ...competition.value,
-      flights: competition.value.flights.map((f) => ({ ...f })),
+      flights: allFlights.value.slice(),
     };
     showEditModal.value = true;
   }
@@ -125,6 +126,27 @@ function openEditModal() {
 function closeEditModal() {
   showEditModal.value = false;
 }
+
+const allFlights = ref<Competition["flights"]>([]);
+
+watch(
+  () => form.value.numberOfSessions,
+  (newCount) => {
+    const count = Number(newCount) || 1;
+    while (allFlights.value.length < count) {
+      const idx = allFlights.value.length + 1;
+      allFlights.value.push({
+        id: idx,
+        name: `Départ ${idx}`,
+        startTime: "",
+        arbitratorName: "",
+        targets: [],
+        assignments: [],
+      });
+    }
+    form.value.flights = allFlights.value.slice(0, count);
+  }
+);
 
 function saveCompetition() {
   if (competition.value) {
@@ -329,7 +351,7 @@ function saveCompetition() {
               leave-to="opacity-0 scale-95"
             >
               <DialogPanel
-                class="w-full max-w-md p-6 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl"
+                class="w-full max-w-2xl p-6 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl"
               >
                 <DialogTitle
                   as="h3"
@@ -338,55 +360,69 @@ function saveCompetition() {
                   Modifier la compétition
                 </DialogTitle>
 
-                <form @submit.prevent="saveCompetition" class="space-y-4">
-                  <div class="form-group">
-                    <label for="name">Nom de la compétition</label>
-                    <input type="text" id="name" v-model="form.name" required />
-                  </div>
+                <form
+                  @submit.prevent="saveCompetition"
+                  class="space-y-4 [&_.form-group]:mb-0"
+                >
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div class="form-group sm:col-span-2">
+                      <label for="name">Nom de la compétition</label>
+                      <input type="text" id="name" v-model="form.name" required />
+                    </div>
 
-                  <div class="form-group">
-                    <label for="date">Date</label>
-                    <input type="date" id="date" v-model="form.date" required />
-                  </div>
+                    <div class="form-group">
+                      <label for="date">Date</label>
+                      <input type="date" id="date" v-model="form.date" required />
+                    </div>
 
-                  <div class="form-group">
-                    <label for="location">Lieu</label>
-                    <input
-                      type="text"
-                      id="location"
-                      v-model="form.location"
-                      required
-                    />
-                  </div>
+                    <div class="form-group">
+                      <label for="location">Lieu</label>
+                      <input
+                        type="text"
+                        id="location"
+                        v-model="form.location"
+                        required
+                      />
+                    </div>
 
-                  <div class="form-group">
-                    <label for="type">Type</label>
-                    <select id="type" v-model="form.type" required>
-                      <option value="indoor">Salle</option>
-                      <option value="outdoor">Extérieur</option>
-                    </select>
-                  </div>
+                    <div class="form-group">
+                      <label for="type">Type</label>
+                      <select id="type" v-model="form.type" required>
+                        <option value="indoor">Salle</option>
+                        <option value="outdoor">Extérieur</option>
+                      </select>
+                    </div>
 
-                  <div class="form-group">
-                    <label for="numberOfSessions">Nombre de départs</label>
-                    <input
-                      type="number"
-                      id="numberOfSessions"
-                      v-model="form.numberOfSessions"
-                      min="1"
-                      required
-                    />
-                  </div>
+                    <div class="form-group">
+                      <label for="organizingClub">Club organisateur</label>
+                      <input
+                        type="text"
+                        id="organizingClub"
+                        v-model="form.organizingClub"
+                      />
+                    </div>
 
-                  <div class="form-group">
-                    <label for="numberOfTargets">Nombre de cibles</label>
-                    <input
-                      type="number"
-                      id="numberOfTargets"
-                      v-model="form.numberOfTargets"
-                      min="1"
-                      required
-                    />
+                    <div class="form-group">
+                      <label for="numberOfSessions">Nombre de départs</label>
+                      <input
+                        type="number"
+                        id="numberOfSessions"
+                        v-model="form.numberOfSessions"
+                        min="1"
+                        required
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="numberOfTargets">Nombre de cibles</label>
+                      <input
+                        type="number"
+                        id="numberOfTargets"
+                        v-model="form.numberOfTargets"
+                        min="1"
+                        required
+                      />
+                    </div>
                   </div>
 
                   <div
@@ -396,35 +432,35 @@ function saveCompetition() {
                     <div
                       v-for="(flight, index) in form.flights"
                       :key="flight.id"
-                      class="form-group"
+                      class="p-3 border border-gray-200 rounded-lg bg-gray-50"
                     >
-                      <label :for="'edit-flight-' + index"
-                        >Date et heure - {{ flight.name }}</label
-                      >
-                      <input
-                        type="datetime-local"
-                        :id="'edit-flight-' + index"
-                        v-model="flight.startTime"
-                      />
-                      <label :for="'edit-arbitrator-' + index" class="mt-2"
-                        >Arbitre - {{ flight.name }}</label
-                      >
-                      <input
-                        type="text"
-                        :id="'edit-arbitrator-' + index"
-                        v-model="flight.arbitratorName"
-                        placeholder="Nom de l'arbitre"
-                      />
+                      <h4 class="mb-2 text-sm font-medium text-gray-700">
+                        {{ flight.name }}
+                      </h4>
+                      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div class="form-group">
+                          <label :for="'edit-flight-' + index"
+                            >Date et heure</label
+                          >
+                          <input
+                            type="datetime-local"
+                            :id="'edit-flight-' + index"
+                            v-model="flight.startTime"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label :for="'edit-arbitrator-' + index"
+                            >Arbitre</label
+                          >
+                          <input
+                            type="text"
+                            :id="'edit-arbitrator-' + index"
+                            v-model="flight.arbitratorName"
+                            placeholder="Nom de l'arbitre"
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="organizingClub">Club organisateur</label>
-                    <input
-                      type="text"
-                      id="organizingClub"
-                      v-model="form.organizingClub"
-                    />
                   </div>
 
                   <div class="flex justify-end gap-3 mt-6">

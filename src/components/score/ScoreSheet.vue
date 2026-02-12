@@ -36,11 +36,15 @@ const selectedTarget = computed(() =>
   targets.value.find((t) => t.number === props.selectedTargetNumber)
 );
 
+const presentArcherIds = computed(() => {
+  return new Set(props.competition.archers.filter(a => a.isPresent).map(a => a.id));
+});
+
 const targetAssignments = computed(() => {
   const assignments = currentFlight.value?.assignments.filter(
-    (a) => a.targetNumber === props.selectedTargetNumber
+    (a) => a.targetNumber === props.selectedTargetNumber && presentArcherIds.value.has(a.archerId)
   ) || [];
-  
+
   // Sort assignments by position alphabetically
   return assignments.sort((a, b) => a.position.localeCompare(b.position));
 });

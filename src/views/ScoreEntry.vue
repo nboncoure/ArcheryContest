@@ -46,6 +46,16 @@ if (competition.value && competition.value.flights.length > 0) {
   selectedFlightId.value = competition.value.flights[0].id;
 }
 
+const presentArcherIds = computed(() => {
+  if (!competition.value) return new Set<string>();
+  return new Set(competition.value.archers.filter(a => a.isPresent).map(a => a.id));
+});
+
+const flightAssignments = computed(() => {
+  const assignments = currentFlight.value?.assignments || [];
+  return assignments.filter(a => presentArcherIds.value.has(a.archerId));
+});
+
 const targets = computed(() => currentFlight.value?.targets || []);
 
 const selectedTarget = computed(() =>
@@ -200,7 +210,7 @@ const selectedTarget = computed(() =>
           <div class="w-80">
             <ArcherSelector
               :archers="competition?.archers || []"
-              :assignments="currentFlight?.assignments || []"
+              :assignments="flightAssignments"
               @select-target="selectedTargetNumber = $event"
             />
           </div>
@@ -209,7 +219,7 @@ const selectedTarget = computed(() =>
         <TargetSelector
           v-model="selectedTargetNumber"
           :targets="targets"
-          :assignments="currentFlight?.assignments || []"
+          :assignments="flightAssignments"
           :scores="competition?.scores || []"
           :selectedRoundId="selectedRoundId"
           @select="selectedTargetNumber = $event"

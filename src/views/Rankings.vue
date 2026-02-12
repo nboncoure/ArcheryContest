@@ -69,6 +69,9 @@ const filteredArchers = computed(() => {
   if (!competition.value) return [];
 
   return competition.value.archers.filter((archer) => {
+    // Hide absent archers
+    if (!archer.isPresent) return false;
+
     // Apply category and bow type filters
     if (selectedCategory.value && archer.category !== selectedCategory.value)
       return false;

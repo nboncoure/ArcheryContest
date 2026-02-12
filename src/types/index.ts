@@ -23,6 +23,7 @@ export type TargetPosition = "A" | "B" | "C" | "D" | "E" | "F";
 export type AgeCategoryCode = "P" | "B" | "M" | "C" | "J" | "S" | "V" | "SV";
 export type BowTypeCode = "SV" | "AV" | "COSV" | "COAV" | "AH";
 export type CompetitionStatus = "draft" | "active" | "completed";
+export type FaceType = "monospot" | "trispot";
 
 export interface AgeCategory {
   code: AgeCategoryCode;
@@ -60,6 +61,7 @@ export interface Target {
   number: number;
   distance: number;
   faceSize: number;
+  faceType?: FaceType;
   maxArchers: number;
   bowTypeCode?: BowTypeCode;
 }

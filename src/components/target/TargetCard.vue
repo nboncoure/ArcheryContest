@@ -21,6 +21,19 @@ const positionBymaxArchers = computed (() => {
   return props.positions.slice(0, props.target.maxArchers)
 })
 
+const distanceColorClass = computed(() => {
+  const colors: Record<number, string> = {
+    10: 'border-l-emerald-400',
+    15: 'border-l-sky-400',
+    18: 'border-l-indigo-500',
+    25: 'border-l-amber-400',
+    40: 'border-l-rose-400',
+  }
+  return colors[props.target.distance] ?? 'border-l-gray-300'
+})
+
+const isTrispot = computed(() => props.target.faceType === 'trispot')
+
 const emit = defineEmits<{
   "position-drag-start": [event: DragEvent, position: TargetPosition];
   "position-drag-over": [event: DragEvent, position: TargetPosition];
@@ -84,16 +97,19 @@ function onTargetDragOver(event: DragEvent) {
 <template>
   <div
     ref="cardRef"
-    class="target-card"
-    :class="{
-      'target-drag-over': isTargetDragOver,
-      'is-being-dragged': isBeingDragged,
-    }"
+    class="target-card border-l-4"
+    :class="[
+      distanceColorClass,
+      {
+        'target-drag-over': isTargetDragOver,
+        'is-being-dragged': isBeingDragged,
+      },
+    ]"
     @dragover="onTargetDragOver"
     @dragleave.self="(e: DragEvent) => $emit('target-drag-leave', e)"
     @drop.prevent="(e: DragEvent) => $emit('target-drop', e)"
   >
-    <div class="target-header">
+    <div class="target-header" :class="{ 'bg-amber-50': isTrispot }">
       <div
         v-if="!readonly"
         class="drag-handle"
@@ -133,11 +149,13 @@ function onTargetDragOver(event: DragEvent) {
             title="Configurer la cible"
           >
             <Icon icon="material-symbols-light:target" class="w-4 h-4" />
-            Blason {{ target.faceSize }}cm
+            <span v-if="isTrispot" class="font-semibold text-amber-700">Trispot</span>
+            <template v-else>Blason</template> {{ target.faceSize }}cm
           </button>
           <span v-else class="flex items-center gap-1">
             <Icon icon="material-symbols-light:target" class="w-4 h-4" />
-            Blason {{ target.faceSize }}cm
+            <span v-if="isTrispot" class="font-semibold text-amber-700">Trispot</span>
+            <template v-else>Blason</template> {{ target.faceSize }}cm
           </span>
         </div>
       </div>

@@ -5,10 +5,11 @@ import type {
   BowType,
   BowTypeCode,
   CompetitionType,
+  FaceType,
   Target,
 } from "../types";
 
-type TargetConfig = Pick<Target, "distance" | "faceSize">;
+type TargetConfig = Pick<Target, "distance" | "faceSize"> & { faceType?: FaceType };
 
 type CompetitionTargetConfig = Record<
   CompetitionType,
@@ -35,7 +36,7 @@ export const BOW_TYPES: BowType[] = [
   { code: "AV", label: "Classique avec viseur", isCompound: false },
   { code: "COSV", label: "Poulie sans viseur", isCompound: true },
   { code: "COAV", label: "Poulie avec viseur", isCompound: true },
-  { code: "AH", label: "Autre Handicapé", isCompound: false },
+  { code: "AH", label: "Autre Handicape", isCompound: false },
 ];
 
 export function getBowTypeByCode(code: string): BowType | undefined {
@@ -73,12 +74,12 @@ export const COMPETITION_TARGET_CONFIG: CompetitionTargetConfig = {
       SV: { distance: 25, faceSize: 60 },
     },
     COAV: {
-      M: { distance: 18, faceSize: 60 },
-      C: { distance: 18, faceSize: 60 },
-      J: { distance: 25, faceSize: 60 },
-      S: { distance: 25, faceSize: 60 },
-      V: { distance: 25, faceSize: 60 },
-      SV: { distance: 25, faceSize: 60 },
+      M: { distance: 18, faceSize: 60, faceType: "trispot" },
+      C: { distance: 18, faceSize: 60, faceType: "trispot" },
+      J: { distance: 25, faceSize: 60, faceType: "trispot" },
+      S: { distance: 25, faceSize: 60, faceType: "trispot" },
+      V: { distance: 25, faceSize: 60, faceType: "trispot" },
+      SV: { distance: 25, faceSize: 60, faceType: "trispot" },
     },
     AH: {
       M: { distance: 18, faceSize: 60 },
@@ -119,12 +120,12 @@ export const COMPETITION_TARGET_CONFIG: CompetitionTargetConfig = {
       SV: { distance: 25, faceSize: 60 },
     },
     COAV: {
-      M: { distance: 18, faceSize: 60 },
-      C: { distance: 18, faceSize: 60 },
-      J: { distance: 25, faceSize: 60 },
-      S: { distance: 25, faceSize: 60 },
-      V: { distance: 25, faceSize: 60 },
-      SV: { distance: 25, faceSize: 60 },
+      M: { distance: 18, faceSize: 60, faceType: "trispot" },
+      C: { distance: 18, faceSize: 60, faceType: "trispot" },
+      J: { distance: 25, faceSize: 60, faceType: "trispot" },
+      S: { distance: 25, faceSize: 60, faceType: "trispot" },
+      V: { distance: 25, faceSize: 60, faceType: "trispot" },
+      SV: { distance: 25, faceSize: 60, faceType: "trispot" },
     },
     AH: {
       M: { distance: 18, faceSize: 60 },

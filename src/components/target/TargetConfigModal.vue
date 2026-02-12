@@ -107,6 +107,13 @@ function submit() {
                       </select>
                     </div>
                     <div class="mb-0 form-group">
+                      <label class="text-sm">Type de blason</label>
+                      <select v-model="editingTarget.faceType">
+                        <option value="monospot">Monospot</option>
+                        <option value="trispot">Trispot</option>
+                      </select>
+                    </div>
+                    <div class="mb-0 form-group">
                       <label class="text-sm">Nombre d'archers maximum</label>
                       <input
                         type="number"

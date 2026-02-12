@@ -50,6 +50,7 @@ export function configureTargets(competition: Competition): Flight[] {
           (t) =>
             t.targetConfig.distance === targetConfig.distance &&
             t.targetConfig.faceSize === targetConfig.faceSize &&
+            t.targetConfig.faceType === targetConfig.faceType &&
             t.targetConfig.maxArchers === targetConfig.maxArchers &&
             t.targetConfig.bowTypeCode === targetConfig.bowTypeCode
         );
@@ -95,6 +96,7 @@ export function configureTargets(competition: Competition): Flight[] {
               number: i + 1,
               distance: targetConfig.distance || 0,
               faceSize: targetConfig.faceSize || 0,
+              faceType: targetConfig.faceType,
               maxArchers: targetConfig.maxArchers || 0,
               bowTypeCode: targetConfig.bowTypeCode,
             })
@@ -183,6 +185,7 @@ export function assignArchers(
       .filter(target =>
         target.distance === group.targetConfig.distance &&
         target.faceSize === group.targetConfig.faceSize &&
+        target.faceType === group.targetConfig.faceType &&
         (!target.bowTypeCode || target.bowTypeCode === group.bowType.code)
       )
       .sort((a, b) => a.number - b.number);

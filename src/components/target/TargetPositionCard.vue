@@ -36,7 +36,7 @@ defineEmits<{
             {{ archer.bowType.label }}
           </span>
           <span v-if="archer.isBeginner" class="w-2 h-2 rounded-full bg-blue-400" title="Débutant"></span>
-          <span v-if="archer.isDisabled" class="w-2 h-2 rounded-full bg-orange-400" title="Handicapé"></span>
+          <span v-if="archer.isDisabled || archer.bowType?.code === 'AH'" class="w-2 h-2 rounded-full bg-orange-400" title="Handicapé"></span>
           <span v-if="archer.isVisuallyImpaired" class="w-2 h-2 rounded-full bg-purple-400" title="Malvoyant"></span>
         </div>
       </div>

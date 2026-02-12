@@ -13,7 +13,7 @@
         La liste des archers est en lecture seule. Pour modifier les archers, la compétition doit être en mode brouillon.
       </div>
 
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
         <div class="form-group">
           <label for="search">Rechercher</label>
           <div class="relative">
@@ -49,6 +49,15 @@
             >
               {{ bowType.label }}
             </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="tag">Profil</label>
+          <select id="tag" v-model="filters.tag">
+            <option value="">Tous</option>
+            <option value="beginner">Débutant</option>
+            <option value="disabled">Handicapé</option>
+            <option value="visuallyImpaired">Malvoyant</option>
           </select>
         </div>
       </div>
@@ -101,7 +110,7 @@
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center gap-1">
                   <span v-if="archer.isBeginner" class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">Déb.</span>
-                  <span v-if="archer.isDisabled" class="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">Hand.</span>
+                  <span v-if="archer.isDisabled || archer.bowType?.code === 'AH'" class="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">Hand.</span>
                   <span v-if="archer.isVisuallyImpaired" class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">Malv.</span>
                 </div>
               </td>
@@ -261,6 +270,7 @@ const filters = ref({
   search: "",
   category: "",
   bowType: "",
+  tag: "",
 });
 
 const sortField = ref("lastName");
@@ -300,7 +310,13 @@ const filteredArchers = computed(() => {
     const bowTypeMatch =
       !filters.value.bowType || archer.bowType.code === filters.value.bowType;
 
-    return searchMatch && categoryMatch && bowTypeMatch;
+    const tagMatch =
+      !filters.value.tag ||
+      (filters.value.tag === "beginner" && archer.isBeginner) ||
+      (filters.value.tag === "disabled" && (archer.isDisabled || archer.bowType?.code === "AH")) ||
+      (filters.value.tag === "visuallyImpaired" && archer.isVisuallyImpaired);
+
+    return searchMatch && categoryMatch && bowTypeMatch && tagMatch;
   });
 });
 

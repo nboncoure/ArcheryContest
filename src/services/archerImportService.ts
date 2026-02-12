@@ -145,7 +145,7 @@ export const archerImportService = {
         category: categoryCode,
         license: license.toString(),
         isBeginner: row["Débutant"] === "D" || row["Débutant"] === "Oui",
-        isDisabled: row["Handicapé"] === "H" || row["Handicapé"] === "Oui",
+        isDisabled: row["Handicapé"] === "H" || row["Handicapé"] === "Oui" || bowType?.code === "AH",
         isVisuallyImpaired: row["Malvoyant"] === "M" || row["Malvoyant"] === "Oui",
         isPresent: false,
         importStatus,

@@ -103,13 +103,18 @@ const groupedRankings = computed((): RankingCategory[] => {
       const categoryData = CATEGORIES.find(cat => cat.code === name);
       
       if (categoryData) {
-        // Recover detailed information
-        const gender = categoryData.gender === 'M' ? 'Masculin' : 'Féminine';
-        const ageCategory = getAgeCategoryByCode(categoryData.ageCategory);
         const bowType = getBowTypeByCode(categoryData.bowType);
 
-        if (ageCategory && bowType) {
-          description = `${ageCategory.minAge}/${ageCategory.maxAge} ans ${gender} ${bowType.label}`;
+        if (bowType?.code === 'AH') {
+          // All handicapped archers are grouped in a single category
+          description = bowType.label;
+        } else {
+          const gender = categoryData.gender === 'M' ? 'Masculin' : 'Féminine';
+          const ageCategory = getAgeCategoryByCode(categoryData.ageCategory);
+
+          if (ageCategory && bowType) {
+            description = `${ageCategory.minAge}/${ageCategory.maxAge} ans ${gender} ${bowType.label}`;
+          }
         }
       }
       

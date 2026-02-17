@@ -81,6 +81,7 @@ function handleSubmit() {
           <select id="type" v-model="form.type" required>
             <option value="indoor">Salle</option>
             <option value="outdoor">Extérieur</option>
+            <option value="18m">18 mètres</option>
           </select>
         </div>
 

@@ -185,7 +185,7 @@ function saveCompetition() {
               </div>
               <div class="flex items-center text-gray-600">
                 <ArrowsPointingOutIcon class="w-5 h-5 mr-2" />
-                {{ competition.type === "indoor" ? "Salle" : competition.type === "18m" ? "18m" : "Extérieur" }}
+                {{ competition.type === "indoor" ? "Salle" : competition.type === "18m" ? "18 mètres" : "Extérieur" }}
               </div>
               <div :class="statusClass(competition.status)">
                 {{ translateStatus(competition.status) }}
@@ -390,6 +390,7 @@ function saveCompetition() {
                       <select id="type" v-model="form.type" required>
                         <option value="indoor">Salle</option>
                         <option value="outdoor">Extérieur</option>
+                        <option value="18m">18 mètres</option>
                       </select>
                     </div>
 

@@ -486,7 +486,8 @@ function drawClubSection(
     });
 
     // Bow type
-    page.drawText(`${archer.ageCategory.minAge}/${archer.ageCategory.maxAge} ans ${archer.gender} ${archer.bowType.code}`, {
+    const ageLabel = archer.ageCategory.code === 'P' ? `- de ${archer.ageCategory.maxAge + 1} ans` : archer.ageCategory.code === 'SV' ? `${archer.ageCategory.minAge} ans et +` : `${archer.ageCategory.minAge}/${archer.ageCategory.maxAge} ans`;
+    page.drawText(`${ageLabel} ${archer.gender} ${archer.bowType.code}`, {
       x: tableStartX + columns[5].x + 3,
       y: currentY - 14,
       size: 9,

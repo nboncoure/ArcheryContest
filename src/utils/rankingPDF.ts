@@ -1,7 +1,6 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import type { Competition, Archer } from '@/types';
 import type { RankingCategory } from '@/types/ranking';
-import { CATEGORIES } from '@/constants/staticData'; // Import the CATEGORIES constant
 import ArcherScoreColumn from '@/components/score/ArcherScoreColumn.vue';
 import ScoreEntry from '@/views/ScoreEntry.vue';
 import ScoreSheet from '@/components/score/ScoreSheet.vue';
@@ -54,7 +53,6 @@ export async function generateRankingPDF(
   // Loading fonts
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const fontItalic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
   // Configure colors
   const colorPrimary = rgb(0.15, 0.39, 0.92); // #2563eb (primary)
@@ -74,20 +72,8 @@ export async function generateRankingPDF(
   const rowHeight = 25;
   const categoryMargin = 20;
   
-  // Group categories for page optimization
-  // Sort by the order defined in CATEGORIES
-  const categoriesToProcess = [...categories].sort((a, b) => {
-    // Finding each category index in CATEGORIES
-    const indexA = CATEGORIES.findIndex(cat => cat.code === a.name);
-    const indexB = CATEGORIES.findIndex(cat => cat.code === b.name);
-    
-    // If category not found, place it at the end
-    if (indexA === -1) return 1;
-    if (indexB === -1) return -1;
-    
-    // Else, sort by order in CATEGORIES
-    return indexA - indexB;
-  });
+  // Categories are already sorted by the caller (special categories first, then by CATEGORIES order)
+  const categoriesToProcess = [...categories];
   
   // Creating the first page
   let page = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -177,7 +163,6 @@ export async function generateRankingPDF(
       contentWidth,
       fontBold,
       fontRegular,
-      fontItalic,
       colorPrimary,
       colorText,
       colorGrey,
@@ -320,7 +305,6 @@ function drawCategory(
   width: number,
   fontBold: any,
   fontRegular: any,
-  fontItalic: any,
   colorPrimary: any,
   colorText: any,
   colorGrey: any,
@@ -343,8 +327,8 @@ function drawCategory(
     page.drawText(category.description, {
       x: x + 5,
       y: currentY,
-      size: 9,
-      font: fontItalic,
+      size: 11,
+      font: fontBold,
       color: colorText
     });
     

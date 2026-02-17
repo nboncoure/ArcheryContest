@@ -121,7 +121,7 @@ const groupedRankings = computed((): RankingCategory[] => {
           const ageCategory = getAgeCategoryByCode(categoryData.ageCategory);
 
           if (ageCategory && bowType) {
-            const ageLabel = ageCategory.code === 'P' ? `- de ${ageCategory.maxAge + 1} ans` : `${ageCategory.minAge}/${ageCategory.maxAge} ans`;
+            const ageLabel = ageCategory.code === 'P' ? `- de ${ageCategory.maxAge + 1} ans` : ageCategory.code === 'SV' ? `${ageCategory.minAge} ans et +` : `${ageCategory.minAge}/${ageCategory.maxAge} ans`;
             description = `${ageLabel} ${gender} ${bowType.label}`;
           }
         }

@@ -3,11 +3,11 @@ import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCompetitionStore } from '@/stores/competitionsStore';
 import { storeToRefs } from 'pinia';
-import { Switch } from '@headlessui/vue'
+import { Switch, Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/vue'
 import { generateAttendancesheetPDF } from '@/utils/attendancesheetPDF';
 import { generatePlacementByClubPDF } from '@/utils/placementByClubPDF';
-import type { Archer } from '../types';
-import { DocumentArrowDownIcon, MagnifyingGlassIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/vue/24/outline';
+import type { Archer, Flight } from '../types';
+import { DocumentArrowDownIcon, MagnifyingGlassIcon, ChevronUpIcon, ChevronDownIcon, CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/24/outline';
 import { useCompetitionStatus } from '@/composables/useCompetitionStatus';
 
 
@@ -18,9 +18,18 @@ const competitionId = route.params.id as string;
 
 const isGeneratingPDF = ref(false);
 const showExportModal = ref(false);
+const selectedFlightId = ref<number>();
 
 const competition = computed(() =>
   competitions.value.find((c) => c.id === route.params.id)
+);
+
+if (competition.value && competition.value.flights.length > 0) {
+  selectedFlightId.value = competition.value.flights[0].id;
+}
+
+const currentFlight = computed(() =>
+  competition.value?.flights.find((f: Flight) => f.id === selectedFlightId.value)
 );
 
 const { canEditAttendance, isDraft } = useCompetitionStatus(competition);
@@ -46,8 +55,14 @@ const archers = computed(
   () => competitions.value.find((c) => c.id === competitionId)?.archers || []
 );
 
+const flightArchers = computed(() => {
+  if (!currentFlight.value) return [];
+  const flightArcherIds = new Set(currentFlight.value.assignments.map(a => a.archerId));
+  return archers.value.filter(archer => flightArcherIds.has(archer.id));
+});
+
 const filteredArchers = computed(() => {
-  return archers.value.filter((archer) => {
+  return flightArchers.value.filter((archer) => {
     const searchMatch =
       !filters.value.search ||
       [archer.lastName, archer.firstName, archer.club, archer.category]
@@ -89,30 +104,28 @@ function sort(field: string) {
 }
 
 async function generatePDF() {
-  if (!competition.value || isGeneratingPDF.value) return;
+  if (!competition.value || !currentFlight.value || isGeneratingPDF.value) return;
 
   try {
     isGeneratingPDF.value = true;
     showExportModal.value = false;
 
-    for (const flight of competition.value.flights) {
-      const pdfBytes = await generateAttendancesheetPDF(
-        competition.value,
-        archers.value,
-        flight,
-      );
+    const pdfBytes = await generateAttendancesheetPDF(
+      competition.value,
+      archers.value,
+      currentFlight.value,
+    );
 
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Rapport arbitre - ${flight.name}.pdf`;
-      document.body.appendChild(link);
-      link.click();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Rapport arbitre - ${currentFlight.value.name}.pdf`;
+    document.body.appendChild(link);
+    link.click();
 
-      URL.revokeObjectURL(url);
-      document.body.removeChild(link);
-    }
+    URL.revokeObjectURL(url);
+    document.body.removeChild(link);
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
     alert('Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.');
@@ -173,22 +186,89 @@ async function generateClubPDF() {
         </div>
 
         <div class="flex items-center justify-between mb-6">
-          <!-- Removed the button from here -->
-            <button 
-            class="btn btn-primary flex items-center gap-2"
-            @click="generatePDF"
-          >
-            <DocumentArrowDownIcon class="w-5 h-5" />
-            {{ 'Rapport d\'arbitrage' }}
-          </button>
+          <div class="flex items-center gap-4">
+            <div class="mb-0 form-group">
+              <Listbox v-model="selectedFlightId">
+                <div class="relative w-40 mt-1">
+                  <ListboxButton
+                    class="relative w-full py-2 pl-3 pr-10 text-left bg-white rounded-lg shadow-md cursor-default focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm"
+                  >
+                    <span class="block truncate">{{
+                      competition?.flights.find(
+                        (flight) => flight.id === selectedFlightId
+                      )?.name
+                    }}</span>
+                    <span
+                      class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none"
+                    >
+                      <ChevronUpDownIcon
+                        class="w-5 h-5 text-gray-400"
+                        aria-hidden="true"
+                      />
+                    </span>
+                  </ListboxButton>
+                  <transition
+                    leave-active-class="transition duration-100 ease-in"
+                    leave-from-class="opacity-100"
+                    leave-to-class="opacity-0"
+                  >
+                    <ListboxOptions
+                      class="absolute w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black/5 focus:outline-none sm:text-sm z-10"
+                    >
+                      <ListboxOption
+                        v-slot="{ active, selected }"
+                        v-for="flight in competition?.flights"
+                        :key="flight.id"
+                        :value="flight.id"
+                        as="template"
+                      >
+                        <li
+                          :class="[
+                            active
+                              ? 'bg-amber-100 text-amber-900'
+                              : 'text-gray-900',
+                            'relative cursor-default text-left select-none py-2 pl-10 pr-4',
+                          ]"
+                        >
+                          <span
+                            :class="[
+                              selected ? 'font-medium' : 'font-normal',
+                              'block truncate',
+                            ]"
+                            >{{ flight.name }}</span
+                          >
+                          <span
+                            v-if="selected"
+                            class="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600"
+                          >
+                            <CheckIcon class="w-5 h-5" aria-hidden="true" />
+                          </span>
+                        </li>
+                      </ListboxOption>
+                    </ListboxOptions>
+                  </transition>
+                </div>
+              </Listbox>
+            </div>
+          </div>
 
-          <button 
-            class="btn btn-primary flex items-center gap-2"
-            @click="generateClubPDF"
-          >
-            <DocumentArrowDownIcon class="w-5 h-5" />
-            {{ 'Placement par club' }}
-          </button>
+          <div class="flex items-center gap-2">
+            <button
+              class="btn btn-primary flex items-center gap-2"
+              @click="generatePDF"
+            >
+              <DocumentArrowDownIcon class="w-5 h-5" />
+              {{ 'Rapport d\'arbitrage' }}
+            </button>
+
+            <button
+              class="btn btn-primary flex items-center gap-2"
+              @click="generateClubPDF"
+            >
+              <DocumentArrowDownIcon class="w-5 h-5" />
+              {{ 'Placement par club' }}
+            </button>
+          </div>
         </div>
    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div class="form-group">

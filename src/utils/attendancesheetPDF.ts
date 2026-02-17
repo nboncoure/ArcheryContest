@@ -20,22 +20,24 @@ export async function generateAttendancesheetPDF(
 
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-  const colorText = rgb(0.15, 0.39, 0.92); // #2563eb (text)
+  const colorText = rgb(0, 0, 0);
 
   const pages = pdfDoc.getPages()
   const firstPage = pages[0]
   const { width } = firstPage.getSize()
 
-if (showDate) {
-    const dateStr = new Date(competition.date).toLocaleDateString();
-    firstPage.drawText(`${dateStr}`, {
+if (showDate && flight.startTime) {
+    const flightDate = new Date(flight.startTime);
+    const dateStr = flightDate.toLocaleDateString();
+    const timeStr = flightDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    firstPage.drawText(`${dateStr} ${timeStr}`, {
       x: width - 415,
       y: 675,
       size: 10,
       font: fontRegular,
       color: colorText,
     });
-  } 
+  }
 
   firstPage.drawText(`${competition.location}`, {
     x: width - 415,
@@ -517,8 +519,9 @@ if (showDate) {
     color: colorText,
   });
 
-  if (showDate) {
-    const dateStr = new Date(competition.date).toLocaleDateString();
+  if (showDate && flight.startTime) {
+    const flightDate = new Date(flight.startTime);
+    const dateStr = flightDate.toLocaleDateString();
     firstPage.drawText(`${dateStr}`, {
       x: width - 240,
       y: 121,

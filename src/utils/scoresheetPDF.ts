@@ -48,7 +48,7 @@ export async function generateScoreSheets(
 
       // Mention Débutant ou Autre handicapé
       if (archer?.isBeginner || archer?.isDisabled) {
-        const mention = archer.isBeginner ? 'Débutant' : 'Autre handicapé';
+        const mention = archer.isBeginner ? 'Débutant' : 'Autre handicape';
         const mentionWidth = fontBold.widthOfTextAtSize(mention, 12);
         const { height: pageHeight } = page.getSize();
         page.drawText(mention, {
@@ -80,7 +80,7 @@ export async function generateScoreSheets(
       });
 
       // Catégorie de l'archer : genre, type d'arc, viseur
-      if (archer?.bowType && archer?.gender) {
+      if (archer?.bowType && archer?.gender && !archer?.isDisabled) {
         const bowCode = archer.bowType.code as BowTypeCode;
         const isCompound = bowCode === 'COSV' || bowCode === 'COAV';
         const hasSight = bowCode === 'AV' || bowCode === 'COAV';
@@ -106,16 +106,16 @@ export async function generateScoreSheets(
       }
 
       // Cible et Position (partie supérieure droite)
-      const labelSize = 12;
+      const labelSize = 20;
       const valueSize = 40;
-      const infoY = 680;
+      const infoY = 655;
 
       const cibleLabel = 'Cible ';
       page.drawText(cibleLabel, {
         rotate: degrees(90), x: 80, y: infoY, size: labelSize, font, color: colorText,
       });
       page.drawText(`${assignment.targetNumber}`, {
-        rotate: degrees(90), x: 90, y: infoY + 55, size: valueSize, font: fontBold, color: colorText,
+        rotate: degrees(90), x: 90, y: infoY + 80, size: valueSize, font: fontBold, color: colorText,
       });
 
       const posLabel = 'Position ';
@@ -123,8 +123,22 @@ export async function generateScoreSheets(
         rotate: degrees(90), x: 120, y: infoY, size: labelSize, font, color: colorText,
       });
       page.drawText(`${assignment.position}`, {
-        rotate: degrees(90), x: 130, y: infoY + 55, size: valueSize, font: fontBold, color: colorText,
+        rotate: degrees(90), x: 130, y: infoY + 80, size: valueSize, font: fontBold, color: colorText,
       });
+
+      // Nom du départ (en haut à droite, même niveau que la date)
+      if (flight?.name) {
+        const flightNameWidth = fontBold.widthOfTextAtSize(flight.name, 12);
+        const { height: pageH } = page.getSize();
+        page.drawText(flight.name, {
+          rotate: degrees(90),
+          x: 45,
+          y: pageH - flightNameWidth - 20,
+          size: 12,
+          font: fontBold,
+          color: colorText,
+        });
+      }
 
       if (flight?.startTime) {
         page.drawText(`${format(flight.startTime, 'dd/MM/yyyy')}`, {

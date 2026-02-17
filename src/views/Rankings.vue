@@ -86,9 +86,14 @@ const filteredArchers = computed(() => {
 
 const groupedRankings = computed((): RankingCategory[] => {
   const groups = new Map<string, Archer[]>();
+  const beginners: Archer[] = [];
 
-  // Group archers by category
+  // Group archers by category, separating beginners
   filteredArchers.value.forEach((archer) => {
+    if (archer.isBeginner) {
+      beginners.push(archer);
+      return;
+    }
     const key = archer.category || 'Sans catégorie';
     if (!groups.has(key)) {
       groups.set(key, []);
@@ -97,7 +102,7 @@ const groupedRankings = computed((): RankingCategory[] => {
   });
 
   // Sort archers in each group
-  return Array.from(groups.entries())
+  const result = Array.from(groups.entries())
     .map(([name, archers]) => {
       // Generate the category description
       let description = '';
@@ -116,7 +121,8 @@ const groupedRankings = computed((): RankingCategory[] => {
           const ageCategory = getAgeCategoryByCode(categoryData.ageCategory);
 
           if (ageCategory && bowType) {
-            description = `${ageCategory.minAge}/${ageCategory.maxAge} ans ${gender} ${bowType.label}`;
+            const ageLabel = ageCategory.code === 'P' ? `- de ${ageCategory.maxAge + 1} ans` : `${ageCategory.minAge}/${ageCategory.maxAge} ans`;
+            description = `${ageLabel} ${gender} ${bowType.label}`;
           }
         }
       }
@@ -166,14 +172,48 @@ const groupedRankings = computed((): RankingCategory[] => {
       const indexA = CATEGORIES.findIndex(cat => cat.code === a.name);
       const indexB = CATEGORIES.findIndex(cat => cat.code === b.name);
 
-      
+
       // If a category is not found, place it at the end
       if (indexA === -1) return 1;
       if (indexB === -1) return -1;
-      
+
       // Else, sort by order in CATEGORIES
       return indexA - indexB;
     });
+
+  // Separate special categories (AH) and regular categories
+  const specialCategories: RankingCategory[] = [];
+  const regularCategories: RankingCategory[] = [];
+
+  for (const cat of result) {
+    if (cat.name === 'AH') {
+      specialCategories.push(cat);
+    } else {
+      regularCategories.push(cat);
+    }
+  }
+
+  // Add beginners as a special category
+  if (beginners.length > 0) {
+    specialCategories.unshift({
+      name: 'Débutants',
+      description: 'Tous les archers débutants',
+      archers: beginners.sort((a, b) => {
+        const scoreA = getArcherScore(a);
+        const scoreB = getArcherScore(b);
+        if (!scoreA?.total) return 1;
+        if (!scoreB?.total) return -1;
+        if (scoreA.total !== scoreB.total) return scoreB.total - scoreA.total;
+        if (scoreA.tens !== scoreB.tens) return scoreB.tens! - scoreA.tens!;
+        if (scoreA.nines !== scoreB.nines) return scoreB.nines! - scoreA.nines!;
+        if (scoreA.eights !== scoreB.eights) return scoreB.eights! - scoreA.eights!;
+        return scoreA.birthYear! - scoreB.birthYear!;
+      }),
+    });
+  }
+
+  // Special categories first, then regular categories
+  return [...specialCategories, ...regularCategories];
 });
 
 function getArcherScore(archer: Archer): ArcherScore | undefined {

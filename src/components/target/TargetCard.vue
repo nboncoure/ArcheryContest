@@ -33,6 +33,10 @@ const distanceColorClass = computed(() => {
 })
 
 const isTrispot = computed(() => props.target.faceType === 'trispot')
+const faceTypeLabel = computed(() => {
+  const labels: Record<string, string> = { blason: 'Blason', monospot: 'Monospot', trispot: 'Trispot' }
+  return labels[props.target.faceType ?? 'blason'] ?? 'Blason'
+})
 
 const emit = defineEmits<{
   "position-drag-start": [event: DragEvent, position: TargetPosition];
@@ -149,13 +153,11 @@ function onTargetDragOver(event: DragEvent) {
             title="Configurer la cible"
           >
             <Icon icon="material-symbols-light:target" class="w-4 h-4" />
-            <span v-if="isTrispot" class="font-semibold text-amber-700">Trispot</span>
-            <template v-else>Blason</template> {{ target.faceSize }}cm
+            <span :class="{ 'font-semibold text-amber-700': isTrispot }">{{ faceTypeLabel }}</span> {{ target.faceSize }}cm
           </button>
           <span v-else class="flex items-center gap-1">
             <Icon icon="material-symbols-light:target" class="w-4 h-4" />
-            <span v-if="isTrispot" class="font-semibold text-amber-700">Trispot</span>
-            <template v-else>Blason</template> {{ target.faceSize }}cm
+            <span :class="{ 'font-semibold text-amber-700': isTrispot }">{{ faceTypeLabel }}</span> {{ target.faceSize }}cm
           </span>
         </div>
       </div>

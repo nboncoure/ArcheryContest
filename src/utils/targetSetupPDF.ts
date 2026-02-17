@@ -236,7 +236,8 @@ function drawTargetRow(
   })
 
   // Type de blason
-  const faceTypeLabel = target.faceType === 'trispot' ? 'Trispot' : 'Monospot'
+  const faceTypeLabels: Record<string, string> = { trispot: 'Trispot', monospot: 'Monospot', blason: 'Blason' }
+  const faceTypeLabel = faceTypeLabels[target.faceType ?? 'blason'] ?? 'Blason'
   page.drawText(faceTypeLabel, {
     x: x + columns[2].x + 8,
     y: textY,

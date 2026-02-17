@@ -24,7 +24,7 @@ const editingTarget = ref<Target | undefined>();
 watch(
   () => props.target,
   (newTarget) => {
-    editingTarget.value = newTarget ? { ...newTarget } : undefined;
+    editingTarget.value = newTarget ? { ...newTarget, faceType: newTarget.faceType ?? 'blason' } : undefined;
   },
   { immediate: true }
 );
@@ -109,6 +109,7 @@ function submit() {
                     <div class="mb-0 form-group">
                       <label class="text-sm">Type de blason</label>
                       <select v-model="editingTarget.faceType">
+                        <option value="blason">Blason</option>
                         <option value="monospot">Monospot</option>
                         <option value="trispot">Trispot</option>
                       </select>

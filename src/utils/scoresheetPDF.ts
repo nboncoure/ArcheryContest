@@ -18,7 +18,7 @@ export async function generateScoreSheets(
 
    // let page = pdfDoc.getPages()[0];
 
-    const colorText = rgb(0.15, 0.39, 0.92); // #2563eb (text)
+    const colorText = rgb(0, 0, 0);
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
    
@@ -45,6 +45,21 @@ export async function generateScoreSheets(
         font: fontBold,
         color: colorText,
       });
+
+      // Mention Débutant ou Autre handicapé
+      if (archer?.isBeginner || archer?.isDisabled) {
+        const mention = archer.isBeginner ? 'Débutant' : 'Autre handicapé';
+        const mentionWidth = fontBold.widthOfTextAtSize(mention, 12);
+        const { height: pageHeight } = page.getSize();
+        page.drawText(mention, {
+          rotate: degrees(90),
+          x: 150,
+          y: (pageHeight - mentionWidth) / 2,
+          size: 12,
+          font: fontBold,
+          color: colorText,
+        });
+      }
 
       page.drawText(`${archer?.birthYear}`, {
         rotate: degrees(90),
@@ -89,6 +104,27 @@ export async function generateScoreSheets(
         }
         page.drawText('X', { ...categoryMark, x: 250, y: sightY });
       }
+
+      // Cible et Position (partie supérieure droite)
+      const labelSize = 12;
+      const valueSize = 40;
+      const infoY = 680;
+
+      const cibleLabel = 'Cible ';
+      page.drawText(cibleLabel, {
+        rotate: degrees(90), x: 80, y: infoY, size: labelSize, font, color: colorText,
+      });
+      page.drawText(`${assignment.targetNumber}`, {
+        rotate: degrees(90), x: 90, y: infoY + 55, size: valueSize, font: fontBold, color: colorText,
+      });
+
+      const posLabel = 'Position ';
+      page.drawText(posLabel, {
+        rotate: degrees(90), x: 120, y: infoY, size: labelSize, font, color: colorText,
+      });
+      page.drawText(`${assignment.position}`, {
+        rotate: degrees(90), x: 130, y: infoY + 55, size: valueSize, font: fontBold, color: colorText,
+      });
 
       if (flight?.startTime) {
         page.drawText(`${format(flight.startTime, 'dd/MM/yyyy')}`, {

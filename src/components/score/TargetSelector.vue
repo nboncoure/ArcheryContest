@@ -22,11 +22,17 @@ function getTargetAssignments(targetNumber: number) {
     .sort((a, b) => a.position.localeCompare(b.position));
 }
 
+function getArcherRoundScore(archerId: string, roundId: number): number | null {
+  return props.scores.find(s => s.archerId === archerId)?.rounds.find(r => r.id === roundId)?.total || null;
+}
+
+function getArcherTotal(archerId: string): number | null {
+  return props.scores.find(s => s.archerId === archerId)?.total || null;
+}
+
+// Keep for completion tracking
 function getArcherScore(archerId: string): number | null {
-  if (!props.selectedRoundId) {
-    return props.scores.find(s => s.archerId === archerId)?.total || null;
-  }
-  return props.scores.find(s => s.archerId === archerId)?.rounds.find(round => round.id === props.selectedRoundId)?.total || null;
+  return getArcherRoundScore(archerId, props.selectedRoundId);
 }
 
 function getAssignmentCount(targetNumber: number): number {
@@ -85,15 +91,22 @@ function getScoreClass(score: number | null): string {
         <div
           v-for="assignment in getTargetAssignments(target.number)"
           :key="assignment.position"
-          class="flex items-center justify-between text-sm"
+          class="text-xs"
         >
-          <span class="text-gray-600">{{ assignment.position }}:</span>
-          <span 
-            class="font-medium"
-            :class="getScoreClass(getArcherScore(assignment.archerId))"
-          >
-            {{ getArcherScore(assignment.archerId) || '—' }}
-          </span>
+          <div class="flex items-center gap-1">
+            <span class="text-gray-500 w-4">{{ assignment.position }}</span>
+            <span class="font-medium" :class="getScoreClass(getArcherRoundScore(assignment.archerId, 1))">
+              {{ getArcherRoundScore(assignment.archerId, 1) ?? '—' }}
+            </span>
+            <span class="text-gray-300">+</span>
+            <span class="font-medium" :class="getScoreClass(getArcherRoundScore(assignment.archerId, 2))">
+              {{ getArcherRoundScore(assignment.archerId, 2) ?? '—' }}
+            </span>
+            <span class="text-gray-300">=</span>
+            <span class="font-bold" :class="getScoreClass(getArcherTotal(assignment.archerId))">
+              {{ getArcherTotal(assignment.archerId) ?? '—' }}
+            </span>
+          </div>
         </div>
       </div>
 

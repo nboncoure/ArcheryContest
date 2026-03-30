@@ -94,13 +94,37 @@ export interface End {
   total: number;
 }
 
+export type ScoreZone = 'tens' | 'nines' | 'eights' | 'sevens' | 'sixes' | 'fives' | 'fours' | 'threes' | 'twos' | 'ones' | 'misses';
+
+export const SCORE_ZONES: { key: ScoreZone; label: string; value: number }[] = [
+  { key: 'tens', label: '10', value: 10 },
+  { key: 'nines', label: '9', value: 9 },
+  { key: 'eights', label: '8', value: 8 },
+  { key: 'sevens', label: '7', value: 7 },
+  { key: 'sixes', label: '6', value: 6 },
+  { key: 'fives', label: '5', value: 5 },
+  { key: 'fours', label: '4', value: 4 },
+  { key: 'threes', label: '3', value: 3 },
+  { key: 'twos', label: '2', value: 2 },
+  { key: 'ones', label: '1', value: 1 },
+  { key: 'misses', label: 'M', value: 0 },
+];
+
 export interface Round {
   id: number;
   ends: End[];
   total: number;
   tens: number;
   nines: number;
-  eights: number; //Ajout de la variable eights(huit) pour le calcul des points par série
+  eights: number;
+  sevens: number;
+  sixes: number;
+  fives: number;
+  fours: number;
+  threes: number;
+  twos: number;
+  ones: number;
+  misses: number;
 }
 
 export interface ArcherScore {
@@ -111,7 +135,15 @@ export interface ArcherScore {
   total?: number;
   tens?: number;
   nines?: number;
-  eights?: number; //Ajout de la variable eights(huit) dans le score de l'archer
+  eights?: number;
+  sevens?: number;
+  sixes?: number;
+  fives?: number;
+  fours?: number;
+  threes?: number;
+  twos?: number;
+  ones?: number;
+  misses?: number;
   birthYear?: number;
 }
 

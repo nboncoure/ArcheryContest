@@ -283,9 +283,7 @@ export const useCompetitionStore = defineStore("competition", () => {
         total: 0
       })),
       total: 0,
-      tens: 0,
-      nines: 0,
-      eights: 0,
+      tens: 0, nines: 0, eights: 0, sevens: 0, sixes: 0, fives: 0, fours: 0, threes: 0, twos: 0, ones: 0, misses: 0,
     }));
 
     const score: ArcherScore = {
@@ -294,9 +292,7 @@ export const useCompetitionStore = defineStore("competition", () => {
       flightId,
       rounds,
       total: 0,
-      tens: 0,
-      nines: 0,
-      eights: 0,
+      tens: 0, nines: 0, eights: 0, sevens: 0, sixes: 0, fives: 0, fours: 0, threes: 0, twos: 0, ones: 0, misses: 0,
     };
 
     competition.scores = [...(competition.scores || []), score];
@@ -344,28 +340,27 @@ export const useCompetitionStore = defineStore("competition", () => {
     // Recalculate round total
     round.total = round.ends.reduce((sum, e) => sum + e.total, 0);
 
-    // Recalculate round tens, nines and eights
-    round.tens = round.ends.reduce(
-      (sum, e) => sum + e.arrows.filter(a => a.status === "valid" && a.value === 10).length,
-      0
-    );
-    round.nines = round.ends.reduce(
-      (sum, e) => sum + e.arrows.filter(a => a.status === "valid" && a.value === 9).length,
-      0
-    );
-    round.eights = round.ends.reduce(
-      (sum, e) => sum + e.arrows.filter(a => a.status === "valid" && a.value === 8).length,
-      0
-    );
+    // Recalculate round zone counts
+    const zoneValues = [
+      { key: 'tens', value: 10 }, { key: 'nines', value: 9 }, { key: 'eights', value: 8 },
+      { key: 'sevens', value: 7 }, { key: 'sixes', value: 6 }, { key: 'fives', value: 5 },
+      { key: 'fours', value: 4 }, { key: 'threes', value: 3 }, { key: 'twos', value: 2 },
+      { key: 'ones', value: 1 }, { key: 'misses', value: 0 },
+    ] as const;
+    for (const { key, value: zoneVal } of zoneValues) {
+      (round as any)[key] = round.ends.reduce(
+        (sum, e) => sum + e.arrows.filter(a => a.status === "valid" && a.value === zoneVal).length, 0
+      );
+    }
 
     // Recalculate overall score
     score.total = score.rounds.reduce((sum, r) => sum + r.total, 0);
-    score.tens = score.rounds.reduce((sum, r) => sum + r.tens, 0);
-    score.nines = score.rounds.reduce((sum, r) => sum + r.nines, 0);
-    score.eights = score.rounds.reduce((sum, r) => sum + r.eights, 0);
+    for (const { key } of zoneValues) {
+      (score as any)[key] = score.rounds.reduce((sum, r) => sum + (r as any)[key], 0);
+    }
   }
 
-  type ScoreField = 'total' | 'tens' | 'nines' | 'eights';
+  type ScoreField = 'total' | 'tens' | 'nines' | 'eights' | 'sevens' | 'sixes' | 'fives' | 'fours' | 'threes' | 'twos' | 'ones' | 'misses';
 
   function updateArcherScoreField(
     competitionId: string, archerId: string, flightId: number,
@@ -384,11 +379,11 @@ export const useCompetitionStore = defineStore("competition", () => {
     if (roundId !== undefined) {
       const round = score.rounds.find(r => r.id === roundId);
       if (round) {
-        round[field] = value;
-        score[field] = score.rounds.reduce((sum, r) => sum + r[field], 0);
+        (round as any)[field] = value;
+        (score as any)[field] = score.rounds.reduce((sum, r) => sum + (r as any)[field], 0);
       }
     } else {
-      score[field] = value;
+      (score as any)[field] = value;
     }
   }
 
@@ -396,16 +391,8 @@ export const useCompetitionStore = defineStore("competition", () => {
     updateArcherScoreField(competitionId, archerId, flightId, roundId, 'total', value, 300);
   }
 
-  function updateArcherTens(competitionId: string, archerId: string, flightId: number, roundId: number, value: number) {
-    updateArcherScoreField(competitionId, archerId, flightId, roundId, 'tens', value, 30);
-  }
-
-  function updateArcherNines(competitionId: string, archerId: string, flightId: number, roundId: number, value: number) {
-    updateArcherScoreField(competitionId, archerId, flightId, roundId, 'nines', value, 30);
-  }
-
-  function updateArcherEights(competitionId: string, archerId: string, flightId: number, roundId: number, value: number) {
-    updateArcherScoreField(competitionId, archerId, flightId, roundId, 'eights', value, 30);
+  function updateArcherZone(competitionId: string, archerId: string, flightId: number, roundId: number, zone: ScoreField, value: number) {
+    updateArcherScoreField(competitionId, archerId, flightId, roundId, zone, value, 30);
   }
 
   function findCompetitionTargetConfig(competitionId: string, flightId: number | undefined, targetNumber: number | undefined) {
@@ -435,9 +422,7 @@ export const useCompetitionStore = defineStore("competition", () => {
     getOrCreateArcherScore,
     updateArrowScore,
     updateArcherTotal,
-    updateArcherTens,
-    updateArcherNines,
-    updateArcherEights,
+    updateArcherZone,
     findCompetitionTargetConfig,
   };
 });

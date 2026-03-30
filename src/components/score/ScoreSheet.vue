@@ -2,7 +2,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useCompetitionStore } from "@/stores/competitionsStore";
-import type { Arrow, ArcherScore, Round, Flight, Competition } from "@/types";
+import type { Arrow, ArcherScore, Round, Flight, Competition, ScoreZone } from "@/types";
+import { SCORE_ZONES } from "@/types";
 import ArcherScoreColumn from "./ArcherScoreColumn.vue";
 import { ClipboardDocumentListIcon } from "@heroicons/vue/24/outline";
 
@@ -18,10 +19,14 @@ const props = withDefaults(defineProps<{
   readonly: false,
 });
 
-const emit = defineEmits(['update:showDetailedScores', 'update-arrow', 'update-total', 'update-tens', 'update-nines', 'update-eights']);
+const emit = defineEmits(['update:showDetailedScores', 'update:selectedRoundId']);
 
 function toggleDetailedScores() {
   emit('update:showDetailedScores', !props.showDetailedScores);
+}
+
+function toggleRound() {
+  emit('update:selectedRoundId', props.selectedRoundId === 1 ? 2 : 1);
 }
 
 const competitionStore = useCompetitionStore();
@@ -87,26 +92,16 @@ function getEndTotal(archerId: string, endIndex: number): number | null {
   return round?.ends[endIndex]?.total || null;
 }
 
-function getArcherRoundField(archerId: string, field: 'total' | 'tens' | 'nines' | 'eights'): number | null {
+function getArcherTotal(archerId: string): number | null {
   const score = getOrCreateScore(archerId);
   const round = findRoundById(score, props.selectedRoundId);
-  return round?.[field] ?? null;
+  return round?.total ?? null;
 }
 
-function getArcherTotal(archerId: string): number | null {
-  return getArcherRoundField(archerId, 'total');
-}
-
-function getArcherTens(archerId: string): number | null {
-  return getArcherRoundField(archerId, 'tens');
-}
-
-function getArcherNines(archerId: string): number | null {
-  return getArcherRoundField(archerId, 'nines');
-}
-
-function getArcherEights(archerId: string): number | null {
-  return getArcherRoundField(archerId, 'eights');
+function getArcherZone(archerId: string, zone: ScoreZone): number | null {
+  const score = getOrCreateScore(archerId);
+  const round = findRoundById(score, props.selectedRoundId);
+  return round?.[zone] ?? null;
 }
 
 function isScoreValid(archerId: string): boolean {
@@ -117,32 +112,18 @@ function isScoreValid(archerId: string): boolean {
   return calculatedTotal === score.total || !props.showDetailedScores;
 }
 
-function updateScoreField(archerId: string, field: 'Total' | 'Tens' | 'Nines' | 'Eights', value: number) {
+function updateArcherTotal(archerId: string, value: number) {
   if (!props.competition) return;
-  const method = `updateArcher${field}` as const;
-  competitionStore[method](
-    props.competition.id,
-    archerId,
-    props.selectedFlightId,
-    props.selectedRoundId,
-    value,
+  competitionStore.updateArcherTotal(
+    props.competition.id, archerId, props.selectedFlightId, props.selectedRoundId, value,
   );
 }
 
-function updateArcherTotal(archerId: string, value: number) {
-  updateScoreField(archerId, 'Total', value);
-}
-
-function updateArcherTens(archerId: string, value: number) {
-  updateScoreField(archerId, 'Tens', value);
-}
-
-function updateArcherNines(archerId: string, value: number) {
-  updateScoreField(archerId, 'Nines', value);
-}
-
-function updateArcherEights(archerId: string, value: number) {
-  updateScoreField(archerId, 'Eights', value);
+function updateArcherZone(archerId: string, zone: ScoreZone, value: number) {
+  if (!props.competition) return;
+  competitionStore.updateArcherZone(
+    props.competition.id, archerId, props.selectedFlightId, props.selectedRoundId, zone, value,
+  );
 }
 
 // Use the store's updateArrowScore method
@@ -177,14 +158,32 @@ function updateArrowScore(
             {{ showDetailedScores ? "(Saisie détaillée)" : "(Saisie rapide)" }}
           </span>
         </h2>
-        <button
-          @click="toggleDetailedScores"
-          class="btn btn-secondary"
-          :class="{ 'bg-primary text-white': showDetailedScores }"
-        >
-          <ClipboardDocumentListIcon class="w-5 h-5" />
-          {{ showDetailedScores ? "Mode simplifié" : "Mode détaillé" }}
-        </button>
+        <div class="flex items-center gap-2">
+          <div class="inline-flex rounded-lg border border-gray-300 overflow-hidden">
+            <button
+              @click="toggleRound"
+              class="px-3 py-2 text-sm font-medium transition-colors"
+              :class="selectedRoundId === 1 ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'"
+            >
+              Série 1
+            </button>
+            <button
+              @click="toggleRound"
+              class="px-3 py-2 text-sm font-medium transition-colors"
+              :class="selectedRoundId === 2 ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-50'"
+            >
+              Série 2
+            </button>
+          </div>
+          <button
+            @click="toggleDetailedScores"
+            class="btn btn-secondary"
+            :class="{ 'bg-primary text-white': showDetailedScores }"
+          >
+            <ClipboardDocumentListIcon class="w-5 h-5" />
+            {{ showDetailedScores ? "Mode simplifié" : "Mode détaillé" }}
+          </button>
+        </div>
       </div>
 
       <div class="score-container">
@@ -208,17 +207,9 @@ function updateArrowScore(
             <div class="data-cell bg-gray-50 font-medium">
               Total
             </div>
-            
-            <div class="data-cell">
-              10
-            </div>
-            
-            <div class="data-cell">
-              9
-            </div>
 
-            <div class="data-cell">
-              8
+            <div v-for="zone in SCORE_ZONES" :key="zone.key" class="data-cell">
+              {{ zone.label }}
             </div>
           </div>
           
@@ -232,18 +223,14 @@ function updateArrowScore(
             :position="assignment.position"
             :show-detailed-scores="showDetailedScores"
             :archer-total="getArcherTotal(assignment.archerId)"
-            :archer-tens="getArcherTens(assignment.archerId)"
-            :archer-nines="getArcherNines(assignment.archerId)"
-            :archer-eights="getArcherEights(assignment.archerId)"
+            :get-zone-value="(zone: ScoreZone) => getArcherZone(assignment.archerId, zone)"
             :is-score-valid="isScoreValid(assignment.archerId)"
-            :get-arrow-score="(endIndex, arrowIndex) => getArrowScore(assignment.archerId, endIndex, arrowIndex)"
-            :get-end-total="(endIndex) => getEndTotal(assignment.archerId, endIndex)"
+            :get-arrow-score="(endIndex: number, arrowIndex: number) => getArrowScore(assignment.archerId, endIndex, arrowIndex)"
+            :get-end-total="(endIndex: number) => getEndTotal(assignment.archerId, endIndex)"
             :readonly="readonly"
             @update-arrow="updateArrowScore"
             @update-total="updateArcherTotal"
-            @update-tens="updateArcherTens"
-            @update-nines="updateArcherNines"
-            @update-eights="updateArcherEights"
+            @update-zone="updateArcherZone"
           />
         </div>
       </div>

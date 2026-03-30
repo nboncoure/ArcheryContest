@@ -64,6 +64,7 @@ export interface Target {
   faceType?: FaceType;
   maxArchers: number;
   bowTypeCode?: BowTypeCode;
+  comment?: string;
 }
 
 export interface TargetAssignment {

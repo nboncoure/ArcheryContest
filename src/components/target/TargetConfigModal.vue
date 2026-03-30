@@ -123,6 +123,14 @@ function submit() {
                         max="6"
                       />
                     </div>
+                    <div class="mb-0 form-group">
+                      <label class="text-sm">Commentaire</label>
+                      <input
+                        type="text"
+                        v-model="editingTarget.comment"
+                        placeholder="Ex: fond de salle, près de la porte..."
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

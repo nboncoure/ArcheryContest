@@ -24,10 +24,11 @@ export async function generateTargetSetupPDF(competition: Competition): Promise<
   const flightMargin = 20
 
   const columns = [
-    { name: 'Cible', x: 0, width: 80 },
-    { name: 'Distance', x: 80, width: 120 },
-    { name: 'Type de blason', x: 200, width: 160 },
-    { name: 'Taille de blason', x: 360, width: contentWidth - 360 },
+    { name: 'Cible', x: 0, width: 60 },
+    { name: 'Distance', x: 60, width: 70 },
+    { name: 'Type de blason', x: 130, width: 100 },
+    { name: 'Taille de blason', x: 230, width: 90 },
+    { name: 'Commentaire', x: 320, width: contentWidth - 320 },
   ]
 
   let currentPage = pdfDoc.addPage([pageWidth, pageHeight])
@@ -252,6 +253,17 @@ function drawTargetRow(
     size: fontSize,
     font: fontRegular,
   })
+
+  // Commentaire
+  if (target.comment) {
+    page.drawText(target.comment, {
+      x: x + columns[4].x + 8,
+      y: textY,
+      size: fontSize,
+      font: fontRegular,
+      color: rgb(0.4, 0.4, 0.4),
+    })
+  }
 
   return y - height
 }

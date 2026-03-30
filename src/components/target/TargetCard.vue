@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { XMarkIcon, Bars3Icon } from "@heroicons/vue/24/outline";
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { XMarkIcon, Bars3Icon, InformationCircleIcon } from "@heroicons/vue/24/outline";
 import { Icon } from "@iconify/vue";
 import type { Archer, TargetPosition, Target, TargetAssignment } from "@/types";
 import TargetPositionCard from "./TargetPositionCard.vue";
-import { computed } from 'vue'
 
 const props = defineProps<{
   positions: TargetPosition[];
@@ -53,6 +52,18 @@ const emit = defineEmits<{
   "target-drag-leave": [event: DragEvent];
   "target-drop": [event: DragEvent];
 }>();
+
+const showCommentPopover = ref(false);
+const commentRef = ref<HTMLElement | null>(null);
+
+function onDocumentClick(e: MouseEvent) {
+  if (commentRef.value && !commentRef.value.contains(e.target as Node)) {
+    showCommentPopover.value = false;
+  }
+}
+
+onMounted(() => document.addEventListener("click", onDocumentClick));
+onUnmounted(() => document.removeEventListener("click", onDocumentClick));
 
 const cardRef = ref<HTMLElement>();
 
@@ -126,7 +137,23 @@ function onTargetDragOver(event: DragEvent) {
         <Bars3Icon class="w-5 h-5" />
       </div>
       <div style="width: -webkit-fill-available">
-        <div class="target-number">Cible {{ target.number }}</div>
+        <div class="target-number flex items-center justify-center gap-1">
+          <span>Cible {{ target.number }}</span>
+          <div v-if="target.comment" ref="commentRef" class="relative inline-flex">
+            <button
+              @click.stop="showCommentPopover = !showCommentPopover"
+              class="text-gray-400 hover:text-gray-600"
+            >
+              <InformationCircleIcon class="w-4 h-4" />
+            </button>
+            <div
+              v-if="showCommentPopover"
+              class="absolute left-0 top-full mt-1 z-10 px-3 py-1.5 text-xs font-normal text-gray-700 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 whitespace-nowrap"
+            >
+              {{ target.comment }}
+            </div>
+          </div>
+        </div>
         <div class="flex items-center gap-4 mt-1 text-sm text-gray-600">
           <button
             v-if="!readonly"

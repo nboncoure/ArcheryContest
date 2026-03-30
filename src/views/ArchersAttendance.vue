@@ -3,11 +3,11 @@ import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCompetitionStore } from '@/stores/competitionsStore';
 import { storeToRefs } from 'pinia';
-import { Switch, Listbox, ListboxButton, ListboxOptions, ListboxOption } from '@headlessui/vue'
+import { Switch } from '@headlessui/vue'
 import { generateAttendancesheetPDF } from '@/utils/attendancesheetPDF';
 import { generatePlacementByClubPDF } from '@/utils/placementByClubPDF';
 import type { Archer, Flight } from '../types';
-import { DocumentArrowDownIcon, MagnifyingGlassIcon, ChevronUpIcon, ChevronDownIcon, CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/24/outline';
+import { DocumentArrowDownIcon, MagnifyingGlassIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/vue/24/outline';
 import { getAgeCategoryLabel } from '@/constants/staticData';
 import { useCompetitionStatus } from '@/composables/useCompetitionStatus';
 
@@ -188,68 +188,16 @@ async function generateClubPDF() {
 
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center gap-4">
-            <div class="mb-0 form-group">
-              <Listbox v-model="selectedFlightId">
-                <div class="relative w-40 mt-1">
-                  <ListboxButton
-                    class="relative w-full py-2 pl-3 pr-10 text-left bg-white rounded-lg shadow-md cursor-default focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm"
-                  >
-                    <span class="block truncate">{{
-                      competition?.flights.find(
-                        (flight) => flight.id === selectedFlightId
-                      )?.name
-                    }}</span>
-                    <span
-                      class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none"
-                    >
-                      <ChevronUpDownIcon
-                        class="w-5 h-5 text-gray-400"
-                        aria-hidden="true"
-                      />
-                    </span>
-                  </ListboxButton>
-                  <transition
-                    leave-active-class="transition duration-100 ease-in"
-                    leave-from-class="opacity-100"
-                    leave-to-class="opacity-0"
-                  >
-                    <ListboxOptions
-                      class="absolute w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black/5 focus:outline-none sm:text-sm z-10"
-                    >
-                      <ListboxOption
-                        v-slot="{ active, selected }"
-                        v-for="flight in competition?.flights"
-                        :key="flight.id"
-                        :value="flight.id"
-                        as="template"
-                      >
-                        <li
-                          :class="[
-                            active
-                              ? 'bg-amber-100 text-amber-900'
-                              : 'text-gray-900',
-                            'relative cursor-default text-left select-none py-2 pl-10 pr-4',
-                          ]"
-                        >
-                          <span
-                            :class="[
-                              selected ? 'font-medium' : 'font-normal',
-                              'block truncate',
-                            ]"
-                            >{{ flight.name }}</span
-                          >
-                          <span
-                            v-if="selected"
-                            class="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600"
-                          >
-                            <CheckIcon class="w-5 h-5" aria-hidden="true" />
-                          </span>
-                        </li>
-                      </ListboxOption>
-                    </ListboxOptions>
-                  </transition>
-                </div>
-              </Listbox>
+            <div class="mb-0 w-56 form-group">
+              <select v-model="selectedFlightId">
+                <option
+                  v-for="flight in competition?.flights"
+                  :key="flight.id"
+                  :value="flight.id"
+                >
+                  {{ flight.name }}
+                </option>
+              </select>
             </div>
           </div>
 

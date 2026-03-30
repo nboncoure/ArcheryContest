@@ -629,7 +629,8 @@ async function generatePDF() {
     const pdfBytes = await generateScoreSheets(
       assignments.value,
       archers.value,
-      currentFlight.value
+      currentFlight.value,
+      competition.value?.name
     );
 
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });

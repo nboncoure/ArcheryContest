@@ -1,6 +1,6 @@
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch, nextTick } from "vue";
 import { useCompetitionStore } from "@/stores/competitionsStore";
 import type { Arrow, ArcherScore, Round, Flight, Competition, ScoreZone } from "@/types";
 import { SCORE_ZONES } from "@/types";
@@ -146,10 +146,23 @@ function updateArrowScore(
     value,
   );
 }
+
+const scoreGridRef = ref<HTMLElement | null>(null);
+
+function focusFirstTotal() {
+  nextTick(() => {
+    if (!scoreGridRef.value) return;
+    const firstTotal = scoreGridRef.value.querySelector<HTMLInputElement>('.archer-total-input');
+    firstTotal?.focus();
+  });
+}
+
+watch(() => props.selectedTargetNumber, focusFirstTotal);
+watch(() => props.selectedRoundId, focusFirstTotal);
 </script>
 
 <template>
-  <div v-if="selectedTarget" class="card">
+  <div v-if="selectedTarget" ref="scoreGridRef" class="card">
     <div class="p-6">
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-semibold text-gray-900">
@@ -215,8 +228,10 @@ function updateArrowScore(
           
           <!-- Archer columns -->
           <ArcherScoreColumn
-            v-for="assignment in targetAssignments"
+            v-for="(assignment, archerIndex) in targetAssignments"
             :key="assignment.archerId"
+            :archer-index="archerIndex"
+            :archer-count="targetAssignments.length"
             :archer-id="assignment.archerId"
             :archer-name="getArcherName(assignment.archerId)"
             :archer-category="getArcherCategory(assignment.archerId)"

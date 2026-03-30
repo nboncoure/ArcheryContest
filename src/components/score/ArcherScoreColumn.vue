@@ -8,6 +8,8 @@ const props = defineProps<{
   archerName: string;
   archerCategory?: string;
   position: string;
+  archerIndex: number;
+  archerCount: number;
   showDetailedScores: boolean;
   archerTotal: number | null;
   getZoneValue: (zone: ScoreZone) => number | null;
@@ -16,6 +18,36 @@ const props = defineProps<{
   getEndTotal: (endIndex: number) => number | null;
   readonly: boolean;
 }>();
+
+/**
+ * Compute tabindex so Tab navigates by row across archers:
+ * Row 0..9 = detailed volées (3 arrows + end total per row = 4 fields)
+ * Row 10 = total
+ * Row 11..21 = zones (10, 9, 8, ..., M)
+ *
+ * tabindex = (row * archerCount + archerIndex) * fieldsPerCell + fieldIndex + 1
+ */
+function tabFor(row: number, fieldInRow: number = 0): number {
+  // Each row has archerCount columns, each column has up to 4 fields (for detailed volées)
+  // For simple cells (total, zones) fieldInRow is always 0
+  const cols = props.archerCount;
+  return (row * cols + props.archerIndex) * 4 + fieldInRow + 1;
+}
+
+function detailedRowTab(endIndex: number, arrowIndex: number): number {
+  // endIndex 0-based, arrowIndex 0-based
+  return tabFor(endIndex, arrowIndex);
+}
+
+function totalTab(): number {
+  const detailedRows = props.showDetailedScores ? 10 : 0;
+  return tabFor(detailedRows);
+}
+
+function zoneTab(zoneIndex: number): number {
+  const detailedRows = props.showDetailedScores ? 10 : 0;
+  return tabFor(detailedRows + 1 + zoneIndex);
+}
 
 const emit = defineEmits<{
   'update-arrow': [archerId: string, endIndex: number, arrowIndex: number, value: number];
@@ -72,6 +104,7 @@ function updateZone(zone: ScoreZone, value: number) {
             type="number"
             min="0"
             max="10"
+            :tabindex="detailedRowTab(endIndex - 1, arrowIndex - 1)"
             class="w-12 text-center"
             :class="{ 'bg-gray-100 cursor-not-allowed': readonly }"
             :disabled="readonly"
@@ -91,7 +124,8 @@ function updateZone(zone: ScoreZone, value: number) {
           type="number"
           min="0"
           max="300"
-          class="w-20 text-center"
+          :tabindex="totalTab()"
+          class="w-20 text-center archer-total-input"
           :value="archerTotal || ''"
           :disabled="readonly"
           @input="(e) => updateTotal(parseInt((e.target as HTMLInputElement).value))"
@@ -105,12 +139,13 @@ function updateZone(zone: ScoreZone, value: number) {
       </div>
     </div>
 
-    <div v-for="zone in SCORE_ZONES" :key="zone.key" class="data-cell">
+    <div v-for="(zone, zoneIndex) in SCORE_ZONES" :key="zone.key" class="data-cell">
       <div class="flex justify-center">
         <input
           type="number"
           min="0"
           max="30"
+          :tabindex="zoneTab(zoneIndex)"
           class="w-16 text-center"
           :class="{ 'bg-gray-100 cursor-not-allowed': readonly }"
           :disabled="readonly"

@@ -43,6 +43,10 @@
               </div>
             </div>
           </div>
+          <button @click="generateRewardsPDFAction" class="btn btn-secondary">
+            <DocumentArrowDownIcon class="w-5 h-5" />
+            Récompenses
+          </button>
           <button v-if="canEditArchers" @click="showAddForm = true" class="btn btn-primary">
             <PlusIcon class="w-5 h-5" />
             Ajouter un archer
@@ -289,8 +293,10 @@ import {
   UsersIcon,
   ViewColumnsIcon,
   Bars3Icon,
+  DocumentArrowDownIcon,
 } from "@heroicons/vue/24/outline";
 import { BOW_TYPES, getAgeCategoryLabel } from "../constants/staticData";
+import { generateRewardsPDF } from "@/utils/rewardsPDF";
 import ArcherFormModal from "@/components/ArcherFormModal.vue";
 import ConfirmModal from "@/components/ConfirmModal.vue";
 import type { Archer } from "../types";
@@ -537,6 +543,25 @@ function saveArcher(archerData: Partial<Archer>) {
 function closeForm() {
   showAddForm.value = false;
   editingArcher.value = null;
+}
+
+async function generateRewardsPDFAction() {
+  if (!competition.value) return;
+  try {
+    const pdfBytes = await generateRewardsPDF(competition.value);
+    const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Récompenses - ${competition.value.name}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Erreur lors de la génération du PDF:', error);
+    alert('Une erreur est survenue lors de la génération du PDF.');
+  }
 }
 </script>
 

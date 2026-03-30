@@ -14,11 +14,12 @@ import {
   getBowTypeByCode,
   findCategoryCode,
 } from "@/constants/staticData";
-import type { Archer, AgeCategoryCode } from "@/types";
+import type { Archer, AgeCategoryCode, Flight } from "@/types";
 
 const props = defineProps<{
   isOpen: boolean;
   archer: Archer | null;
+  flights: Flight[];
 }>();
 
 const emit = defineEmits<{
@@ -38,6 +39,7 @@ const archerForm = ref<Partial<Archer>>({
   gender: "M",
   ageCategory: getAgeCategoryByCode("S"),
   bowType: getBowTypeByCode("AV"),
+  flightId: undefined,
   isBeginner: false,
   isDisabled: false,
   isVisuallyImpaired: false,
@@ -76,6 +78,7 @@ function resetForm() {
     gender: "M",
     ageCategory: getAgeCategoryByCode("S"),
     bowType: getBowTypeByCode("AV"),
+    flightId: undefined,
     license: "",
     isBeginner: false,
     isDisabled: false,
@@ -214,6 +217,20 @@ function save() {
                       :value="bowType.code"
                     >
                       {{ bowType.label }}
+                    </option>
+                  </select>
+                </div>
+
+                <div v-if="flights.length > 0" class="form-group">
+                  <label for="flightId">Départ</label>
+                  <select id="flightId" v-model="archerForm.flightId">
+                    <option :value="undefined">Non assigné</option>
+                    <option
+                      v-for="flight in flights"
+                      :key="flight.id"
+                      :value="flight.id"
+                    >
+                      {{ flight.name }}
                     </option>
                   </select>
                 </div>

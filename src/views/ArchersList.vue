@@ -3,17 +3,58 @@
     <div class="mb-8">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-gray-900">Liste des Archers</h1>
-        <button v-if="canEditArchers" @click="showAddForm = true" class="btn btn-primary">
-          <PlusIcon class="w-5 h-5" />
-          Ajouter un archer
-        </button>
+        <div class="flex items-center gap-2">
+          <div class="relative" ref="columnMenuRef">
+            <button @click="showColumnMenu = !showColumnMenu" class="btn btn-secondary">
+              <ViewColumnsIcon class="w-5 h-5" />
+              Colonnes
+            </button>
+            <div
+              v-if="showColumnMenu"
+              class="absolute right-0 z-50 mt-2 w-64 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5"
+            >
+              <div class="p-3">
+                <p class="text-xs font-medium text-gray-500 uppercase mb-2">Colonnes visibles</p>
+                <ul class="space-y-1">
+                  <li
+                    v-for="(col, index) in columnConfig"
+                    :key="col.key"
+                    draggable="true"
+                    @dragstart="onDragStart(index)"
+                    @dragover.prevent="onDragOver(index)"
+                    @dragend="onDragEnd"
+                    :class="[
+                      'flex items-center gap-2 px-2 py-1.5 rounded transition-colors',
+                      dragOverIndex === index ? 'bg-blue-50' : 'hover:bg-gray-50',
+                    ]"
+                  >
+                    <Bars3Icon class="w-4 h-4 text-gray-300 cursor-grab shrink-0" />
+                    <label class="flex items-center gap-2 flex-1 cursor-pointer text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        :checked="col.visible"
+                        @change="toggleColumn(col.key)"
+                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      {{ col.label || col.key }}
+                    </label>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <button v-if="canEditArchers" @click="showAddForm = true" class="btn btn-primary">
+            <PlusIcon class="w-5 h-5" />
+            Ajouter un archer
+          </button>
+        </div>
       </div>
 
       <div v-if="!canEditArchers" class="p-3 mb-4 text-sm text-blue-800 border border-blue-200 rounded-lg bg-blue-50">
         La liste des archers est en lecture seule. Pour modifier les archers, la compétition doit être en mode brouillon.
       </div>
 
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-5">
         <div class="form-group">
           <label for="search">Rechercher</label>
           <div class="relative">
@@ -52,6 +93,15 @@
           </select>
         </div>
         <div class="form-group">
+          <label for="flight">Départ</label>
+          <select id="flight" v-model="filters.flight">
+            <option value="">Tous</option>
+            <option v-for="flight in flights" :key="flight.id" :value="flight.id">
+              {{ flight.name }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
           <label for="tag">Profil</label>
           <select id="tag" v-model="filters.tag">
             <option value="">Tous</option>
@@ -69,7 +119,7 @@
           <thead class="bg-gray-50">
             <tr>
               <th
-                v-for="column in columns"
+                v-for="column in visibleColumns"
                 :key="column.key"
                 @click="() => column.sortable && sort(column.key)"
                 :class="[
@@ -103,35 +153,35 @@
               :key="archer.id"
               class="hover:bg-gray-50 group/row"
             >
-              <td class="px-6 py-4 whitespace-nowrap">{{ archer.lastName }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                {{ archer.firstName }}
-              </td>          
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center gap-1">
-                  <span v-if="archer.isBeginner" class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">Déb.</span>
-                  <span v-if="archer.isDisabled || archer.bowType?.code === 'AH'" class="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">Hand.</span>
-                  <span v-if="archer.isVisuallyImpaired" class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">Malv.</span>
-                </div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="truncate max-w-[150px] md:max-w-[180px] lg:max-w-[220px]" :title="archer.club">
-                  {{ archer.club }}
-                </div>    
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                {{ archer.departmentNumber }}
-              </td> 
-              <td class="px-6 py-4 whitespace-nowrap">{{ archer.category }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                {{ archer.gender === "M" ? "Homme" : "Femme" }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center gap-2">
-                  <BowIcon class="w-5 h-5 text-gray-400" />
-                  {{ archer.bowType?.label }}
-                </div>
-              </td>
+              <template v-for="column in visibleColumns" :key="column.key">
+                <td v-if="column.key === 'tags'" class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center gap-1">
+                    <span v-if="archer.isBeginner" class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">Déb.</span>
+                    <span v-if="archer.isDisabled || archer.bowType?.code === 'AH'" class="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">Hand.</span>
+                    <span v-if="archer.isVisuallyImpaired" class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">Malv.</span>
+                  </div>
+                </td>
+                <td v-else-if="column.key === 'club'" class="px-6 py-4">
+                  <div class="truncate max-w-[150px] md:max-w-[180px] lg:max-w-[220px]" :title="archer.club">
+                    {{ archer.club }}
+                  </div>
+                </td>
+                <td v-else-if="column.key === 'gender'" class="px-6 py-4 whitespace-nowrap">
+                  {{ archer.gender === "M" ? "Homme" : "Femme" }}
+                </td>
+                <td v-else-if="column.key === 'bowType'" class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <BowIcon class="w-5 h-5 text-gray-400" />
+                    {{ archer.bowType?.label }}
+                  </div>
+                </td>
+                <td v-else-if="column.key === 'flightId'" class="px-6 py-4 whitespace-nowrap">
+                  {{ getFlightName(archer.flightId) }}
+                </td>
+                <td v-else class="px-6 py-4 whitespace-nowrap">
+                  {{ archer[column.key as keyof Archer] }}
+                </td>
+              </template>
               <td v-if="canEditArchers" class="sticky right-0 bg-white px-6 py-4 text-right whitespace-nowrap group-hover/row:bg-gray-50">
                 <Menu as="div" class="relative inline-block text-left">
                   <MenuButton class="p-2 btn btn-secondary" @click="captureMenuPosition">
@@ -197,6 +247,7 @@
     <ArcherFormModal
       :is-open="showAddForm || editingArcher !== null"
       :archer="editingArcher"
+      :flights="flights"
       @close="closeForm"
       @save="saveArcher"
     />
@@ -214,7 +265,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import { useCompetitionStore } from "../stores/competitionsStore";
 import { storeToRefs } from "pinia";
@@ -233,6 +284,8 @@ import {
   PencilIcon,
   TrashIcon,
   UsersIcon,
+  ViewColumnsIcon,
+  Bars3Icon,
 } from "@heroicons/vue/24/outline";
 import { BOW_TYPES } from "../constants/staticData";
 import ArcherFormModal from "@/components/ArcherFormModal.vue";
@@ -270,22 +323,118 @@ const filters = ref({
   search: "",
   category: "",
   bowType: "",
+  flight: "" as number | "",
   tag: "",
 });
 
 const sortField = ref("lastName");
 const sortDirection = ref<"asc" | "desc">("asc");
 
-const columns = [
+interface ColumnDef {
+  key: string;
+  label: string;
+  sortable: boolean;
+}
+
+const allColumns: ColumnDef[] = [
   { key: "lastName", label: "Nom", sortable: true },
   { key: "firstName", label: "Prénom", sortable: true },
-  { key: "tags", label: "", sortable: false },
+  { key: "tags", label: "Profil", sortable: false },
   { key: "club", label: "Club", sortable: true },
-  { key: "departmentNumber", label: "Numéro de département", sortable: true },
+  { key: "departmentNumber", label: "N° département", sortable: true },
   { key: "category", label: "Catégorie", sortable: true },
   { key: "gender", label: "Genre", sortable: true },
   { key: "bowType", label: "Arc", sortable: true },
+  { key: "flightId", label: "Départ", sortable: true },
 ];
+
+const STORAGE_KEY = "archersListColumns";
+
+interface ColumnConfigItem {
+  key: string;
+  visible: boolean;
+  label: string;
+  sortable: boolean;
+}
+
+function loadColumnConfig(): ColumnConfigItem[] {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved) as { key: string; visible: boolean }[];
+      const knownKeys = new Set(allColumns.map((c) => c.key));
+      const savedKeys = new Set(parsed.map((c) => c.key));
+      const result: ColumnConfigItem[] = [];
+      for (const item of parsed) {
+        const col = allColumns.find((c) => c.key === item.key);
+        if (col) result.push({ ...col, visible: item.visible });
+      }
+      for (const col of allColumns) {
+        if (!savedKeys.has(col.key)) result.push({ ...col, visible: true });
+      }
+      return result;
+    }
+  } catch { /* ignore */ }
+  return allColumns.map((c) => ({ ...c, visible: true }));
+}
+
+function saveColumnConfig() {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(columnConfig.value.map(({ key, visible }) => ({ key, visible })))
+  );
+}
+
+const columnConfig = ref<ColumnConfigItem[]>(loadColumnConfig());
+
+const visibleColumns = computed(() =>
+  columnConfig.value.filter((c) => c.visible)
+);
+
+const showColumnMenu = ref(false);
+const columnMenuRef = ref<HTMLElement | null>(null);
+
+function toggleColumn(key: string) {
+  const col = columnConfig.value.find((c) => c.key === key);
+  if (col) {
+    col.visible = !col.visible;
+    saveColumnConfig();
+  }
+}
+
+const dragStartIndex = ref<number | null>(null);
+const dragOverIndex = ref<number | null>(null);
+
+function onDragStart(index: number) {
+  dragStartIndex.value = index;
+}
+
+function onDragOver(index: number) {
+  if (dragStartIndex.value === null || dragStartIndex.value === index) {
+    dragOverIndex.value = null;
+    return;
+  }
+  dragOverIndex.value = index;
+  const items = columnConfig.value;
+  const [moved] = items.splice(dragStartIndex.value, 1);
+  items.splice(index, 0, moved);
+  dragStartIndex.value = index;
+}
+
+function onDragEnd() {
+  dragStartIndex.value = null;
+  dragOverIndex.value = null;
+  saveColumnConfig();
+}
+
+function onClickOutsideColumnMenu(e: MouseEvent) {
+  if (columnMenuRef.value && !columnMenuRef.value.contains(e.target as Node)) {
+    showColumnMenu.value = false;
+  }
+}
+
+onMounted(() => document.addEventListener("click", onClickOutsideColumnMenu));
+onUnmounted(() => document.removeEventListener("click", onClickOutsideColumnMenu));
 
 const archers = computed(
   () => competitions.value.find((c) => c.id === competitionId)?.archers || []
@@ -294,6 +443,14 @@ const archers = computed(
 const categories = computed(() =>
   [...new Set(archers.value.map((a) => a.category))].sort()
 );
+
+const flights = computed(() => competition.value?.flights || []);
+
+function getFlightName(flightId?: number): string {
+  if (flightId == null) return "—";
+  const flight = flights.value.find((f) => f.id === flightId);
+  return flight?.name ?? "—";
+}
 
 const filteredArchers = computed(() => {
   return archers.value.filter((archer) => {
@@ -310,13 +467,16 @@ const filteredArchers = computed(() => {
     const bowTypeMatch =
       !filters.value.bowType || archer.bowType.code === filters.value.bowType;
 
+    const flightMatch =
+      filters.value.flight === "" || archer.flightId === filters.value.flight;
+
     const tagMatch =
       !filters.value.tag ||
       (filters.value.tag === "beginner" && archer.isBeginner) ||
       (filters.value.tag === "disabled" && (archer.isDisabled || archer.bowType?.code === "AH")) ||
       (filters.value.tag === "visuallyImpaired" && archer.isVisuallyImpaired);
 
-    return searchMatch && categoryMatch && bowTypeMatch && tagMatch;
+    return searchMatch && categoryMatch && bowTypeMatch && flightMatch && tagMatch;
   });
 });
 

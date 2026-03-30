@@ -2,26 +2,51 @@
 import { ref, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useCompetitionStore } from "../stores/competitionsStore";
-import type { Competition } from "../types";
+import type { Competition, FeeRule } from "../types";
+import { PlusIcon, TrashIcon } from "@heroicons/vue/24/outline";
 
 const router = useRouter();
 const route = useRoute();
 const competitionsStore = useCompetitionStore();
 
 const isEdit = route.params.id !== undefined;
+const existingCompetition = isEdit
+  ? competitionsStore.competitions.find((c) => c.id === route.params.id)
+  : undefined;
+
 const form = ref({
-  name: "",
-  date: "",
-  location: "",
-  organizingClub: "",
-  type: "indoor" as const,
-  numberOfSessions: 1,
-  numberOfTargets: 10,
-  status: "draft" as const,
+  name: existingCompetition?.name ?? "",
+  date: existingCompetition?.date ? new Date(existingCompetition.date).toISOString().split("T")[0] : "",
+  location: existingCompetition?.location ?? "",
+  organizingClub: existingCompetition?.organizingClub ?? "",
+  type: existingCompetition?.type ?? ("indoor" as const),
+  numberOfSessions: existingCompetition?.numberOfSessions ?? 1,
+  numberOfTargets: existingCompetition?.numberOfTargets ?? 10,
+  status: existingCompetition?.status ?? ("draft" as const),
 });
 
-const flightStartTimes = ref<string[]>([""]);
-const flightArbitratorNames = ref<string[]>([""]);
+const flightStartTimes = ref<string[]>(
+  existingCompetition?.flights.map((f) => f.startTime ?? "") ?? [""]
+);
+const flightArbitratorNames = ref<string[]>(
+  existingCompetition?.flights.map((f) => f.arbitratorName ?? "") ?? [""]
+);
+const feeRules = ref<FeeRule[]>(
+  existingCompetition?.feeRules?.length
+    ? existingCompetition.feeRules.map((r) => ({ ...r }))
+    : [
+        { label: "Enfant", minAge: 0, maxAge: 17, amount: 3 },
+        { label: "Adulte", minAge: 18, maxAge: 99, amount: 5 },
+      ]
+);
+
+function addFeeRule() {
+  feeRules.value.push({ label: "", minAge: 0, maxAge: 99, amount: 0 });
+}
+
+function removeFeeRule(index: number) {
+  feeRules.value.splice(index, 1);
+}
 
 watch(
   () => form.value.numberOfSessions,
@@ -39,6 +64,7 @@ watch(
 function handleSubmit() {
   const competition: Partial<Competition> = {
     ...form.value,
+    feeRules: feeRules.value,
   };
 
   const count = Number(form.value.numberOfSessions) || 1;
@@ -142,6 +168,45 @@ function handleSubmit() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="mt-6">
+        <h3 class="mb-3 text-lg font-medium text-gray-900">Tarifs de participation</h3>
+        <div class="space-y-3">
+          <div
+            v-for="(rule, index) in feeRules"
+            :key="index"
+            class="p-3 border border-gray-200 rounded-lg bg-gray-50"
+          >
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-5 items-end">
+              <div class="form-group sm:col-span-1">
+                <label>Libellé</label>
+                <input type="text" v-model="rule.label" placeholder="Ex: Adulte" />
+              </div>
+              <div class="form-group">
+                <label>Âge min</label>
+                <input type="number" v-model.number="rule.minAge" min="0" />
+              </div>
+              <div class="form-group">
+                <label>Âge max</label>
+                <input type="number" v-model.number="rule.maxAge" min="0" />
+              </div>
+              <div class="form-group">
+                <label>Montant (€)</label>
+                <input type="number" v-model.number="rule.amount" min="0" step="0.5" />
+              </div>
+              <div>
+                <button type="button" @click="removeFeeRule(index)" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded">
+                  <TrashIcon class="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button type="button" @click="addFeeRule" class="mt-3 inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
+          <PlusIcon class="w-4 h-4" />
+          Ajouter un tarif
+        </button>
       </div>
 
       <div class="actions">

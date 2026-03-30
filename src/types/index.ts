@@ -121,6 +121,24 @@ export interface TargetLimitRule {
   maxArchers: number;
 }
 
+export interface FeeRule {
+  label: string;
+  minAge: number;
+  maxAge: number;
+  amount: number;
+}
+
+export type PaymentMethod = "cash" | "check" | "transfer" | "";
+
+export interface ClubPayment {
+  club: string;
+  paidAt: string;
+  archerIds: string[]; // archers whose payment was added by this club payment
+  method: PaymentMethod;
+  amountReceived?: number; // if different from total due
+  note?: string;
+}
+
 export interface Competition {
   id: string;
   name: string;
@@ -139,4 +157,7 @@ export interface Competition {
   arbitratorName?: string;
   targetLimitRules: TargetLimitRule[];
   defaultMaxArchers: number;
+  feeRules: FeeRule[];
+  clubPayments: ClubPayment[];
+  archerPayments: string[]; // archer IDs that have paid
 }

@@ -29,6 +29,19 @@ const loadCompetitions = (): Competition[] => {
     }
   });
 
+  // Migration: add feeRules and clubPayments
+  competitions.forEach((competition) => {
+    if (!competition.feeRules) {
+      competition.feeRules = [];
+    }
+    if (!competition.clubPayments) {
+      competition.clubPayments = [];
+    }
+    if (!competition.archerPayments) {
+      competition.archerPayments = [];
+    }
+  });
+
   return competitions;
 };
 
@@ -58,6 +71,9 @@ export const useCompetitionStore = defineStore("competition", () => {
       scores: [],
       targetLimitRules: [],
       defaultMaxArchers: 4,
+      feeRules: competition.feeRules || [],
+      clubPayments: [],
+      archerPayments: [],
       arbitratorName: undefined,
       flights: Array.from(
         { length: competition.numberOfSessions || 1 },

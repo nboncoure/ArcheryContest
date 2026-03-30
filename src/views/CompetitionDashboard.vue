@@ -26,9 +26,10 @@ import {
   CheckBadgeIcon,
   ArrowUturnLeftIcon,
 } from "@heroicons/vue/24/outline";
-import type { Competition } from "@/types";
+import type { Competition, FeeRule } from "@/types";
 import ConfirmModal from "@/components/ConfirmModal.vue";
 import { useCompetitionStatus } from "@/composables/useCompetitionStatus";
+import { PlusIcon, TrashIcon } from "@heroicons/vue/24/outline";
 
 const route = useRoute();
 const competitionsStore = useCompetitionStore();
@@ -111,10 +112,21 @@ function revertToDraft() {
   }
 }
 
+const editFeeRules = ref<FeeRule[]>([]);
+
+function addEditFeeRule() {
+  editFeeRules.value.push({ label: "", minAge: 0, maxAge: 99, amount: 0 });
+}
+
+function removeEditFeeRule(index: number) {
+  editFeeRules.value.splice(index, 1);
+}
+
 function openEditModal() {
   if (!canEditCompetitionInfo.value) return;
   if (competition.value) {
     allFlights.value = competition.value.flights.map((f) => ({ ...f }));
+    editFeeRules.value = (competition.value.feeRules || []).map((r) => ({ ...r }));
     form.value = {
       ...competition.value,
       flights: allFlights.value.slice(),
@@ -150,7 +162,10 @@ watch(
 
 function saveCompetition() {
   if (competition.value) {
-    competitionsStore.updateCompetition(competition.value.id, form.value);
+    competitionsStore.updateCompetition(competition.value.id, {
+      ...form.value,
+      feeRules: editFeeRules.value,
+    });
     closeEditModal();
   }
 }
@@ -462,6 +477,45 @@ function saveCompetition() {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  <div class="mt-4">
+                    <h4 class="mb-2 text-sm font-medium text-gray-700">Tarifs de participation</h4>
+                    <div class="space-y-2">
+                      <div
+                        v-for="(rule, index) in editFeeRules"
+                        :key="index"
+                        class="p-3 border border-gray-200 rounded-lg bg-gray-50"
+                      >
+                        <div class="grid grid-cols-5 gap-2 items-end">
+                          <div class="form-group">
+                            <label class="text-xs">Libellé</label>
+                            <input type="text" v-model="rule.label" placeholder="Ex: Adulte" />
+                          </div>
+                          <div class="form-group">
+                            <label class="text-xs">Âge min</label>
+                            <input type="number" v-model.number="rule.minAge" min="0" />
+                          </div>
+                          <div class="form-group">
+                            <label class="text-xs">Âge max</label>
+                            <input type="number" v-model.number="rule.maxAge" min="0" />
+                          </div>
+                          <div class="form-group">
+                            <label class="text-xs">Montant (€)</label>
+                            <input type="number" v-model.number="rule.amount" min="0" step="0.5" />
+                          </div>
+                          <div>
+                            <button type="button" @click="removeEditFeeRule(index)" class="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded">
+                              <TrashIcon class="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <button type="button" @click="addEditFeeRule" class="mt-2 inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
+                      <PlusIcon class="w-4 h-4" />
+                      Ajouter un tarif
+                    </button>
                   </div>
 
                   <div class="flex justify-end gap-3 mt-6">

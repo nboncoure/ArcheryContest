@@ -101,43 +101,10 @@ function handleDrop(event: DragEvent) {
   event.preventDefault();
   isDragging.value = false;
   dragCounter.value = 0;
-  
+
   const files = event.dataTransfer?.files;
   if (files && files.length > 0) {
-    const file = files[0];
-    if (file.type === "application/json" || file.name.endsWith('.json')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target?.result as string);
-
-          // Handle versioned format (v1+) and legacy format (no version)
-          const competition = data.version ? data.competition : data;
-
-          if (!competition?.id || !competition?.name) {
-            alert("Le fichier ne contient pas une compétition valide.");
-            return;
-          }
-          
-          // Check if a competition with the same ID already exists
-          const existingCompetition = competitions.value.find(c => c.id === competition.id);
-          if (existingCompetition) {
-            importedCompetition.value = competition;
-            showImportModal.value = true;
-          } else {
-            // No duplicate, add directly
-            competitionsStore.addCompetition(competition);
-            alert("Compétition importée avec succès !");
-          }
-        } catch (error) {
-          alert("Erreur lors de la lecture du fichier JSON.");
-          console.error(error);
-        }
-      };
-      reader.readAsText(file);
-    } else {
-      alert("Veuillez déposer un fichier JSON.");
-    }
+    processImportFile(files[0]);
   }
 }
 
@@ -164,6 +131,51 @@ function replaceExistingCompetition() {
 function cancelImport() {
   showImportModal.value = false;
   importedCompetition.value = null;
+}
+
+const fileInput = ref<HTMLInputElement | null>(null);
+
+function openFilePicker() {
+  fileInput.value?.click();
+}
+
+function handleFileSelect(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (file) {
+    processImportFile(file);
+  }
+  input.value = "";
+}
+
+function processImportFile(file: File) {
+  if (file.type !== "application/json" && !file.name.endsWith(".json")) {
+    alert("Veuillez sélectionner un fichier JSON.");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target?.result as string);
+      const competition = data.version ? data.competition : data;
+      if (!competition?.id || !competition?.name) {
+        alert("Le fichier ne contient pas une compétition valide.");
+        return;
+      }
+      const existingCompetition = competitions.value.find(c => c.id === competition.id);
+      if (existingCompetition) {
+        importedCompetition.value = competition;
+        showImportModal.value = true;
+      } else {
+        competitionsStore.addCompetition(competition);
+        alert("Compétition importée avec succès !");
+      }
+    } catch (error) {
+      alert("Erreur lors de la lecture du fichier JSON.");
+      console.error(error);
+    }
+  };
+  reader.readAsText(file);
 }
 </script>
 
@@ -291,6 +303,23 @@ function cancelImport() {
       </router-link>
     </div>
     
+    <!-- Import drop zone -->
+    <div class="mt-8 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center transition-colors hover:border-gray-400">
+      <ArrowUpTrayIcon class="w-10 h-10 mx-auto mb-3 text-gray-400" />
+      <p class="text-sm font-medium text-gray-700 mb-1">Importer une compétition</p>
+      <p class="text-sm text-gray-500 mb-4">Glissez-déposez un fichier de sauvegarde JSON ici</p>
+      <button @click="openFilePicker" class="btn btn-secondary">
+        Parcourir les fichiers
+      </button>
+      <input
+        ref="fileInput"
+        type="file"
+        accept=".json,application/json"
+        class="hidden"
+        @change="handleFileSelect"
+      />
+    </div>
+
     <!-- Drop zone overlay -->
     <div v-if="isDragging" class="drop-zone-overlay">
       <div class="drop-zone">

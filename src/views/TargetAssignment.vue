@@ -137,6 +137,7 @@
           :assignments="currentFlight?.assignments || []"
           :archers="assignedArchers"
           :readonly="!canEditTargets"
+          :current-flight-id="selectedFlightId"
           @position-drag-start="handlePositionDragStart"
           @position-drag-over="handleDragOver"
           @position-drag-leave="handleDragLeave"
@@ -222,6 +223,16 @@
     variant="danger"
     @close="showDeleteTargetConfirmModal = false; targetToDelete = null"
     @confirm="confirmDeleteTarget"
+  />
+
+  <ConfirmModal
+    :is-open="!!pendingFlightChange"
+    title="Changement de départ"
+    :message="flightChangeMessage"
+    confirm-label="Changer de départ"
+    variant="warning"
+    @close="cancelFlightChange"
+    @confirm="confirmFlightChange"
   />
 
   </div>
@@ -316,6 +327,7 @@ const assignments = computed(() => currentFlight.value?.assignments || []);
 const {
   dragOverTarget,
   draggedArcher,
+  pendingFlightChange,
   handlePositionDragStart,
   dragStart,
   dragEnd,
@@ -323,7 +335,20 @@ const {
   handleDragLeave,
   handleDrop,
   removeFromTarget,
+  confirmFlightChange,
+  cancelFlightChange,
 } = useTargetDragDrop(competition, currentFlight, selectedFlightId);
+
+const flightChangeMessage = computed(() => {
+  if (!pendingFlightChange.value || !competition.value) return "";
+  const fromFlight = competition.value.flights.find(
+    (f) => f.id === pendingFlightChange.value!.fromFlightId
+  );
+  const toFlight = competition.value.flights.find(
+    (f) => f.id === pendingFlightChange.value!.toFlightId
+  );
+  return `L'archer ${pendingFlightChange.value.archerName} est affecté au ${fromFlight?.name ?? "départ inconnu"}. Voulez-vous le déplacer vers le ${toFlight?.name ?? "départ courant"} ?`;
+});
 
 // Initialiser le départ sélectionné avec le premier départ
 if (competition.value && competition.value.flights.length > 0) {

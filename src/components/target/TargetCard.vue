@@ -15,6 +15,7 @@ const props = defineProps<{
   isTargetDragOver?: boolean;
   isBeingDragged?: boolean;
   readonly?: boolean;
+  currentFlightId?: number;
 }>();
 
 const positionBymaxArchers = computed (() => {
@@ -177,6 +178,7 @@ function onTargetDragOver(event: DragEvent) {
           :archer="getArcherAtPosition(position)"
           :is-drag-over="isDragOver(position)"
           :readonly="readonly"
+          :current-flight-id="currentFlightId"
           @dragover.prevent="(e: DragEvent) => $emit('position-drag-over', e, position)"
           @dragleave.prevent="(e: DragEvent) => $emit('position-drag-leave', e, position)"
           @drop.prevent="(e: DragEvent) => $emit('position-drop', e, position)"

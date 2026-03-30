@@ -25,6 +25,16 @@ export function useTargetDragDrop(
     assignment?: TargetAssignment;
   } | null>(null);
 
+  const pendingFlightChange = ref<{
+    archerId: string;
+    archerName: string;
+    fromFlightId: number;
+    toFlightId: number;
+    targetNum: number;
+    position: TargetPosition;
+    draggedAssignment?: TargetAssignment;
+  } | null>(null);
+
   function handlePositionDragStart(
     event: DragEvent,
     targetNum: number,
@@ -107,6 +117,35 @@ export function useTargetDragDrop(
       return;
     }
 
+    // Vérifier si l'archer appartient à un autre départ
+    const archer = competition.value!.archers.find((a) => a.id === archerId);
+    if (
+      archer?.flightId != null &&
+      archer.flightId !== selectedFlightId.value
+    ) {
+      pendingFlightChange.value = {
+        archerId,
+        archerName: `${archer.lastName} ${archer.firstName}`,
+        fromFlightId: archer.flightId,
+        toFlightId: selectedFlightId.value!,
+        targetNum,
+        position,
+        draggedAssignment: draggedArcher.value.assignment,
+      };
+      draggedArcher.value = null;
+      return;
+    }
+
+    applyDrop(archerId, targetNum, position, draggedArcher.value.assignment);
+    draggedArcher.value = null;
+  }
+
+  function applyDrop(
+    archerId: string,
+    targetNum: number,
+    position: TargetPosition,
+    draggedAssignment?: TargetAssignment
+  ) {
     // Trouver l'attribution à la position cible (s'il y en a une)
     const targetAssignment = currentFlight.value?.assignments.find(
       (a: TargetAssignment) =>
@@ -118,7 +157,7 @@ export function useTargetDragDrop(
     const updatedAssignments = [...currentFlight.value.assignments];
 
     // Si l'archer qu'on déplace a déjà une attribution
-    if (draggedArcher.value.assignment) {
+    if (draggedAssignment) {
       const draggedAssignmentIndex = updatedAssignments.findIndex(
         (a) => a.archerId === archerId
       );
@@ -140,8 +179,8 @@ export function useTargetDragDrop(
           if (targetAssignmentIndex !== -1) {
             updatedAssignments[targetAssignmentIndex] = {
               ...updatedAssignments[targetAssignmentIndex],
-              targetNumber: draggedArcher.value.assignment.targetNumber,
-              position: draggedArcher.value.assignment.position,
+              targetNumber: draggedAssignment.targetNumber,
+              position: draggedAssignment.position,
             };
           }
         }
@@ -180,8 +219,29 @@ export function useTargetDragDrop(
     competitionStore.updateCompetition(competition.value!.id, {
       flights: updatedFlights,
     });
+  }
 
-    draggedArcher.value = null;
+  function confirmFlightChange() {
+    if (!pendingFlightChange.value || !competition.value) return;
+
+    const { archerId, toFlightId, targetNum, position, draggedAssignment } =
+      pendingFlightChange.value;
+
+    // Mettre à jour le flightId de l'archer
+    const archer = competition.value.archers.find((a) => a.id === archerId);
+    if (archer) {
+      competitionStore.updateArcher(competition.value.id, {
+        ...archer,
+        flightId: toFlightId,
+      });
+    }
+
+    applyDrop(archerId, targetNum, position, draggedAssignment);
+    pendingFlightChange.value = null;
+  }
+
+  function cancelFlightChange() {
+    pendingFlightChange.value = null;
   }
 
   function removeFromTarget(targetNum: number, position: TargetPosition) {
@@ -211,6 +271,7 @@ export function useTargetDragDrop(
   return {
     dragOverTarget,
     draggedArcher,
+    pendingFlightChange,
     handlePositionDragStart,
     dragStart,
     dragEnd,
@@ -218,5 +279,7 @@ export function useTargetDragDrop(
     handleDragLeave,
     handleDrop,
     removeFromTarget,
+    confirmFlightChange,
+    cancelFlightChange,
   };
 }

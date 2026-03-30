@@ -1,15 +1,23 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
-import { ViewfinderCircleIcon, XMarkIcon, InformationCircleIcon } from "@heroicons/vue/24/outline";
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ViewfinderCircleIcon, XMarkIcon, InformationCircleIcon, ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
 import type { Archer, TargetPosition } from "@/types";
 import { getAgeCategoryLabel } from "@/constants/staticData";
 
-defineProps<{
+const props = defineProps<{
   position: TargetPosition;
   archer?: Archer;
   isDragOver?: boolean;
   readonly?: boolean;
+  currentFlightId?: number;
 }>();
+
+const isWrongFlight = computed(() =>
+  props.archer != null &&
+  props.archer.flightId != null &&
+  props.currentFlightId != null &&
+  props.archer.flightId !== props.currentFlightId
+);
 
 defineEmits<{
   remove: [];
@@ -32,7 +40,8 @@ onUnmounted(() => document.removeEventListener("click", onDocumentClick));
   <div
     class="position"
     :class="{
-      occupied: archer,
+      occupied: archer && !isWrongFlight,
+      'wrong-flight': isWrongFlight,
       'drag-over': isDragOver,
     }"
     :draggable="!readonly"
@@ -42,6 +51,14 @@ onUnmounted(() => document.removeEventListener("click", onDocumentClick));
       <div ref="popoverRef" class="archer-info relative">
         <div class="archer-name flex items-center">
           <button
+            v-if="isWrongFlight"
+            @click.stop="showClubPopover = !showClubPopover"
+            class="mr-1 text-red-500 hover:text-red-700 shrink-0"
+          >
+            <ExclamationTriangleIcon class="w-4 h-4" />
+          </button>
+          <button
+            v-else
             @click.stop="showClubPopover = !showClubPopover"
             class="mr-1 text-gray-400 hover:text-gray-600 shrink-0"
           >
@@ -60,7 +77,13 @@ onUnmounted(() => document.removeEventListener("click", onDocumentClick));
           <span v-if="archer.isVisuallyImpaired" class="w-2 h-2 rounded-full bg-purple-400" title="Malvoyant"></span>
         </div>
         <div
-          v-if="showClubPopover"
+          v-if="showClubPopover && isWrongFlight"
+          class="absolute left-0 top-full mt-1 z-10 px-3 py-1.5 text-xs font-normal text-red-700 bg-red-50 rounded-lg shadow-lg ring-1 ring-red-200 whitespace-nowrap"
+        >
+          Archer affecté à un autre départ
+        </div>
+        <div
+          v-else-if="showClubPopover"
           class="absolute left-0 top-full mt-1 z-10 px-3 py-1.5 text-xs font-normal text-gray-700 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 whitespace-nowrap"
         >
           {{ archer.club }}
@@ -83,6 +106,10 @@ onUnmounted(() => document.removeEventListener("click", onDocumentClick));
 
 .position.occupied {
   @apply bg-blue-50 border-blue-200;
+}
+
+.position.wrong-flight {
+  @apply bg-red-50 border-red-300;
 }
 
 .position.drag-over {

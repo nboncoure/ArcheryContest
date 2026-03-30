@@ -9,6 +9,7 @@ const props = defineProps<{
   assignments: TargetAssignment[];
   dragOverPosition?: TargetPosition;
   readonly?: boolean;
+  currentFlightId?: number;
 }>();
 
 defineEmits<{
@@ -89,6 +90,7 @@ function getAssignmentsForTarget(targetNum: number): TargetAssignment[] {
           :is-target-drag-over="targetDragOverNum === target.number"
           :is-being-dragged="draggedTargetNum === target.number"
           :readonly="readonly"
+          :current-flight-id="currentFlightId"
           @position-drag-start="
             (e, pos) => $emit('position-drag-start', e, target.number, pos)
           "

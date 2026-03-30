@@ -92,7 +92,11 @@ if (showDate && flight.startTime) {
         break;
     }
 
-    if (!archer.isBeginner && !archer.isDisabled && !archer.isVisuallyImpaired) {
+    if (archer.isVisuallyImpaired) {
+      total.mv = total.mv + 1;
+    } else if (archer.isDisabled || archer.bowType?.code === "AH") {
+      total.ah = total.ah + 1;
+    } else if (!archer.isBeginner) {
       switch (archer.bowType.code) {
         case "SV":
           total.sv = total.sv + 1;
@@ -108,20 +112,6 @@ if (showDate && flight.startTime) {
           break;
       }
     }
-    else if (archer.isBeginner) {
-        total.beginner = total.beginner + 1;
-    }
-    else if (archer.isDisabled) {
-      switch (archer.bowType.code){
-        case "AH":
-          total.disabled = total.disabled + 1;
-          total.ah = total.ah + 1;
-          break;
-      }
-    }
-    else if (archer.isVisuallyImpaired) {
-        total.visuallyImpaired = total.visuallyImpaired + 1;
-    }
 
     return total;
   }
@@ -129,9 +119,11 @@ if (showDate && flight.startTime) {
   const flightArcherIds = new Set(flight.assignments.map(a => a.archerId));
   const isPresent = archers.filter(archer => archer.isPresent && flightArcherIds.has(archer.id));
 
-  const statMale = isPresent.filter(archer => archer.gender === "M").reduce(reducer, {sv: 0, av: 0, cosv: 0, coav: 0, ah: 0, p: 0, b: 0, m: 0, c: 0, j: 0, s: 0, v: 0, svAge: 0, disabled: 0, beginner: 0, visuallyImpaired: 0}) ;
+  const initialStats = {sv: 0, av: 0, cosv: 0, coav: 0, f: 0, nv: 0, mv: 0, ah: 0, p: 0, b: 0, m: 0, c: 0, j: 0, s: 0, v: 0, svAge: 0, disabled: 0, beginner: 0, visuallyImpaired: 0};
 
-  const statFemale = isPresent.filter(archer => archer.gender === "F").reduce(reducer, {sv: 0, av: 0, cosv: 0, coav: 0, ah: 0, p: 0, b: 0, m: 0, c: 0, j: 0, s: 0, v: 0, svAge: 0, disabled: 0, beginner: 0, visuallyImpaired: 0}) ;
+  const statMale = isPresent.filter(archer => archer.gender === "M").reduce(reducer, {...initialStats}) ;
+
+  const statFemale = isPresent.filter(archer => archer.gender === "F").reduce(reducer, {...initialStats}) ;
 
  
 
@@ -154,13 +146,15 @@ if (showDate && flight.startTime) {
     total.av = statMale.av + statFemale.av;
     total.cosv = statMale.cosv + statFemale.cosv;
     total.coav = statMale.coav + statFemale.coav;
+    total.f = statMale.f + statFemale.f;
+    total.nv = statMale.nv + statFemale.nv;
+    total.mv = statMale.mv + statFemale.mv;
     total.ah = statMale.ah + statFemale.ah;
 
-
-     return total }, {total: 0, homme: 0, femme: 0, sv: 0, av: 0, cosv: 0, coav: 0, ah: 0, p: 0, b: 0, m: 0, c: 0, j: 0, s: 0, v: 0, svAge: 0, disabled: 0, beginner: 0, visuallyImpaired: 0});
+     return total }, {total: 0, homme: 0, femme: 0, sv: 0, av: 0, cosv: 0, coav: 0, f: 0, nv: 0, mv: 0, ah: 0, p: 0, b: 0, m: 0, c: 0, j: 0, s: 0, v: 0, svAge: 0, disabled: 0, beginner: 0, visuallyImpaired: 0});
 
   firstPage.drawText(`${statMale.p}`, {
-    x: width - 473,
+    x: width - 468,
     y: 312,
     size: 10,
     font: fontRegular,
@@ -224,7 +218,7 @@ if (showDate && flight.startTime) {
   });
 
    firstPage.drawText(`${statFemale.p}`, {
-    x: width - 473,
+    x: width - 468,
     y: 324,
     size: 10,
     font: fontRegular,
@@ -288,7 +282,7 @@ if (showDate && flight.startTime) {
   });
 
    firstPage.drawText(`${totalArchers.p}`, {
-    x: width - 473,
+    x: width - 468,
     y: 299,
     size: 10,
     font: fontRegular,
@@ -376,7 +370,7 @@ if (showDate && flight.startTime) {
   });
 
   firstPage.drawText(`${statMale.sv}`, {
-    x: width - 473,
+    x: width - 468,
     y: 237,
     size: 10,
     font: fontRegular,
@@ -384,7 +378,7 @@ if (showDate && flight.startTime) {
   });
 
   firstPage.drawText(`${statMale.av}`, {
-    x: width - 423,
+    x: width - 415,
     y: 237,
     size: 10,
     font: fontRegular,
@@ -407,8 +401,32 @@ if (showDate && flight.startTime) {
     color: colorText,
   });
 
+  firstPage.drawText(`${statMale.f}`, {
+    x: width - 249,
+    y: 237,
+    size: 10,
+    font: fontRegular,
+    color: colorText,
+  });
+
+  firstPage.drawText(`${statMale.nv}`, {
+    x: width - 210,
+    y: 237,
+    size: 10,
+    font: fontRegular,
+    color: colorText,
+  });
+
+  firstPage.drawText(`${statMale.mv}`, {
+    x: width - 165,
+    y: 237,
+    size: 10,
+    font: fontRegular,
+    color: colorText,
+  });
+
   firstPage.drawText(`${statMale.ah}`, {
-    x: width - 125,
+    x: width - 120,
     y: 237,
     size: 10,
     font: fontRegular,
@@ -416,7 +434,7 @@ if (showDate && flight.startTime) {
   });
 
   firstPage.drawText(`${statFemale.sv}`, {
-    x: width - 473,
+    x: width - 468,
     y: 249,
     size: 10,
     font: fontRegular,
@@ -424,7 +442,7 @@ if (showDate && flight.startTime) {
   });
 
   firstPage.drawText(`${statFemale.av}`, {
-    x: width - 423,
+    x: width - 415,
     y: 249,
     size: 10,
     font: fontRegular,
@@ -447,8 +465,32 @@ if (showDate && flight.startTime) {
     color: colorText,
   });
 
+  firstPage.drawText(`${statFemale.f}`, {
+    x: width - 249,
+    y: 249,
+    size: 10,
+    font: fontRegular,
+    color: colorText,
+  });
+
+  firstPage.drawText(`${statFemale.nv}`, {
+    x: width - 210,
+    y: 249,
+    size: 10,
+    font: fontRegular,
+    color: colorText,
+  });
+
+  firstPage.drawText(`${statFemale.mv}`, {
+    x: width - 165,
+    y: 249,
+    size: 10,
+    font: fontRegular,
+    color: colorText,
+  });
+
   firstPage.drawText(`${statFemale.ah}`, {
-    x: width - 125,
+    x: width - 120,
     y: 249,
     size: 10,
     font: fontRegular,
@@ -456,7 +498,7 @@ if (showDate && flight.startTime) {
   });
 
    firstPage.drawText(`${totalArchers.sv}`, {
-    x: width - 473,
+    x: width - 468,
     y: 225,
     size: 10,
     font: fontRegular,
@@ -464,7 +506,7 @@ if (showDate && flight.startTime) {
   });
 
     firstPage.drawText(`${totalArchers.av}`, {
-    x: width - 423,
+    x: width - 415,
     y: 225,
     size: 10,
     font: fontRegular,
@@ -487,8 +529,32 @@ if (showDate && flight.startTime) {
     color: colorText,
   });
 
+  firstPage.drawText(`${totalArchers.f}`, {
+    x: width - 249,
+    y: 225,
+    size: 10,
+    font: fontRegular,
+    color: colorText,
+  });
+
+  firstPage.drawText(`${totalArchers.nv}`, {
+    x: width - 210,
+    y: 225,
+    size: 10,
+    font: fontRegular,
+    color: colorText,
+  });
+
+  firstPage.drawText(`${totalArchers.mv}`, {
+    x: width - 165,
+    y: 225,
+    size: 10,
+    font: fontRegular,
+    color: colorText,
+  });
+
   firstPage.drawText(`${totalArchers.ah}`, {
-    x: width - 125,
+    x: width - 120,
     y: 225,
     size: 10,
     font: fontRegular,

@@ -22,7 +22,13 @@ export async function generateScoreSheets(
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
    
-    for (const assignment of assignments) {
+    const sortedAssignments = [...assignments].sort((a, b) => {
+      const clubA = archers.find(ar => ar.id === a.archerId)?.club ?? "";
+      const clubB = archers.find(ar => ar.id === b.archerId)?.club ?? "";
+      return clubA.localeCompare(clubB);
+    });
+
+    for (const assignment of sortedAssignments) {
       const archer = archers.find(archer => archer.id === assignment.archerId);
       const [page] = await pdfDoc.copyPages(pdfSrc, [0])
       page.setRotation(degrees(90));

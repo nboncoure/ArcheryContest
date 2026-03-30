@@ -26,7 +26,9 @@ const distanceColorClass = computed(() => {
     10: 'border-l-emerald-400',
     15: 'border-l-sky-400',
     18: 'border-l-indigo-500',
+    20: 'border-l-violet-400',
     25: 'border-l-amber-400',
+    30: 'border-l-orange-400',
     40: 'border-l-rose-400',
   }
   return colors[props.target.distance] ?? 'border-l-gray-300'
@@ -34,7 +36,7 @@ const distanceColorClass = computed(() => {
 
 const isTrispot = computed(() => props.target.faceType === 'trispot')
 const faceTypeLabel = computed(() => {
-  const labels: Record<string, string> = { blason: 'Blason', monospot: 'Monospot', trispot: 'Trispot' }
+  const labels: Record<string, string> = { blason: 'Blason', monospot: 'Monospot', trispot: 'Trispot', vegas: 'Vegas' }
   return labels[props.target.faceType ?? 'blason'] ?? 'Blason'
 })
 

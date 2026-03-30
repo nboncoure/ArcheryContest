@@ -112,6 +112,7 @@ function submit() {
                         <option value="blason">Blason</option>
                         <option value="monospot">Monospot</option>
                         <option value="trispot">Trispot</option>
+                        <option value="vegas">Vegas</option>
                       </select>
                     </div>
                     <div class="mb-0 form-group">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ViewfinderCircleIcon, XMarkIcon } from "@heroicons/vue/24/outline";
+import { ref, onMounted, onUnmounted } from "vue";
+import { ViewfinderCircleIcon, XMarkIcon, InformationCircleIcon } from "@heroicons/vue/24/outline";
 import type { Archer, TargetPosition } from "@/types";
 import { getAgeCategoryLabel } from "@/constants/staticData";
 
@@ -13,6 +14,18 @@ defineProps<{
 defineEmits<{
   remove: [];
 }>();
+
+const showClubPopover = ref(false);
+const popoverRef = ref<HTMLElement | null>(null);
+
+function onDocumentClick(e: MouseEvent) {
+  if (popoverRef.value && !popoverRef.value.contains(e.target as Node)) {
+    showClubPopover.value = false;
+  }
+}
+
+onMounted(() => document.addEventListener("click", onDocumentClick));
+onUnmounted(() => document.removeEventListener("click", onDocumentClick));
 </script>
 
 <template>
@@ -26,8 +39,14 @@ defineEmits<{
     v-bind="$attrs"
   >
     <template v-if="archer">
-      <div class="archer-info">
-        <div class="archer-name">
+      <div ref="popoverRef" class="archer-info relative">
+        <div class="archer-name flex items-center">
+          <button
+            @click.stop="showClubPopover = !showClubPopover"
+            class="mr-1 text-gray-400 hover:text-gray-600 shrink-0"
+          >
+            <InformationCircleIcon class="w-4 h-4" />
+          </button>
           {{ archer.lastName }} {{ archer.firstName }}
         </div>
         <div class="archer-details">
@@ -39,6 +58,12 @@ defineEmits<{
           <span v-if="archer.isBeginner" class="w-2 h-2 rounded-full bg-blue-400" title="Débutant"></span>
           <span v-if="archer.isDisabled || archer.bowType?.code === 'AH'" class="w-2 h-2 rounded-full bg-orange-400" title="Handicapé"></span>
           <span v-if="archer.isVisuallyImpaired" class="w-2 h-2 rounded-full bg-purple-400" title="Malvoyant"></span>
+        </div>
+        <div
+          v-if="showClubPopover"
+          class="absolute left-0 top-full mt-1 z-10 px-3 py-1.5 text-xs font-normal text-gray-700 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 whitespace-nowrap"
+        >
+          {{ archer.club }}
         </div>
       </div>
       <button v-if="!readonly" @click="$emit('remove')" class="remove-button">

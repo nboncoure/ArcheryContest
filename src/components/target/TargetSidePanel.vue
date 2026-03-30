@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { defineProps, defineEmits, ref } from "vue";
-import { ArrowPathIcon, SparklesIcon } from "@heroicons/vue/24/outline";
+import { defineProps, defineEmits, ref, onMounted, onUnmounted } from "vue";
+import { ArrowPathIcon, SparklesIcon, InformationCircleIcon } from "@heroicons/vue/24/outline";
 import type { Archer } from "@/types";
 import { getAgeCategoryLabel } from "@/constants/staticData";
 
@@ -16,6 +16,21 @@ defineProps<{
 }>();
 
 const keepAssignments = ref(true);
+const clubPopoverArcherId = ref<string | null>(null);
+const popoverContainerRef = ref<HTMLElement | null>(null);
+
+function toggleClubPopover(archerId: string) {
+  clubPopoverArcherId.value = clubPopoverArcherId.value === archerId ? null : archerId;
+}
+
+function onDocumentClick(e: MouseEvent) {
+  if (popoverContainerRef.value && !popoverContainerRef.value.contains(e.target as Node)) {
+    clubPopoverArcherId.value = null;
+  }
+}
+
+onMounted(() => document.addEventListener("click", onDocumentClick));
+onUnmounted(() => document.removeEventListener("click", onDocumentClick));
 
 defineEmits<{
   "update:modelValue": [
@@ -124,7 +139,7 @@ defineEmits<{
           Afficher tous les départs
         </label>
       </div>
-      <div class="space-y-2">
+      <div ref="popoverContainerRef" class="space-y-2">
         <div
           v-for="archer in unassignedArchers"
           :key="archer.id"
@@ -134,7 +149,21 @@ defineEmits<{
           @dragstart="$emit('archer-drag-start', $event, archer)"
           @dragend="$emit('archer-drag-end')"
         >
-          <div class="font-medium text-gray-900">
+          <div class="font-medium text-gray-900 flex items-center">
+            <div class="relative inline-flex items-center">
+              <button
+                @click.stop="toggleClubPopover(archer.id)"
+                class="mr-1 text-gray-400 hover:text-gray-600 shrink-0"
+              >
+                <InformationCircleIcon class="w-4 h-4" />
+              </button>
+              <div
+                v-if="clubPopoverArcherId === archer.id"
+                class="absolute left-0 top-full mt-1 z-10 px-3 py-1.5 text-xs font-normal text-gray-700 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 whitespace-nowrap"
+              >
+                {{ archer.club }}
+              </div>
+            </div>
             {{ archer.lastName }} {{ archer.firstName }}
           </div>
           <div class="flex items-center gap-2 text-sm text-gray-500">

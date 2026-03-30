@@ -8,6 +8,7 @@ import { generateAttendancesheetPDF } from '@/utils/attendancesheetPDF';
 import { generatePlacementByClubPDF } from '@/utils/placementByClubPDF';
 import type { Archer, Flight } from '../types';
 import { DocumentArrowDownIcon, MagnifyingGlassIcon, ChevronUpIcon, ChevronDownIcon, CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/24/outline';
+import { getAgeCategoryLabel } from '@/constants/staticData';
 import { useCompetitionStatus } from '@/composables/useCompetitionStatus';
 
 
@@ -47,7 +48,7 @@ const columns = [
   { key: "lastName", label: "Nom", sortable: true },
   { key: "firstName", label: "Prénom", sortable: true },
   { key: "club", label: "Club", sortable: true },
-  { key: "category", label: "Catégorie", sortable: true },
+  { key: "ageCategory", label: "Âge", sortable: true },
   { key: "isPresent", label: "Présent", sortable: true },
 ];
 
@@ -335,7 +336,7 @@ async function generateClubPDF() {
                   {{ archer.club }}
                 </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">{{ archer.category }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ getAgeCategoryLabel(archer.ageCategory) }}</td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <Switch
                   v-model="archer.isPresent"

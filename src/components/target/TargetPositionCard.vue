@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ViewfinderCircleIcon, XMarkIcon } from "@heroicons/vue/24/outline";
 import type { Archer, TargetPosition } from "@/types";
+import { getAgeCategoryLabel } from "@/constants/staticData";
 
 defineProps<{
   position: TargetPosition;
@@ -30,7 +31,7 @@ defineEmits<{
           {{ archer.lastName }} {{ archer.firstName }}
         </div>
         <div class="archer-details">
-          <span>{{ archer.category }}</span>
+          <span>{{ getAgeCategoryLabel(archer.ageCategory) }}</span>
           <span class="flex items-center gap-1">
             <ViewfinderCircleIcon class="w-4 h-4" />
             {{ archer.bowType.label }}

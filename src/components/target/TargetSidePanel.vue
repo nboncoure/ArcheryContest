@@ -2,6 +2,7 @@
 import { defineProps, defineEmits, ref } from "vue";
 import { ArrowPathIcon, SparklesIcon } from "@heroicons/vue/24/outline";
 import type { Archer } from "@/types";
+import { getAgeCategoryLabel } from "@/constants/staticData";
 
 defineProps<{
   modelValue: {
@@ -137,7 +138,7 @@ defineEmits<{
             {{ archer.lastName }} {{ archer.firstName }}
           </div>
           <div class="flex items-center gap-2 text-sm text-gray-500">
-            <span>{{ archer.category }}</span>
+            <span>{{ getAgeCategoryLabel(archer.ageCategory) }}</span>
             <span>•</span>
             <span>{{ archer.bowType.label }}</span>
             <span v-if="archer.isBeginner" class="w-2 h-2 rounded-full bg-blue-400" title="Débutant"></span>

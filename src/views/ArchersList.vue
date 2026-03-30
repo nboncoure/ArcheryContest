@@ -166,6 +166,9 @@
                     {{ archer.club }}
                   </div>
                 </td>
+                <td v-else-if="column.key === 'ageCategory'" class="px-6 py-4 whitespace-nowrap">
+                  {{ getAgeCategoryLabel(archer.ageCategory) }}
+                </td>
                 <td v-else-if="column.key === 'gender'" class="px-6 py-4 whitespace-nowrap">
                   {{ archer.gender === "M" ? "Homme" : "Femme" }}
                 </td>
@@ -287,7 +290,7 @@ import {
   ViewColumnsIcon,
   Bars3Icon,
 } from "@heroicons/vue/24/outline";
-import { BOW_TYPES } from "../constants/staticData";
+import { BOW_TYPES, getAgeCategoryLabel } from "../constants/staticData";
 import ArcherFormModal from "@/components/ArcherFormModal.vue";
 import ConfirmModal from "@/components/ConfirmModal.vue";
 import type { Archer } from "../types";
@@ -334,6 +337,7 @@ interface ColumnDef {
   key: string;
   label: string;
   sortable: boolean;
+  defaultVisible?: boolean;
 }
 
 const allColumns: ColumnDef[] = [
@@ -342,7 +346,8 @@ const allColumns: ColumnDef[] = [
   { key: "tags", label: "Profil", sortable: false },
   { key: "club", label: "Club", sortable: true },
   { key: "departmentNumber", label: "N° département", sortable: true },
-  { key: "category", label: "Catégorie", sortable: true },
+  { key: "ageCategory", label: "Âge", sortable: true },
+  { key: "category", label: "Catégorie", sortable: true, defaultVisible: false },
   { key: "gender", label: "Genre", sortable: true },
   { key: "bowType", label: "Arc", sortable: true },
   { key: "flightId", label: "Départ", sortable: true },
@@ -370,12 +375,12 @@ function loadColumnConfig(): ColumnConfigItem[] {
         if (col) result.push({ ...col, visible: item.visible });
       }
       for (const col of allColumns) {
-        if (!savedKeys.has(col.key)) result.push({ ...col, visible: true });
+        if (!savedKeys.has(col.key)) result.push({ ...col, visible: col.defaultVisible !== false });
       }
       return result;
     }
   } catch { /* ignore */ }
-  return allColumns.map((c) => ({ ...c, visible: true }));
+  return allColumns.map((c) => ({ ...c, visible: c.defaultVisible !== false }));
 }
 
 function saveColumnConfig() {

@@ -31,6 +31,12 @@ export function getAgeCategoryByCode(code: string): AgeCategory | undefined {
   return AGE_CATEGORIES.find((cat) => cat.code === code);
 }
 
+export function getAgeCategoryLabel(ageCategory: AgeCategory): string {
+  if (ageCategory.maxAge >= 99) return `${ageCategory.minAge}+`;
+  if (ageCategory.minAge <= 10) return `-${ageCategory.maxAge}`;
+  return `${ageCategory.minAge}/${ageCategory.maxAge}`;
+}
+
 export const BOW_TYPES: BowType[] = [
   { code: "SV", label: "Classique sans viseur", isCompound: false },
   { code: "AV", label: "Classique avec viseur", isCompound: false },
@@ -120,14 +126,16 @@ export const COMPETITION_TARGET_CONFIG: CompetitionTargetConfig = {
       SV: { distance: 25, faceSize: 60 },
     },
     COAV: {
-      M: { distance: 18, faceSize: 60, faceType: "trispot" },
-      C: { distance: 18, faceSize: 60, faceType: "trispot" },
+      M: { distance: 18, faceSize: 60 },
+      C: { distance: 18, faceSize: 60 },
       J: { distance: 25, faceSize: 60, faceType: "trispot" },
       S: { distance: 25, faceSize: 60, faceType: "trispot" },
       V: { distance: 25, faceSize: 60, faceType: "trispot" },
       SV: { distance: 25, faceSize: 60, faceType: "trispot" },
     },
     AH: {
+      P: { distance: 10, faceSize: 60 },
+      B: { distance: 10, faceSize: 60 },
       M: { distance: 18, faceSize: 60 },
       C: { distance: 18, faceSize: 60 },
       J: { distance: 18, faceSize: 60 },
@@ -168,12 +176,14 @@ export const COMPETITION_TARGET_CONFIG: CompetitionTargetConfig = {
     COAV: {
       M: { distance: 25, faceSize: 80 },
       C: { distance: 25, faceSize: 60 },
-      J: { distance: 40, faceSize: 80 },
-      S: { distance: 40, faceSize: 80 },
-      V: { distance: 40, faceSize: 80 },
-      SV: { distance: 40, faceSize: 80 },
+      J: { distance: 40, faceSize: 80, faceType: "monospot" },
+      S: { distance: 40, faceSize: 80, faceType: "monospot" },
+      V: { distance: 40, faceSize: 80, faceType: "monospot" },
+      SV: { distance: 40, faceSize: 80, faceType: "monospot" },
     },
     AH: {
+      P: { distance: 15, faceSize: 80 },
+      B: { distance: 15, faceSize: 60 },
       M: { distance: 18, faceSize: 80 },
       C: { distance: 18, faceSize: 60 },
       J: { distance: 18, faceSize: 80 },

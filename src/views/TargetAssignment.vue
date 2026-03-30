@@ -636,7 +636,7 @@ async function generatePDF() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Feuille de marque.pdf`;
+    link.download = `Feuille de marque - ${currentFlight.value?.name}.pdf`;
     document.body.appendChild(link);
     link.click();
     

@@ -276,6 +276,9 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import { useCompetitionStore } from "../stores/competitionsStore";
 import { storeToRefs } from "pinia";
+import { useToast } from "@/composables/useToast";
+
+const { showToast } = useToast();
 import {
   Menu,
   MenuButton,
@@ -560,7 +563,7 @@ async function generateRewardsPDFAction() {
     document.body.removeChild(link);
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
-    alert('Une erreur est survenue lors de la génération du PDF.');
+    showToast('Une erreur est survenue lors de la génération du PDF.', 'error');
   }
 }
 </script>

@@ -7,6 +7,7 @@ import type {
   TargetAssignment,
 } from "@/types";
 import { useCompetitionStore } from "@/stores/competitionsStore";
+import { useToast } from "@/composables/useToast";
 
 export function useTargetDragDrop(
   competition: ComputedRef<Competition | undefined>,
@@ -14,6 +15,7 @@ export function useTargetDragDrop(
   selectedFlightId: Ref<number | undefined>
 ) {
   const competitionStore = useCompetitionStore();
+  const { showToast } = useToast();
 
   const dragOverTarget = ref<{
     number: number;
@@ -112,7 +114,7 @@ export function useTargetDragDrop(
     );
 
     if (isAssignedInOtherFlight) {
-      alert("Cet archer est déjà assigné à un autre départ.");
+      showToast("Cet archer est déjà assigné à un autre départ.", "warning");
       draggedArcher.value = null;
       return;
     }

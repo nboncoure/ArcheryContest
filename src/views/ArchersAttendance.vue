@@ -3,6 +3,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCompetitionStore } from '@/stores/competitionsStore';
 import { storeToRefs } from 'pinia';
+import { useToast } from '@/composables/useToast';
+
+const { showToast } = useToast();
 import { Switch } from '@headlessui/vue'
 import { generateAttendancesheetPDF } from '@/utils/attendancesheetPDF';
 import { generatePlacementByClubPDF } from '@/utils/placementByClubPDF';
@@ -328,7 +331,7 @@ async function generatePDF() {
     document.body.removeChild(link);
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
-    alert('Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.');
+    showToast('Une erreur est survenue lors de la génération du PDF.', 'error');
   } finally {
     isGeneratingPDF.value = false;
   }
@@ -360,7 +363,7 @@ async function generateClubPDF() {
   document.body.removeChild(link);
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
-    alert('Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.');
+    showToast('Une erreur est survenue lors de la génération du PDF.', 'error');
     } finally {
       isGeneratingPDF.value = false;
     }

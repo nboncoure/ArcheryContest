@@ -88,7 +88,7 @@ async function processFile(file: File) {
     importData.value = archers;
   } catch (error) {
     console.error("Erreur lors du traitement du fichier:", error);
-    alert(`Erreur lors du traitement du fichier: ${error}`);
+    showToast(`Erreur lors du traitement du fichier: ${error}`, "error");
   } finally {
     isLoading.value = false;
   }

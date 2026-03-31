@@ -3,6 +3,9 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useCompetitionStore } from '@/stores/competitionsStore';
 import { storeToRefs } from 'pinia';
+import { useToast } from '@/composables/useToast';
+
+const { showToast } = useToast();
 import type { Archer, ArcherScore } from '@/types';
 import { generateRankingPDF } from '@/utils/rankingPDF';
 import type { RankingCategory } from '@/types/ranking';
@@ -262,7 +265,7 @@ async function generatePDF() {
     document.body.removeChild(link);
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
-    alert('Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.');
+    showToast('Une erreur est survenue lors de la génération du PDF.', 'error');
   } finally {
     isGeneratingPDF.value = false;
   }

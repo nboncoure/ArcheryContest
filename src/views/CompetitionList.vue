@@ -3,6 +3,9 @@ import { useCompetitionStore } from "@/stores/competitionsStore";
 import { storeToRefs } from "pinia";
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/vue";
 import { ref } from "vue";
+import { useToast } from "@/composables/useToast";
+
+const { showToast } = useToast();
 import {
   PlusIcon,
   CalendarIcon,
@@ -115,7 +118,7 @@ function importWithNewId() {
     competitionsStore.addCompetition(newCompetition);
     showImportModal.value = false;
     importedCompetition.value = null;
-    alert("Compétition importée avec un nouvel ID !");
+    showToast("Compétition importée avec un nouvel ID !", "success");
   }
 }
 
@@ -124,7 +127,7 @@ function replaceExistingCompetition() {
     competitionsStore.updateCompetition(importedCompetition.value.id, importedCompetition.value);
     showImportModal.value = false;
     importedCompetition.value = null;
-    alert("Compétition existante remplacée !");
+    showToast("Compétition existante remplacée !", "success");
   }
 }
 
@@ -150,7 +153,7 @@ function handleFileSelect(event: Event) {
 
 function processImportFile(file: File) {
   if (file.type !== "application/json" && !file.name.endsWith(".json")) {
-    alert("Veuillez sélectionner un fichier JSON.");
+    showToast("Veuillez sélectionner un fichier JSON.", "warning");
     return;
   }
   const reader = new FileReader();
@@ -159,7 +162,7 @@ function processImportFile(file: File) {
       const data = JSON.parse(e.target?.result as string);
       const competition = data.version ? data.competition : data;
       if (!competition?.id || !competition?.name) {
-        alert("Le fichier ne contient pas une compétition valide.");
+        showToast("Le fichier ne contient pas une compétition valide.", "error");
         return;
       }
       const existingCompetition = competitions.value.find(c => c.id === competition.id);
@@ -168,10 +171,10 @@ function processImportFile(file: File) {
         showImportModal.value = true;
       } else {
         competitionsStore.addCompetition(competition);
-        alert("Compétition importée avec succès !");
+        showToast("Compétition importée avec succès !", "success");
       }
     } catch (error) {
-      alert("Erreur lors de la lecture du fichier JSON.");
+      showToast("Erreur lors de la lecture du fichier JSON.", "error");
       console.error(error);
     }
   };

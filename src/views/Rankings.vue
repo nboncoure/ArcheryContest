@@ -17,7 +17,7 @@ import {
   TransitionChild 
 } from '@headlessui/vue';
 import { DocumentArrowDownIcon } from '@heroicons/vue/24/outline';
-import { BOW_TYPES, CATEGORIES, getAgeCategoryByCode, getBowTypeByCode } from '@/constants/staticData';
+import { BOW_TYPES, CATEGORIES, getAgeCategoryByCode, getAgeCategoryLabel, getBowTypeByCode } from '@/constants/staticData';
 
 const route = useRoute();
 const competitionStore = useCompetitionStore();
@@ -60,9 +60,22 @@ onMounted(() => {
   }
 });
 
-const categories = computed(() =>
-  [...new Set(competition.value?.archers.map((a) => a.category))].sort()
-);
+const categories = computed(() => {
+  if (!competition.value) return [];
+  const presentArchers = competition.value.archers.filter((a) => a.isPresent);
+  const codes = [...new Set(presentArchers.map((a) => a.category).filter(Boolean))].sort();
+  return codes.map((code) => {
+    const catData = CATEGORIES.find((c) => c.code === code);
+    if (!catData) return { code, label: code };
+    const bowType = getBowTypeByCode(catData.bowType);
+    if (bowType?.code === 'AH') return { code, label: bowType.label };
+    const gender = catData.gender === 'M' ? 'Masculin' : 'Féminine';
+    const ageCategory = getAgeCategoryByCode(catData.ageCategory);
+    if (!ageCategory || !bowType) return { code, label: code };
+    const ageLabel = getAgeCategoryLabel(ageCategory);
+    return { code, label: `${ageLabel} ans ${gender} ${bowType.label}` };
+  });
+});
 
 const departments = computed(() =>
   [...new Set(competition.value?.archers.map((a) => a.departmentNumber))].sort()
@@ -296,8 +309,8 @@ async function generatePDF() {
             <label for="category">Catégorie</label>
             <select id="category" v-model="selectedCategory">
               <option value="">Toutes</option>
-              <option v-for="cat in categories" :key="cat" :value="cat">
-                {{ cat }}
+              <option v-for="cat in categories" :key="cat.code" :value="cat.code">
+                {{ cat.label }}
               </option>
             </select>
           </div>
@@ -331,7 +344,7 @@ async function generatePDF() {
     <div v-for="category in groupedRankings" :key="category.name" class="mb-6 card">
       <div class="p-6">
         <h2 class="mb-4 text-xl font-semibold text-gray-900">
-          {{ category.name }} 
+          {{ category.description || category.name }}
         </h2>
 
         <div class="overflow-x-auto">

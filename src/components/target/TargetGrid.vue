@@ -79,7 +79,7 @@ function getAssignmentsForTarget(targetNum: number): TargetAssignment[] {
 
 <template>
   <div class="bg-white rounded-lg shadow">
-    <div class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-3">
+    <div class="grid grid-cols-1 gap-3 p-4 min-[850px]:grid-cols-2 min-[1100px]:grid-cols-3">
       <template v-for="(target, index) in targets" :key="target.number">
         <TargetCard
           :target="target"

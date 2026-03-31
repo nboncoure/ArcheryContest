@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { XMarkIcon, Bars3Icon, InformationCircleIcon } from "@heroicons/vue/24/outline";
-import { Icon } from "@iconify/vue";
+
 import type { Archer, TargetPosition, Target, TargetAssignment } from "@/types";
 import TargetPositionCard from "./TargetPositionCard.vue";
 
@@ -138,7 +138,7 @@ function onTargetDragOver(event: DragEvent) {
       >
         <Bars3Icon class="w-5 h-5" />
       </div>
-      <div style="width: -webkit-fill-available">
+      <div class="flex-1 min-w-0">
         <div class="target-number flex items-center justify-center gap-1">
           <span>Cible {{ target.number }}</span>
           <div v-if="target.comment" ref="commentRef" class="relative inline-flex">
@@ -156,37 +156,25 @@ function onTargetDragOver(event: DragEvent) {
             </div>
           </div>
         </div>
-        <div class="flex items-center gap-4 mt-1 text-sm text-gray-600">
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-0 mt-1 text-sm text-gray-600">
           <button
             v-if="!readonly"
             @click="$emit('edit-config')"
-            class="flex items-center gap-1 transition-colors hover:text-primary"
+            class="transition-colors hover:text-primary"
             title="Configurer la cible"
           >
-            <Icon
-              icon="material-symbols-light:fit-width-rounded"
-              class="w-4 h-4"
-            />
             {{ target.distance }}m
           </button>
-          <span v-else class="flex items-center gap-1">
-            <Icon
-              icon="material-symbols-light:fit-width-rounded"
-              class="w-4 h-4"
-            />
-            {{ target.distance }}m
-          </span>
+          <span v-else>{{ target.distance }}m</span>
           <button
             v-if="!readonly"
             @click="$emit('edit-config')"
-            class="flex items-center gap-1 transition-colors hover:text-primary"
+            class="transition-colors hover:text-primary"
             title="Configurer la cible"
           >
-            <Icon icon="material-symbols-light:target" class="w-4 h-4" />
             <span :class="{ 'font-semibold text-amber-700': isTrispot }">{{ faceTypeLabel }}</span> {{ target.faceSize }}cm
           </button>
-          <span v-else class="flex items-center gap-1">
-            <Icon icon="material-symbols-light:target" class="w-4 h-4" />
+          <span v-else>
             <span :class="{ 'font-semibold text-amber-700': isTrispot }">{{ faceTypeLabel }}</span> {{ target.faceSize }}cm
           </span>
         </div>

@@ -75,11 +75,11 @@
           </div>
         </div>
         <div class="form-group">
-          <label for="category">Catégorie</label>
-          <select id="category" v-model="filters.category">
+          <label for="ageCategory">Tranche d'âge</label>
+          <select id="ageCategory" v-model="filters.ageCategory">
             <option value="">Toutes</option>
-            <option v-for="cat in categories" :key="cat" :value="cat">
-              {{ cat }}
+            <option v-for="cat in ageCategories" :key="cat.code" :value="cat.code">
+              {{ cat.label }}
             </option>
           </select>
         </div>
@@ -298,7 +298,7 @@ import {
   Bars3Icon,
   DocumentArrowDownIcon,
 } from "@heroicons/vue/24/outline";
-import { BOW_TYPES, getAgeCategoryLabel } from "../constants/staticData";
+import { BOW_TYPES, AGE_CATEGORIES, getAgeCategoryLabel } from "../constants/staticData";
 import { generateRewardsPDF } from "@/utils/rewardsPDF";
 import ArcherFormModal from "@/components/ArcherFormModal.vue";
 import ConfirmModal from "@/components/ConfirmModal.vue";
@@ -333,7 +333,7 @@ const archerToDelete = ref<string | null>(null);
 
 const filters = ref({
   search: "",
-  category: "",
+  ageCategory: "",
   bowType: "",
   flight: "" as number | "",
   tag: "",
@@ -454,9 +454,12 @@ const archers = computed(
   () => competitions.value.find((c) => c.id === competitionId)?.archers || []
 );
 
-const categories = computed(() =>
-  [...new Set(archers.value.map((a) => a.category))].sort()
-);
+const ageCategories = computed(() => {
+  const codes = new Set(archers.value.map((a) => a.ageCategory?.code).filter(Boolean));
+  return AGE_CATEGORIES
+    .filter((c) => codes.has(c.code))
+    .map((c) => ({ code: c.code, label: `${c.label} (${getAgeCategoryLabel(c)})` }));
+});
 
 const flights = computed(() => competition.value?.flights || []);
 
@@ -476,7 +479,7 @@ const filteredArchers = computed(() => {
         .includes(filters.value.search.toLowerCase());
 
     const categoryMatch =
-      !filters.value.category || archer.category === filters.value.category;
+      !filters.value.ageCategory || archer.ageCategory?.code === filters.value.ageCategory;
 
     const bowTypeMatch =
       !filters.value.bowType || archer.bowType.code === filters.value.bowType;
